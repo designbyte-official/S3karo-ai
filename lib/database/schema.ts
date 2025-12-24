@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, uuid, bigint, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, uuid, bigint, jsonb, boolean } from "drizzle-orm/pg-core";
 
 // Users table
 export const users = pgTable("users", {
@@ -14,6 +14,21 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Subscriptions table
+export const subscriptions = pgTable("subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  plan: text("plan").notNull(), // 'free', 'basic', 'pro', 'enterprise'
+  status: text("status").notNull().default("active"), // 'active', 'cancelled', 'expired', 'trial'
+  stripeSubscriptionId: text("stripe_subscription_id"), // For Stripe integration
+  stripeCustomerId: text("stripe_customer_id"), // For Stripe integration
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Files table
 export const files = pgTable("files", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -23,8 +38,8 @@ export const files = pgTable("files", {
   extension: text("extension").notNull(),
   size: bigint("size", { mode: "number" }).notNull(),
   url: text("url").notNull(),
-  storageType: text("storage_type").notNull().default("s3"), // 's3' or 'appwrite'
-  storageKey: text("storage_key").notNull(), // S3 key or Appwrite file ID
+  storageType: text("storage_type").notNull().default("own-s3"), // 'own-s3', 'platform-s3'
+  storageKey: text("storage_key").notNull(), // S3 key or local file path
   bucketName: text("bucket_name"),
   sharedWith: jsonb("shared_with").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -34,6 +49,8 @@ export const files = pgTable("files", {
 // Type exports
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Subscription = typeof subscriptions.$inferSelect;
+export type NewSubscription = typeof subscriptions.$inferInsert;
 export type File = typeof files.$inferSelect;
 export type NewFile = typeof files.$inferInsert;
 

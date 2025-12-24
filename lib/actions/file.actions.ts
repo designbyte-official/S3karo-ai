@@ -44,16 +44,41 @@ export const getFiles = async ({
     });
     if (limit) params.append('limit', limit.toString());
 
-    // Use absolute URL for server-side fetch
-    const url = `${API_BASE}/api/files?${params.toString()}`;
+    // For server-side, use the database queries directly instead of API route
+    // This avoids cookie issues with server-side fetch
+    const { getFilesForUser } = await import('@/lib/database/queries');
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
+    const files = await getFilesForUser(currentUser.id, {
+      types: types.length > 0 ? types : undefined,
+      searchText: searchText || undefined,
+      sort: sort || undefined,
+      limit: limit || undefined,
     });
+
+    // Transform to match existing format
+    const transformedFiles = files.map(file => ({
+      $id: file.id,
+      id: file.id,
+      name: file.name,
+      type: file.type,
+      extension: file.extension,
+      size: Number(file.size),
+      url: file.url,
+      owner: {
+        $id: currentUser.id,
+        fullName: currentUser.fullName,
+      },
+      accountId: currentUser.id,
+      users: (file.sharedWith as string[]) || [],
+      bucketFileId: file.storageKey,
+      $createdAt: file.createdAt.toISOString(),
+      $updatedAt: file.updatedAt.toISOString(),
+    }));
+
+    return {
+      documents: transformedFiles,
+      total: transformedFiles.length,
+    };
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -178,29 +203,10 @@ export async function getTotalSpaceUsed(): Promise<{
       };
     }
 
-    const response = await fetch(`${API_BASE}/api/files/space`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Failed to fetch space usage:', response.status, errorText);
-      return {
-        image: { size: 0, latestDate: "" },
-        document: { size: 0, latestDate: "" },
-        video: { size: 0, latestDate: "" },
-        audio: { size: 0, latestDate: "" },
-        other: { size: 0, latestDate: "" },
-        used: 0,
-        all: 2 * 1024 * 1024 * 1024 * 1024,
-      };
-    }
-
-    return await response.json();
+    // Use database queries directly instead of API route
+    const { getTotalSpaceUsed } = await import('@/lib/database/queries');
+    
+    return await getTotalSpaceUsed(currentUser.id);
   } catch (error) {
     console.error('Get total space error:', error);
     return {

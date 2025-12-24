@@ -2,8 +2,8 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getFiles as getFilesClient, getTotalSpaceUsed as getTotalSpaceUsedClient } from "@/lib/actions/file.actions.client";
-import { getStorageMode } from "@/lib/s3/config";
-import { getCurrentUser } from "@/lib/actions/user.actions";
+import { useStorageStore } from "@/lib/stores/storage-store";
+import { useAuth } from "@/lib/hooks/use-auth";
 
 // Get files query hook
 export function useFiles(filters?: {
@@ -12,14 +12,15 @@ export function useFiles(filters?: {
   sort?: string;
   limit?: number;
 }) {
+  const { user } = useAuth();
+  const { mode } = useStorageStore();
+
   return useQuery({
-    queryKey: ["files", filters],
+    queryKey: ["files", filters, mode],
     queryFn: async () => {
-      const user = await getCurrentUser();
       if (!user) throw new Error("User not authenticated");
 
-      const mode = getStorageMode();
-      if (mode === "s3") {
+      if (mode === "own-s3") {
         return await getFilesClient({
           types: filters?.types || [],
           searchText: filters?.searchText || "",
@@ -29,7 +30,7 @@ export function useFiles(filters?: {
           accountId: user.accountId || user.id,
         });
       } else {
-        // For custom backend, fetch from API
+        // For platform-s3 or custom backend, fetch from API
         const params = new URLSearchParams();
         if (filters?.types && filters.types.length > 0) {
           params.append("types", filters.types.join(","));
@@ -43,21 +44,22 @@ export function useFiles(filters?: {
         return await response.json();
       }
     },
-    enabled: true,
+    enabled: !!user,
     staleTime: 30000, // 30 seconds
   });
 }
 
 // Get total space used hook
 export function useTotalSpace() {
+  const { user } = useAuth();
+  const { mode } = useStorageStore();
+
   return useQuery({
-    queryKey: ["totalSpace"],
+    queryKey: ["totalSpace", mode],
     queryFn: async () => {
-      const user = await getCurrentUser();
       if (!user) throw new Error("User not authenticated");
 
-      const mode = getStorageMode();
-      if (mode === "s3") {
+      if (mode === "own-s3") {
         return await getTotalSpaceUsedClient(user.$id || user.id);
       } else {
         const response = await fetch("/api/files/space");
@@ -65,6 +67,7 @@ export function useTotalSpace() {
         return await response.json();
       }
     },
+    enabled: !!user,
     staleTime: 60000, // 1 minute
   });
 }
@@ -72,11 +75,11 @@ export function useTotalSpace() {
 // Delete file mutation
 export function useDeleteFile() {
   const queryClient = useQueryClient();
+  const { mode } = useStorageStore();
 
   return useMutation({
     mutationFn: async ({ fileId, bucketFileId }: { fileId: string; bucketFileId: string }) => {
-      const mode = getStorageMode();
-      if (mode === "s3") {
+      if (mode === "own-s3") {
         const { deleteFile: deleteFileClient } = await import("@/lib/actions/file.actions.client");
         return await deleteFileClient({ fileId, bucketFileId, path: window.location.pathname });
       } else {
@@ -95,6 +98,7 @@ export function useDeleteFile() {
 // Rename file mutation
 export function useRenameFile() {
   const queryClient = useQueryClient();
+  const { mode } = useStorageStore();
 
   return useMutation({
     mutationFn: async ({
@@ -110,8 +114,7 @@ export function useRenameFile() {
       bucketFileId: string;
       ownerId: string;
     }) => {
-      const mode = getStorageMode();
-      if (mode === "s3") {
+      if (mode === "own-s3") {
         const { renameFile: renameFileClient } = await import("@/lib/actions/file.actions.client");
         return await renameFileClient({ fileId, name, extension, path: window.location.pathname, ownerId, bucketFileId });
       } else {

@@ -181,7 +181,10 @@
     @apply cursor-pointer !important;
   }
   .shad-dialog {
-    @apply rounded-[26px] w-[90%] max-w-[400px] px-6 py-8   !important;
+    @apply rounded-[26px] w-[90%] max-w-[400px] px-6 py-8 !important;
+  }
+  .shad-dialog-wide {
+    @apply rounded-[26px] w-[95%] max-w-[800px] px-8 py-10 !important;
   }
   .shad-chart-title {
     @apply text-white !important;

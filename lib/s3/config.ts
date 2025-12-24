@@ -33,12 +33,14 @@ export const clearS3Config = () => {
   localStorage.removeItem('s3-config');
 };
 
-export const getStorageMode = (): 'appwrite' | 's3' => {
-  if (typeof window === 'undefined') return 'appwrite';
-  return (localStorage.getItem('storage-mode') as 'appwrite' | 's3') || 'appwrite';
+export type StorageMode = 'own-s3' | 'platform-s3';
+
+export const getStorageMode = (): StorageMode => {
+  if (typeof window === 'undefined') return 'own-s3';
+  return (localStorage.getItem('storage-mode') as StorageMode) || 'own-s3';
 };
 
-export const setStorageMode = (mode: 'appwrite' | 's3') => {
+export const setStorageMode = (mode: StorageMode) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem('storage-mode', mode);
 };
