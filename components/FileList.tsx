@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { getStorageMode } from "@/lib/s3/config";
 import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
 import { getCurrentUser } from "@/lib/actions/user.actions";
@@ -23,6 +24,7 @@ interface FileListProps {
 }
 
 const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFiles, currentUser }: FileListProps) => {
+  const router = useRouter();
   const [files, setFiles] = useState(initialFiles || { documents: [], total: 0 });
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(currentUser);
@@ -58,8 +60,13 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
           // No Appwrite - return empty
           setFiles({ documents: [], total: 0 });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading files:', error);
+        // If own-s3 mode and config not found, redirect to setup
+        if (mode === 'own-s3' && error?.message?.includes('S3 configuration not found')) {
+          router.push('/own-s3/setup');
+          return;
+        }
         // Show error message
         setFiles({ documents: [], total: 0 });
       } finally {

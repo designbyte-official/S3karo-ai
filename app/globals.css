@@ -314,7 +314,7 @@
 
   /* Card */
   .file-card {
-    @apply flex cursor-pointer flex-col gap-6 rounded-[18px] bg-white p-5 shadow-sm transition-all hover:shadow-drop-3 !important;
+    @apply flex cursor-pointer flex-col gap-6 rounded-[18px] bg-white p-5 shadow-drop-1 transition-all hover:shadow-drop-3 !important;
   }
   .file-card-details {
     @apply flex flex-col gap-2 text-light-100 !important;
@@ -460,7 +460,7 @@
 
   /* Sort */
   .sort-select {
-    @apply shad-no-focus h-11 w-full rounded-[8px] border-transparent bg-white !shadow-sm sm:w-[210px] !important;
+    @apply shad-no-focus h-11 w-full rounded-[8px] border-transparent bg-white !shadow-drop-1 sm:w-[210px] !important;
   }
   .sort-select-content {
     @apply !shadow-drop-3 !important;
