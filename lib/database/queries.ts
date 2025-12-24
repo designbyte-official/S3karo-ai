@@ -22,6 +22,8 @@ export async function createUser(data: {
   fullName: string;
   passwordHash: string;
   avatar?: string;
+  verificationToken?: string;
+  verificationTokenExpiry?: Date;
 }): Promise<User> {
   const result = await db
     .insert(users)
@@ -30,9 +32,57 @@ export async function createUser(data: {
       fullName: data.fullName,
       passwordHash: data.passwordHash,
       avatar: data.avatar || "https://ui-avatars.com/api/?name=User&background=random",
+      emailVerified: "false",
+      verificationToken: data.verificationToken || null,
+      verificationTokenExpiry: data.verificationTokenExpiry || null,
     })
     .returning();
   return result[0];
+}
+
+// Verify user email
+export async function verifyUserEmail(token: string): Promise<User | null> {
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.verificationToken, token))
+    .limit(1);
+  
+  const user = result[0];
+  if (!user) return null;
+  
+  // Check if token is expired
+  if (user.verificationTokenExpiry && new Date() > new Date(user.verificationTokenExpiry)) {
+    return null; // Token expired
+  }
+  
+  // Update user to verified
+  const updated = await db
+    .update(users)
+    .set({
+      emailVerified: "true",
+      verificationToken: null,
+      verificationTokenExpiry: null,
+    })
+    .where(eq(users.id, user.id))
+    .returning();
+  
+  return updated[0] || null;
+}
+
+// Update verification token
+export async function updateVerificationToken(
+  userId: string,
+  token: string,
+  expiry: Date
+): Promise<void> {
+  await db
+    .update(users)
+    .set({
+      verificationToken: token,
+      verificationTokenExpiry: expiry,
+    })
+    .where(eq(users.id, userId));
 }
 
 // File queries

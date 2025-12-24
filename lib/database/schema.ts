@@ -7,6 +7,9 @@ export const users = pgTable("users", {
   fullName: text("full_name").notNull(),
   avatar: text("avatar").default("https://ui-avatars.com/api/?name=User&background=random"),
   passwordHash: text("password_hash").notNull(),
+  emailVerified: text("email_verified").default("false"), // 'true', 'false', or verification token
+  verificationToken: text("verification_token"),
+  verificationTokenExpiry: timestamp("verification_token_expiry"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

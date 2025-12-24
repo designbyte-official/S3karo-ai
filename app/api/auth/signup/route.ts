@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserByEmail, createUser } from '@/lib/database/queries';
+import { sendVerificationEmail } from '@/lib/email/sender';
+import { generateVerificationToken, getVerificationTokenExpiry } from '@/lib/utils/tokens';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
@@ -30,12 +32,26 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Generate verification token
+    const verificationToken = generateVerificationToken();
+    const verificationTokenExpiry = getVerificationTokenExpiry();
+
     // Create user
     const user = await createUser({
       email,
       fullName,
       passwordHash,
+      verificationToken,
+      verificationTokenExpiry,
     });
+
+    // Send verification email
+    try {
+      await sendVerificationEmail(email, verificationToken, fullName);
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+      // Don't fail signup if email fails - user can request resend later
+    }
 
     // Generate JWT token
     const token = jwt.sign(

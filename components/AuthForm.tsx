@@ -68,7 +68,11 @@ const AuthForm = ({ type }: { type: FormType }) => {
       const data = await response.json();
 
       if (!response.ok) {
-        setErrorMessage(data.error || "Failed to authenticate. Please try again.");
+        if (data.needsVerification) {
+          setErrorMessage(data.message || "Please verify your email address before signing in.");
+        } else {
+          setErrorMessage(data.error || "Failed to authenticate. Please try again.");
+        }
         return;
       }
 
