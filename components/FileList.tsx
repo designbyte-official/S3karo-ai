@@ -1,11 +1,10 @@
 "use client";
 
-"use client";
-
 import { useEffect, useState } from "react";
 import { getStorageMode } from "@/lib/s3/config";
 import { getFiles as getFilesAppwrite } from "@/lib/actions/file.actions";
 import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
+import { getCurrentUser } from "@/lib/actions/user.actions";
 import { Models } from "node-appwrite";
 import Card from "@/components/Card";
 import { FileType } from "@/types/index.d";
@@ -47,7 +46,7 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
       const mode = getStorageMode();
       
       try {
-        if (mode === 's3') {
+        if (mode === 'own-s3' || mode === 'platform-s3') {
           const result = await getFilesClient({
             types,
             searchText,
@@ -66,6 +65,8 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
         }
       } catch (error) {
         console.error('Error loading files:', error);
+        // Show error message
+        setFiles({ documents: [], total: 0 });
       } finally {
         setLoading(false);
       }
@@ -81,14 +82,16 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
     const handleStorageChange = () => {
       if (user) {
         const mode = getStorageMode();
-        if (mode === 's3') {
+        if (mode === 'own-s3' || mode === 'platform-s3') {
           getFilesClient({
             types,
             searchText,
             sort,
             ownerId: user.$id,
             accountId: user.accountId,
-          }).then(setFiles);
+          }).then(setFiles).catch((error) => {
+            console.error('Error refreshing files:', error);
+          });
         }
       }
     };

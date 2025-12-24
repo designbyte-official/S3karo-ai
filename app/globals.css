@@ -309,7 +309,7 @@
     @apply primary-btn h-[66px] !important;
   }
   .error-message {
-    @apply body-2 mx-auto w-fit rounded-xl bg-error/5 px-8 py-4 text-center text-error !important;
+    @apply body-2 mx-auto w-fit rounded-xl bg-red/10 px-8 py-4 text-center text-red border border-red/30 !important;
   }
 
   /* Card */
@@ -358,7 +358,11 @@
   }
 
   .error-toast {
-    @apply bg-red !rounded-[10px] !important;
+    @apply border-red/30 bg-red/10 text-red rounded-lg shadow-drop-1 !important;
+  }
+  
+  .success-toast {
+    @apply border-green/30 bg-green/10 text-green rounded-lg shadow-drop-1 !important;
   }
 
   /* Header */

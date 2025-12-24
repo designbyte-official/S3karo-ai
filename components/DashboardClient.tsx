@@ -51,7 +51,7 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
       const mode = getStorageMode();
       
       try {
-        if (mode === 's3') {
+        if (mode === 'own-s3' || mode === 'platform-s3') {
           const [filesData, spaceData] = await Promise.all([
             getFilesClient({
               types: [],
@@ -73,6 +73,8 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
+        // Set empty data on error
+        setFiles({ documents: [], total: 0 });
       } finally {
         setLoading(false);
       }
@@ -86,13 +88,15 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
     const handleStorageChange = () => {
       if (user) {
         const mode = getStorageMode();
-        if (mode === 's3') {
+        if (mode === 'own-s3' || mode === 'platform-s3') {
           getFilesClient({
             types: [],
             limit: 10,
             ownerId: user.$id,
             accountId: user.accountId,
-          }).then(setFiles);
+          }).then(setFiles).catch((error) => {
+            console.error('Error refreshing dashboard files:', error);
+          });
         }
       }
     };

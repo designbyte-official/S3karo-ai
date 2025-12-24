@@ -63,7 +63,7 @@ export default function IAMSection({ bucketName }: IAMSectionProps) {
         {PERMISSIONS.map((permission) => (
           <span
             key={permission}
-            className="caption px-3 py-1.5 bg-brand/10 text-brand-100 rounded-full border border-brand/30"
+            className="caption px-3 py-1.5 bg-brand/10 text-brand rounded-full border border-brand/30"
           >
             {permission}
           </span>
@@ -95,7 +95,7 @@ export default function IAMSection({ bucketName }: IAMSectionProps) {
           <code>{policyText}</code>
         </pre>
         <p className="caption text-light-200">
-          Replace <code className="bg-white/50 px-1.5 py-0.5 rounded border border-light-300 text-brand-100">YOUR_BUCKET_NAME</code> with your actual bucket name
+          Replace <code className="bg-white/50 px-1.5 py-0.5 rounded border border-light-300 text-brand">YOUR_BUCKET_NAME</code> with your actual bucket name
         </p>
       </div>
 

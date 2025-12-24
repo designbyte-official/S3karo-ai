@@ -127,6 +127,24 @@ const StorageModeToggle = () => {
   };
 
   const handleModeChange = (newMode: StorageMode) => {
+    // If clicking the same mode, open settings or show status
+    if (newMode === mode) {
+      if (newMode === 'own-s3') {
+        const savedConfig = user?.id ? getS3Config(user.id) : s3Config;
+        if (savedConfig && savedConfig.accessKeyId && savedConfig.secretAccessKey && savedConfig.bucket) {
+          // If config exists, test connection
+          checkConnection(savedConfig);
+          toast({
+            description: "Testing S3 connection...",
+          });
+        } else {
+          // If no config, open settings
+          setS3SettingsOpen(true);
+        }
+      }
+      return;
+    }
+
     // Check if platform-s3 requires subscription
     if (newMode === 'platform-s3' && !hasPlatformAccess) {
       toast({
@@ -140,22 +158,38 @@ const StorageModeToggle = () => {
     if (newMode === 'own-s3') {
       const savedConfig = user?.id ? getS3Config(user.id) : s3Config;
       if (!savedConfig || !savedConfig.accessKeyId || !savedConfig.secretAccessKey || !savedConfig.bucket) {
+        // Open settings dialog to configure
         setS3SettingsOpen(true);
+        toast({
+          description: "Please configure your S3 credentials first",
+          className: "error-toast",
+        });
         return;
       }
+      
+      // Config exists, switch mode and test connection
+      setStorageMode(newMode);
+      setStorageModeStore(newMode);
+      router.refresh();
+      
+      // Test connection after switching
+      setTimeout(() => {
+        checkConnection(savedConfig);
+      }, 100);
+      
+      toast({
+        description: "Switched to Your Own S3. Testing connection...",
+      });
+      return;
     }
     
+    // For platform-s3
     setStorageMode(newMode);
     setStorageModeStore(newMode);
     router.refresh();
     
-    const modeLabels: Record<StorageMode, string> = {
-      'own-s3': 'Your Own S3',
-      'platform-s3': 'Platform S3'
-    };
-    
     toast({
-      description: `Switched to ${modeLabels[newMode]}`,
+      description: `Switched to Platform S3`,
     });
   };
 
@@ -254,14 +288,14 @@ const StorageModeToggle = () => {
   const getConnectionStatusIcon = () => {
     switch (connectionStatus) {
       case 'connected':
-        return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+        return <CheckCircle2 className="w-4 h-4 text-green" />;
       case 'disconnected':
       case 'invalid':
-        return <XCircle className="w-4 h-4 text-red-500" />;
+        return <XCircle className="w-4 h-4 text-red" />;
       case 'checking':
-        return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
+        return <Loader2 className="w-4 h-4 text-blue animate-spin" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
+        return <AlertCircle className="w-4 h-4 text-light-200" />;
     }
   };
 
@@ -396,17 +430,17 @@ const StorageModeToggle = () => {
               />
             </div>
 
-            {/* Connection Status Display */}
-            {s3Config && (
-              <div className="flex items-center gap-2 p-3 rounded-lg border border-light-300 bg-light-50">
+            {/* Connection Status Display - Always show when testing or has config */}
+            {(s3Config || connectionStatus !== 'idle') && (
+              <div className="flex items-center gap-2 p-3 rounded-lg border border-light-300 bg-light-300">
                 <div className="flex items-center gap-2 flex-1">
                   {getConnectionStatusIcon()}
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-light-100">
-                      {getConnectionStatusText()}
+                    <span className="body-2 font-medium text-light-100">
+                      {connectionStatus === 'idle' ? 'Not Tested' : getConnectionStatusText()}
                     </span>
                     {connectionMessage && (
-                      <span className="text-xs text-light-200">
+                      <span className="caption text-light-200">
                         {connectionMessage}
                       </span>
                     )}
@@ -414,9 +448,10 @@ const StorageModeToggle = () => {
                 </div>
                 <Button
                   onClick={() => checkConnection(config)}
-                  disabled={isTestingConnection}
+                  disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
                   variant="outline"
-                  className="button h-[32px] px-3 text-xs"
+                  className="button h-[32px] px-3 caption border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
+                  title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test S3 connection"}
                 >
                   {isTestingConnection ? (
                     <>
@@ -424,32 +459,61 @@ const StorageModeToggle = () => {
                       Testing...
                     </>
                   ) : (
-                    'Test Connection'
+                    'Test Now'
                   )}
                 </Button>
               </div>
             )}
 
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleSaveConfig} 
-                disabled={isTestingConnection}
-                className="flex-1 modal-submit-button"
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleSaveConfig} 
+                  disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
+                  className="flex-1 modal-submit-button"
+                  title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to save" : "Save and test connection"}
+                >
+                  {isTestingConnection ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    'Save Configuration'
+                  )}
+                </Button>
+                {(user?.id ? getS3Config(user.id) : getS3Config()) && (
+                  <Button 
+                    onClick={handleClearConfig} 
+                    variant="outline"
+                    className="modal-cancel-button px-4"
+                    title="Clear saved credentials"
+                  >
+                    Clear
+                  </Button>
+                )}
+              </div>
+              
+              {/* Test button - always visible */}
+              <Button
+                onClick={() => checkConnection(config)}
+                disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
+                variant="outline"
+                className="w-full button border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
+                title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test connection without saving"}
               >
                 {isTestingConnection ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Testing...
+                    Testing Connection...
                   </>
                 ) : (
-                  'Save & Test Connection'
+                  <>
+                    Test Connection (Don't Save)
+                  </>
                 )}
               </Button>
-              {(user?.id ? getS3Config(user.id) : getS3Config()) && (
-                <Button onClick={handleClearConfig} className="flex-1 modal-cancel-button">
-                  Clear
-                </Button>
-              )}
             </div>
 
             <p className="caption text-center text-light-200">

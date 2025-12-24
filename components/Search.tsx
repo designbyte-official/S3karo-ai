@@ -44,7 +44,7 @@ const Search = () => {
       const mode = getStorageMode();
       let files;
       
-      if (mode === 's3' && user) {
+      if ((mode === 'own-s3' || mode === 'platform-s3') && user) {
         files = await getFilesClient({
           types: [],
           searchText: debouncedQuery,

@@ -1,18 +1,12 @@
 import CryptoJS from 'crypto-js';
 
 /**
- * SECURITY: Enhanced encryption with PBKDF2 key derivation
- * 
- * This provides better security than simple AES encryption:
- * - Uses PBKDF2 for key derivation (slower, harder to brute force)
- * - Random salt for each encryption (prevents rainbow table attacks)
- * - Random IV for each encryption (ensures same plaintext = different ciphertext)
- * - User-specific key derivation (even if secret is exposed, user data is protected)
+ * Simple AES encryption for S3 credentials
+ * Uses AES-256 encryption - simple and reliable
+ * Works in both frontend and backend
  */
 
 // Get encryption secret from environment
-// WARNING: NEXT_PUBLIC_ prefix means this is exposed to client
-// In production, ensure you have proper XSS protection (CSP headers, input sanitization)
 const getEncryptionSecret = (): string => {
   const secret = process.env.NEXT_PUBLIC_ENCRYPTION_SECRET;
   if (!secret || secret === 'default-secret-key-change-in-production') {
@@ -21,105 +15,69 @@ const getEncryptionSecret = (): string => {
   return secret || 'default-secret-key-change-in-production';
 };
 
-// Generate a random salt (16 bytes = 32 hex chars)
-const generateSalt = (): string => {
-  return CryptoJS.lib.WordArray.random(16).toString();
-};
-
-// Derive encryption key using PBKDF2 (Password-Based Key Derivation Function 2)
-// This makes brute force attacks much slower
-const deriveKey = (password: string, salt: string, iterations: number = 10000): string => {
-  return CryptoJS.PBKDF2(password, salt, {
-    keySize: 256 / 32, // 256 bits = 8 words
-    iterations: iterations,
-  }).toString();
-};
-
 /**
- * Encrypt text with enhanced security
- * Format: salt:iv:encryptedData
+ * Simple AES encryption
+ * Uses AES-256 with SHA256 hashed key for consistent encryption
  */
 export const encrypt = (text: string, userId?: string): string => {
-  const secret = getEncryptionSecret();
-  const userSpecificSecret = userId ? `${secret}-${userId}` : secret;
-  
-  // Generate random salt and IV for this encryption
-  const salt = generateSalt();
-  const iv = CryptoJS.lib.WordArray.random(16); // 128-bit IV
-  
-  // Derive key from password + salt
-  const key = deriveKey(userSpecificSecret, salt);
-  
-  // Encrypt with AES
-  const encrypted = CryptoJS.AES.encrypt(text, key, {
-    iv: iv,
-    padding: CryptoJS.pad.Pkcs7,
-    mode: CryptoJS.mode.CBC,
-  });
-  
-  // Return format: salt:iv:ciphertext (all base64 encoded)
-  return `${salt}:${iv.toString()}:${encrypted.ciphertext.toString(CryptoJS.enc.Base64)}`;
+  if (!text || typeof text !== 'string') {
+    throw new Error('Invalid text to encrypt');
+  }
+
+  try {
+    const secret = getEncryptionSecret();
+    // Add userId to key for user-specific encryption
+    const keyString = userId ? `${secret}-${userId}` : secret;
+    
+    // Hash the key to ensure it's properly formatted for AES-256
+    const key = CryptoJS.SHA256(keyString);
+    
+    // Simple AES encryption - CryptoJS handles IV automatically
+    const encrypted = CryptoJS.AES.encrypt(text, key).toString();
+    
+    return encrypted;
+  } catch (error: any) {
+    console.error('Encryption failed:', error);
+    throw new Error('Failed to encrypt data');
+  }
 };
 
 /**
- * Decrypt text with enhanced security
- * Supports both new format (salt:iv:encryptedData) and old format (for backward compatibility)
+ * Simple AES decryption
+ * Works with encrypted data from encrypt function
  */
 export const decrypt = (encryptedText: string, userId?: string): string => {
+  if (!encryptedText || typeof encryptedText !== 'string') {
+    throw new Error('Invalid encrypted text: empty or not a string');
+  }
+
   try {
     const secret = getEncryptionSecret();
-    const userSpecificSecret = userId ? `${secret}-${userId}` : secret;
+    // Use same key derivation as encryption
+    const keyString = userId ? `${secret}-${userId}` : secret;
     
-    // Parse the encrypted format: salt:iv:ciphertext
-    const parts = encryptedText.split(':');
+    // Hash the key the same way as encryption
+    const key = CryptoJS.SHA256(keyString);
     
-    // New format: salt:iv:ciphertext (3 parts)
-    if (parts.length === 3) {
-      const [salt, ivHex, ciphertextBase64] = parts;
-      
-      // Derive the same key using salt
-      const key = deriveKey(userSpecificSecret, salt);
-      
-      // Reconstruct cipher params
-      const iv = CryptoJS.enc.Hex.parse(ivHex);
-      const ciphertext = CryptoJS.enc.Base64.parse(ciphertextBase64);
-      
-      // Decrypt
-      const decrypted = CryptoJS.AES.decrypt(
-        { ciphertext: ciphertext } as any,
-        key,
-        {
-          iv: iv,
-          padding: CryptoJS.pad.Pkcs7,
-          mode: CryptoJS.mode.CBC,
-        }
-      );
-      
-      const result = decrypted.toString(CryptoJS.enc.Utf8);
-      if (!result) {
-        throw new Error('Decryption resulted in empty string');
-      }
-      return result;
+    // Simple AES decryption
+    const bytes = CryptoJS.AES.decrypt(encryptedText, key);
+    const decrypted = bytes.toString(CryptoJS.enc.Utf8);
+    
+    if (!decrypted || decrypted.length === 0) {
+      throw new Error('Decryption resulted in empty string - wrong key or corrupted data');
     }
     
-    // Old format: Try legacy decryption (backward compatibility)
-    // Old format was simple AES without PBKDF2
-    try {
-      const key = userSpecificSecret;
-      const bytes = CryptoJS.AES.decrypt(encryptedText, key);
-      const result = bytes.toString(CryptoJS.enc.Utf8);
-      if (result) {
-        console.warn('Decrypted using legacy format. Consider re-encrypting for better security.');
-        return result;
-      }
-    } catch (legacyError) {
-      // Legacy decryption failed, try new format error
-    }
+    return decrypted;
+  } catch (error: any) {
+    const errorMessage = error?.message || 'Unknown decryption error';
+    console.error('Decryption failed:', errorMessage);
     
-    throw new Error('Invalid encrypted format');
-  } catch (error) {
-    console.error('Decryption failed:', error);
-    throw new Error('Failed to decrypt data');
+    // Provide helpful error message
+    if (errorMessage.includes('empty string') || errorMessage.includes('Malformed UTF-8') || errorMessage.includes('UTF')) {
+      throw new Error('Decryption failed: Corrupted data or wrong encryption key. Please clear and reconfigure your S3 credentials.');
+    } else {
+      throw new Error(`Decryption failed: ${errorMessage}. Please clear and reconfigure your S3 credentials.`);
+    }
   }
 };
 

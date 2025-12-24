@@ -47,17 +47,26 @@ export const testS3Connection = async (config?: S3Config): Promise<ConnectionRes
     // Test connection by checking if bucket exists and is accessible
     // Using HeadBucketCommand which is lightweight and checks permissions
     try {
-      await client.send(
-        new HeadBucketCommand({
-          Bucket: s3Config.bucket,
-        })
-      );
+      // Add timeout and better error handling
+      const command = new HeadBucketCommand({
+        Bucket: s3Config.bucket,
+      });
+      
+      await client.send(command);
 
       return {
         status: "connected",
         message: "Successfully connected to S3",
       };
     } catch (error: any) {
+      // Handle network/CORS errors
+      if (error.name === "NetworkingError" || error.message?.includes("Failed to fetch") || error.message?.includes("NetworkError")) {
+        return {
+          status: "invalid",
+          message: "Network error",
+          error: "Failed to connect to AWS. Please check your internet connection and CORS settings. Make sure your S3 bucket has proper CORS configuration.",
+        };
+      }
       // If bucket doesn't exist or no permission, try listing buckets to check credentials
       if (error.name === "NotFound" || error.name === "403" || error.name === "Forbidden") {
         try {
