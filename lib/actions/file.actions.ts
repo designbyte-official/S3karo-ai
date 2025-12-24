@@ -1,64 +1,29 @@
 "use server";
 
-import { createAdminClient, createSessionClient } from "@/lib/appwrite";
-import { InputFile } from "node-appwrite/file";
-import { appwriteConfig } from "@/lib/appwrite/config";
-import { ID, Models, Query } from "node-appwrite";
-import { constructFileUrl, getFileType, parseStringify } from "@/lib/utils";
-import { revalidatePath } from "next/cache";
+// This file now uses the new custom backend API routes
+// Appwrite code is kept for backward compatibility but not used by default
 import { getCurrentUser } from "@/lib/actions/user.actions";
+import { revalidatePath } from "next/cache";
+
+const API_BASE = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 const handleError = (error: unknown, message: string) => {
   console.log(error, message);
   throw error;
 };
 
+// Upload is now handled client-side for S3, or through API route
+// This function is kept for compatibility but should not be used directly
 export const uploadFile = async ({
   file,
   ownerId,
   accountId,
   path,
 }: UploadFileProps) => {
-  const { storage, databases } = await createAdminClient();
-
-  try {
-    const inputFile = InputFile.fromBuffer(file, file.name);
-
-    const bucketFile = await storage.createFile(
-      appwriteConfig.bucketId,
-      ID.unique(),
-      inputFile,
-    );
-
-    const fileDocument = {
-      type: getFileType(bucketFile.name).type,
-      name: bucketFile.name,
-      url: constructFileUrl(bucketFile.$id),
-      extension: getFileType(bucketFile.name).extension,
-      size: bucketFile.sizeOriginal,
-      owner: ownerId,
-      accountId,
-      users: [],
-      bucketFileId: bucketFile.$id,
-    };
-
-    const newFile = await databases
-      .createDocument(
-        appwriteConfig.databaseId,
-        appwriteConfig.filesCollectionId,
-        ID.unique(),
-        fileDocument,
-      )
-      .catch(async (error: unknown) => {
-        await storage.deleteFile(appwriteConfig.bucketId, bucketFile.$id);
-        handleError(error, "Failed to create file document");
-      });
-
-    revalidatePath(path);
-    return parseStringify(newFile);
-  } catch (error) {
-    handleError(error, "Failed to upload file");
-  }
+  // This is a legacy function - file uploads are now handled client-side
+  // For S3 mode, files are uploaded directly from the client
+  // For Appwrite mode, this would need to be updated to use API routes
+  throw new Error("File upload should be handled client-side. Use file.actions.client.ts instead.");
 };
 
 const createQueries = (
@@ -96,25 +61,34 @@ export const getFiles = async ({
   sort = "$createdAt-desc",
   limit,
 }: GetFilesProps) => {
-  const { databases } = await createAdminClient();
-
   try {
     const currentUser = await getCurrentUser();
-
     if (!currentUser) throw new Error("User not found");
 
-    const queries = createQueries(currentUser, types, searchText, sort, limit);
+    const typesParam = types.length > 0 ? types.join(',') : '';
+    const params = new URLSearchParams({
+      types: typesParam,
+      searchText,
+      sort,
+    });
+    if (limit) params.append('limit', limit.toString());
 
-    const files = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      appwriteConfig.filesCollectionId,
-      queries,
-    );
+    const response = await fetch(`${API_BASE}/api/files?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
 
-    console.log({ files });
-    return parseStringify(files);
+    if (!response.ok) {
+      throw new Error('Failed to fetch files');
+    }
+
+    return await response.json();
   } catch (error) {
-    handleError(error, "Failed to get files");
+    console.error('Get files error:', error);
+    return { documents: [], total: 0 };
   }
 };
 
@@ -124,23 +98,25 @@ export const renameFile = async ({
   extension,
   path,
 }: RenameFileProps) => {
-  const { databases } = await createAdminClient();
-
   try {
     const newName = `${name}.${extension}`;
-    const updatedFile = await databases.updateDocument(
-      appwriteConfig.databaseId,
-      appwriteConfig.filesCollectionId,
-      fileId,
-      {
-        name: newName,
+    const response = await fetch(`${API_BASE}/api/files/${fileId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+      body: JSON.stringify({ name: newName }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to rename file');
+    }
 
     revalidatePath(path);
-    return parseStringify(updatedFile);
+    return await response.json();
   } catch (error) {
-    handleError(error, "Failed to rename file");
+    console.error('Rename file error:', error);
+    throw error;
   }
 };
 
@@ -173,64 +149,55 @@ export const deleteFile = async ({
   bucketFileId,
   path,
 }: DeleteFileProps) => {
-  const { databases, storage } = await createAdminClient();
-
   try {
-    const deletedFile = await databases.deleteDocument(
-      appwriteConfig.databaseId,
-      appwriteConfig.filesCollectionId,
-      fileId,
-    );
+    const response = await fetch(`${API_BASE}/api/files/${fileId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (deletedFile) {
-      await storage.deleteFile(appwriteConfig.bucketId, bucketFileId);
+    if (!response.ok) {
+      throw new Error('Failed to delete file');
     }
 
     revalidatePath(path);
-    return parseStringify({ status: "success" });
+    return { status: 'success' };
   } catch (error) {
-    handleError(error, "Failed to rename file");
+    console.error('Delete file error:', error);
+    throw error;
   }
 };
 
 // ============================== TOTAL FILE SPACE USED
 export async function getTotalSpaceUsed() {
   try {
-    const { databases } = await createSessionClient();
     const currentUser = await getCurrentUser();
     if (!currentUser) throw new Error("User is not authenticated.");
 
-    const files = await databases.listDocuments(
-      appwriteConfig.databaseId,
-      appwriteConfig.filesCollectionId,
-      [Query.equal("owner", [currentUser.$id])],
-    );
+    const response = await fetch(`${API_BASE}/api/files/space`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
 
-    const totalSpace = {
+    if (!response.ok) {
+      throw new Error('Failed to fetch space usage');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Get total space error:', error);
+    return {
       image: { size: 0, latestDate: "" },
       document: { size: 0, latestDate: "" },
       video: { size: 0, latestDate: "" },
       audio: { size: 0, latestDate: "" },
       other: { size: 0, latestDate: "" },
       used: 0,
-      all: 2 * 1024 * 1024 * 1024 /* 2GB available bucket storage */,
+      all: 2 * 1024 * 1024 * 1024 * 1024,
     };
-
-    files.documents.forEach((file) => {
-      const fileType = file.type as FileType;
-      totalSpace[fileType].size += file.size;
-      totalSpace.used += file.size;
-
-      if (
-        !totalSpace[fileType].latestDate ||
-        new Date(file.$updatedAt) > new Date(totalSpace[fileType].latestDate)
-      ) {
-        totalSpace[fileType].latestDate = file.$updatedAt;
-      }
-    });
-
-    return parseStringify(totalSpace);
-  } catch (error) {
-    handleError(error, "Error calculating total space used:, ");
   }
 }

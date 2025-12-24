@@ -12,8 +12,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getStorageMode, setStorageMode, getS3Config, setS3Config, clearS3Config, S3Config } from "@/lib/s3/config";
+import { getCurrentUser } from "@/lib/actions/user.actions";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import S3SetupGuide from "@/components/S3SetupGuide";
+import { s3ConfigSchema } from "@/lib/utils/validation";
 
 const StorageModeToggle = () => {
   const [mode, setMode] = useState<'appwrite' | 's3'>('appwrite');
@@ -28,18 +31,32 @@ const StorageModeToggle = () => {
   const router = useRouter();
 
   useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          setUserId(user.$id || user.id);
+        }
+      } catch (error) {
+        console.error('Failed to load user:', error);
+      }
+    };
+    loadUser();
+  }, []);
+
+  useEffect(() => {
     const currentMode = getStorageMode();
     setMode(currentMode);
     
-    const savedConfig = getS3Config();
+    const savedConfig = getS3Config(userId);
     if (savedConfig) {
       setConfig(savedConfig);
     }
-  }, []);
+  }, [userId]);
 
   const handleModeChange = (newMode: 'appwrite' | 's3') => {
     if (newMode === 's3') {
-      const savedConfig = getS3Config();
+      const savedConfig = getS3Config(userId);
       if (!savedConfig || !savedConfig.accessKeyId || !savedConfig.secretAccessKey || !savedConfig.bucket) {
         setIsDialogOpen(true);
         return;
@@ -56,15 +73,17 @@ const StorageModeToggle = () => {
   };
 
   const handleSaveConfig = () => {
-    if (!config.accessKeyId || !config.secretAccessKey || !config.bucket || !config.region) {
+    // Validate config
+    const validation = s3ConfigSchema.safeParse(config);
+    if (!validation.success) {
       toast({
-        description: "Please fill in all required fields",
+        description: validation.error.errors[0]?.message || "Please fill in all required fields",
         className: "error-toast",
       });
       return;
     }
 
-    setS3Config(config);
+    setS3Config(config, userId);
     setStorageMode('s3');
     setMode('s3');
     setIsDialogOpen(false);
@@ -197,9 +216,27 @@ const StorageModeToggle = () => {
             <p className="text-xs text-light-300">
               Your credentials are stored locally in your browser and never sent to our servers.
             </p>
+
+            <Button
+              type="button"
+              onClick={() => {
+                setIsDialogOpen(false);
+                setShowSetupGuide(true);
+              }}
+              variant="outline"
+              className="w-full mt-2 text-xs"
+            >
+              View Setup Guide (CORS & IAM)
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      <S3SetupGuide
+        isOpen={showSetupGuide}
+        onClose={() => setShowSetupGuide(false)}
+        bucketName={config.bucket}
+      />
     </div>
   );
 };

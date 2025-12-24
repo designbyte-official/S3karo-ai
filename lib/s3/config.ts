@@ -1,3 +1,5 @@
+import { encryptS3Config, decryptS3Config } from '@/lib/encryption';
+
 export interface S3Config {
   accessKeyId: string;
   secretAccessKey: string;
@@ -5,26 +7,29 @@ export interface S3Config {
   bucket: string;
 }
 
-export const getS3Config = (): S3Config | null => {
+export const getS3Config = (userId?: string): S3Config | null => {
   if (typeof window === 'undefined') return null;
   
-  const config = localStorage.getItem('s3-config');
-  if (!config) return null;
+  const encryptedConfig = localStorage.getItem('s3-config-encrypted');
+  if (!encryptedConfig) return null;
   
   try {
-    return JSON.parse(config);
+    return decryptS3Config(encryptedConfig, userId) || null;
   } catch {
     return null;
   }
 };
 
-export const setS3Config = (config: S3Config) => {
+export const setS3Config = (config: S3Config, userId?: string) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('s3-config', JSON.stringify(config));
+  const encryptedConfig = encryptS3Config(config, userId);
+  localStorage.setItem('s3-config-encrypted', encryptedConfig);
 };
 
 export const clearS3Config = () => {
   if (typeof window === 'undefined') return;
+  localStorage.removeItem('s3-config-encrypted');
+  // Also clear old unencrypted config if exists
   localStorage.removeItem('s3-config');
 };
 

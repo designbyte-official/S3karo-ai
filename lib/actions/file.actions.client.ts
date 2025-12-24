@@ -31,10 +31,30 @@ export const uploadFile = async ({
   if (mode === 's3') {
     try {
       const uploadedFile = await uploadFileToS3(file, ownerId, accountId);
-      // Store file metadata in localStorage for S3 mode
-      const files = JSON.parse(localStorage.getItem('s3-files') || '[]');
-      files.push(uploadedFile);
-      localStorage.setItem('s3-files', JSON.stringify(files));
+      
+      // Save file metadata to database via API
+      const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+      try {
+        await fetch(`${API_BASE}/api/files`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: uploadedFile.name,
+            type: uploadedFile.type,
+            extension: uploadedFile.extension,
+            size: uploadedFile.size,
+            url: uploadedFile.url,
+            storageType: 's3',
+            storageKey: uploadedFile.key,
+            bucketName: '', // Will be set from S3 config
+          }),
+        });
+      } catch (apiError) {
+        console.error('Failed to save file metadata to database:', apiError);
+        // Continue even if API call fails
+      }
       
       // Trigger revalidation
       if (typeof window !== 'undefined') {
@@ -47,8 +67,34 @@ export const uploadFile = async ({
       throw error;
     }
   } else {
-    // Use Appwrite upload
-    return await uploadFileAppwrite({ file, ownerId, accountId, path });
+    // For custom backend, we still use S3 but save to our database
+    // Appwrite mode is deprecated
+    const uploadedFile = await uploadFileToS3(file, ownerId, accountId);
+    
+    // Save to our database
+    const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    try {
+      await fetch(`${API_BASE}/api/files`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: uploadedFile.name,
+          type: uploadedFile.type,
+          extension: uploadedFile.extension,
+          size: uploadedFile.size,
+          url: uploadedFile.url,
+          storageType: 's3',
+          storageKey: uploadedFile.key,
+          bucketName: '',
+        }),
+      });
+    } catch (apiError) {
+      console.error('Failed to save file metadata:', apiError);
+    }
+    
+    return uploadedFile;
   }
 };
 
