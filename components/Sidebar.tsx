@@ -5,6 +5,8 @@ import Image from "next/image";
 import { navItems } from "@/constants";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { getStorageMode } from "@/lib/s3/config";
+import { useEffect, useState } from "react";
 
 interface Props {
   fullName: string;
@@ -14,6 +16,39 @@ interface Props {
 
 const Sidebar = ({ fullName, avatar, email }: Props) => {
   const pathname = usePathname();
+  const [storageMode, setStorageMode] = useState<'own-s3' | 'platform-s3' | 'appwrite'>('appwrite');
+
+  useEffect(() => {
+    // Check storage mode on mount and when it changes
+    const updateMode = () => {
+      const mode = getStorageMode();
+      setStorageMode(mode as 'own-s3' | 'platform-s3' | 'appwrite');
+    };
+    
+    updateMode();
+    
+    // Listen for storage changes (when switching modes)
+    if (typeof window !== 'undefined') {
+      const handleStorageChange = () => {
+        updateMode();
+      };
+      
+      // Listen to storage events (for cross-tab updates)
+      window.addEventListener('storage', handleStorageChange);
+      
+      // Also check periodically for same-tab changes
+      const interval = setInterval(updateMode, 1000);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+        clearInterval(interval);
+      };
+    }
+  }, []);
+
+  // All nav items work with S3 (Dashboard, Documents, Images, Media, Others)
+  // They all use direct S3 operations, so show all items for own-s3 mode
+  const visibleNavItems = navItems;
 
   return (
     <aside className="sidebar">
@@ -37,28 +72,51 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
 
       <nav className="sidebar-nav">
         <ul className="flex flex-1 flex-col gap-6">
-          {navItems.map(({ url, name, icon }) => (
-            <Link key={name} href={url} className="lg:w-full">
+          {storageMode === 'own-s3' ? (
+            <Link href="/own-s3" className="lg:w-full">
               <li
                 className={cn(
                   "sidebar-nav-item",
-                  pathname === url && "shad-active",
+                  pathname === "/own-s3" && "shad-active",
                 )}
               >
                 <Image
-                  src={icon}
-                  alt={name}
+                  src="/assets/icons/dashboard.svg"
+                  alt="Own S3"
                   width={24}
                   height={24}
                   className={cn(
                     "nav-icon",
-                    pathname === url && "nav-icon-active",
+                    pathname === "/own-s3" && "nav-icon-active",
                   )}
                 />
-                <p className="hidden lg:block">{name}</p>
+                <p className="hidden lg:block">Own S3 Files</p>
               </li>
             </Link>
-          ))}
+          ) : (
+            visibleNavItems.map(({ url, name, icon }) => (
+              <Link key={name} href={url} className="lg:w-full">
+                <li
+                  className={cn(
+                    "sidebar-nav-item",
+                    pathname === url && "shad-active",
+                  )}
+                >
+                  <Image
+                    src={icon}
+                    alt={name}
+                    width={24}
+                    height={24}
+                    className={cn(
+                      "nav-icon",
+                      pathname === url && "nav-icon-active",
+                    )}
+                  />
+                  <p className="hidden lg:block">{name}</p>
+                </li>
+              </Link>
+            ))
+          )}
         </ul>
       </nav>
 

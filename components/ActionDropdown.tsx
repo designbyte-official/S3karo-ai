@@ -66,7 +66,7 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
 
     try {
       if (action.value === "rename") {
-        if (storageMode === 's3') {
+        if (storageMode === 'own-s3' || storageMode === 'platform-s3') {
           // Extract name and extension
           const nameParts = name.split('.');
           const extension = nameParts.length > 1 ? nameParts.pop() || '' : file.extension || '';
@@ -92,18 +92,18 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
           });
         }
       } else if (action.value === "share") {
-        // Share functionality only works with Appwrite for now
-        if (storageMode === 'appwrite') {
+        // Share functionality only works with Platform S3 (database) or Appwrite
+        if (storageMode === 'platform-s3' || storageMode === 'appwrite') {
           success = await updateFileUsers({ fileId: file.$id, emails, path });
         } else {
-          // S3 doesn't support sharing in the same way
+          // Own S3 doesn't support sharing (no database)
           toast({
-            description: "File sharing is only available in Appwrite mode",
+            description: "File sharing requires Platform S3 (with database) or Appwrite mode",
             className: "error-toast",
           });
         }
       } else if (action.value === "delete") {
-        if (storageMode === 's3') {
+        if (storageMode === 'own-s3' || storageMode === 'platform-s3') {
           success = await deleteFileClient({
             fileId: file.$id,
             bucketFileId: file.bucketFileId,
@@ -214,7 +214,14 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
             {file.name}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {actionsDropdownItems.map((actionItem) => (
+          {actionsDropdownItems.map((actionItem) => {
+            const storageMode = getStorageMode();
+            // Hide share option for Own S3 (no database)
+            if (actionItem.value === "share" && storageMode === 'own-s3') {
+              return null;
+            }
+            
+            return (
             <DropdownMenuItem
               key={actionItem.value}
               className="shad-dropdown-item"
@@ -237,7 +244,7 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
                   className="flex items-center gap-2"
                   onClick={async (e) => {
                     const storageMode = getStorageMode();
-                    if (storageMode === 's3' && !downloadUrl) {
+                    if ((storageMode === 'own-s3' || storageMode === 'platform-s3') && !downloadUrl) {
                       e.preventDefault();
                       try {
                         const url = await getDownloadUrl(file.bucketFileId);
@@ -276,7 +283,8 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
                 </div>
               )}
             </DropdownMenuItem>
-          ))}
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -78,9 +78,27 @@ const StorageModeToggle = () => {
         if (mode === 'own-s3') {
           checkConnection(savedConfig);
         }
+      } else {
+        // Reset config if no saved config
+        setConfig({
+          accessKeyId: '',
+          secretAccessKey: '',
+          region: 'us-east-1',
+          bucket: '',
+        });
       }
     }
   }, [user?.id, setStorageModeStore, setS3ConfigStore, mode]);
+
+  // Load config when settings dialog opens
+  useEffect(() => {
+    if (isS3SettingsOpen && user?.id) {
+      const savedConfig = getS3Config(user.id);
+      if (savedConfig) {
+        setConfig(savedConfig);
+      }
+    }
+  }, [isS3SettingsOpen, user?.id]);
 
   // Check connection when mode changes to own-s3
   useEffect(() => {
@@ -369,11 +387,26 @@ const StorageModeToggle = () => {
         <DialogContent className="shad-dialog">
           <DialogHeader>
             <DialogTitle className="text-center text-light-100">
-              Configure Your Own AWS S3 Storage
+              {s3Config ? 'Edit AWS S3 Configuration' : 'Configure Your Own AWS S3 Storage'}
             </DialogTitle>
           </DialogHeader>
           
           <div className="flex flex-col gap-4">
+            {/* Info about Own S3 features */}
+            <div className="p-4 rounded-lg border border-blue/30 bg-blue/10">
+              <p className="body-2 text-blue font-medium mb-2">What works with Own S3:</p>
+              <ul className="caption text-blue/80 space-y-1">
+                <li>• Upload, download, view, and delete files</li>
+                <li>• Open files directly from S3</li>
+                <li>• Rename files</li>
+                <li>• All operations happen directly in your S3 bucket</li>
+                <li>• No database required - pure S3 operations</li>
+              </ul>
+              <p className="caption text-blue/80 mt-3">
+                Visit <strong>/own-s3</strong> for a dedicated Own S3 interface
+              </p>
+            </div>
+            
             <div className="shad-form-item">
               <Label htmlFor="accessKeyId" className="shad-form-label">
                 AWS Access Key ID
@@ -472,28 +505,36 @@ const StorageModeToggle = () => {
                   onClick={handleSaveConfig} 
                   disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
                   className="flex-1 modal-submit-button"
-                  title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to save" : "Save and test connection"}
+                  title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to save" : s3Config ? "Update and test connection" : "Save and test connection"}
                 >
                   {isTestingConnection ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Testing...
                     </>
+                  ) : s3Config ? (
+                    'Update Configuration'
                   ) : (
                     'Save Configuration'
                   )}
                 </Button>
-                {(user?.id ? getS3Config(user.id) : getS3Config()) && (
-                  <Button 
-                    onClick={handleClearConfig} 
-                    variant="outline"
-                    className="modal-cancel-button px-4"
-                    title="Clear saved credentials"
-                  >
-                    Clear
-                  </Button>
-                )}
               </div>
+              
+              {/* Delete/Clear Button - More prominent */}
+              {(user?.id ? getS3Config(user.id) : getS3Config()) && (
+                <Button 
+                  onClick={() => {
+                    if (confirm('Are you sure you want to delete your S3 configuration? This will clear all saved credentials.')) {
+                      handleClearConfig();
+                    }
+                  }} 
+                  variant="outline"
+                  className="w-full button border border-red/30 bg-red/10 text-red hover:bg-red/20 hover:text-red shadow-drop-1"
+                  title="Delete saved S3 credentials"
+                >
+                  Delete Configuration
+                </Button>
+              )}
               
               {/* Test button - always visible */}
               <Button
