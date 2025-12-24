@@ -65,18 +65,31 @@ openssl rand -base64 32
 
 ### 4️⃣ AWS S3 (Optional) 🔵
 
-**Get from:** https://aws.amazon.com
+**Two Options:**
 
-**Only needed if:** You want to use S3 for file storage
+#### Option A: Own S3 (Free for Users)
+- Users enter their **own AWS credentials** in the app UI
+- **No environment variables needed** on server
+- Credentials stored locally in browser
+
+#### Option B: Platform S3 (Paid Feature)
+**Only needed if:** You want to offer Platform S3 to subscribed users
+
+**Environment Variables:**
+```env
+AWS_ACCESS_KEY_ID=your-aws-access-key-id
+AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=your-platform-bucket-name
+```
 
 **What you need:**
-- AWS Account (free tier available)
-- Access Key ID
-- Secret Access Key
-- S3 Bucket Name
-- Region (e.g., `us-east-1`)
+- AWS Account
+- IAM user with S3 permissions
+- S3 bucket for platform storage
+- Access Key ID and Secret Access Key
 
-**Note:** Users enter these in the app UI, NOT in `.env.local`
+**See:** `local-docs/PLATFORM_S3_SETUP.md` for detailed setup
 
 ---
 
@@ -96,6 +109,12 @@ NEXT_PUBLIC_ENCRYPTION_SECRET=your-encryption-secret-here
 
 # Your app URL
 NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Platform S3 (Optional - only if offering Platform S3 to subscribers)
+# AWS_ACCESS_KEY_ID=your-aws-access-key-id
+# AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
+# AWS_REGION=us-east-1
+# AWS_S3_BUCKET=your-platform-bucket-name
 ```
 
 ---
