@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/actions/user.actions";
 import Card from "@/components/Card";
 import { FileType } from "@/types/index.d";
 import { File } from "@/types/file";
+import { Button } from "@/components/ui/button";
 
 interface FileListProps {
   types: FileType[];
@@ -16,6 +17,7 @@ interface FileListProps {
   initialFiles?: {
     documents: File[];
     total: number;
+    continuationToken?: string;
   };
   currentUser?: {
     $id: string;
@@ -23,11 +25,15 @@ interface FileListProps {
   };
 }
 
+const ITEMS_PER_PAGE = 20;
+
 const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFiles, currentUser }: FileListProps) => {
   const router = useRouter();
   const [files, setFiles] = useState(initialFiles || { documents: [], total: 0 });
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(currentUser);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [continuationToken, setContinuationToken] = useState<string | undefined>(initialFiles?.continuationToken);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -44,6 +50,7 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
       if (!user) return;
       
       setLoading(true);
+      setCurrentPage(1); // Reset to first page on filter change
       const mode = getStorageMode();
       
       try {
@@ -54,8 +61,11 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
             sort,
             ownerId: user.$id,
             accountId: user.accountId,
+            limit: ITEMS_PER_PAGE,
           });
           setFiles(result);
+          setContinuationToken(result.continuationToken);
+          setCurrentPage(1);
         } else {
           // No Appwrite - return empty
           setFiles({ documents: [], total: 0 });
@@ -75,7 +85,7 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
     };
 
     loadFiles();
-  }, [types, searchText, sort, user]);
+  }, [types, searchText, sort, user, router]);
 
   // Listen for storage changes (when files are uploaded/deleted)
   useEffect(() => {
@@ -91,7 +101,12 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
             sort,
             ownerId: user.$id,
             accountId: user.accountId,
-          }).then(setFiles).catch((error) => {
+            limit: ITEMS_PER_PAGE,
+          }).then((result) => {
+            setFiles(result);
+            setContinuationToken(result.continuationToken);
+            setCurrentPage(1);
+          }).catch((error) => {
             console.error('Error refreshing files:', error);
           });
         }
@@ -102,20 +117,67 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [types, searchText, sort, user]);
 
-  if (loading) {
+  const loadMore = async () => {
+    if (!user || !continuationToken || loading) return;
+    
+    setLoading(true);
+    const mode = getStorageMode();
+    
+    try {
+      if (mode === 'own-s3' || mode === 'platform-s3') {
+        const result = await getFilesClient({
+          types,
+          searchText,
+          sort,
+          ownerId: user.$id,
+          accountId: user.accountId,
+          limit: ITEMS_PER_PAGE,
+          continuationToken,
+        });
+        setFiles(prev => ({
+          documents: [...prev.documents, ...result.documents],
+          total: result.total,
+        }));
+        setContinuationToken(result.continuationToken);
+        setCurrentPage(prev => prev + 1);
+      }
+    } catch (error: any) {
+      console.error('Error loading more files:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && files.total === 0) {
     return <p className="empty-list">Loading files...</p>;
   }
 
-  if (files.total === 0) {
+  if (files.total === 0 && !loading) {
     return <p className="empty-list">No files uploaded</p>;
   }
 
+  const hasMore = !!continuationToken;
+  const displayedFiles = files.documents.slice(0, currentPage * ITEMS_PER_PAGE);
+
   return (
-    <section className="file-list">
-      {files.documents.map((file) => (
-        <Card key={file.$id} file={file} />
-      ))}
-    </section>
+    <>
+      <section className="file-list">
+        {displayedFiles.map((file) => (
+          <Card key={file.$id} file={file} />
+        ))}
+      </section>
+      {hasMore && displayedFiles.length < files.total && (
+        <div className="flex justify-center mt-6">
+          <Button
+            onClick={loadMore}
+            disabled={loading}
+            className="primary-btn shadow-drop-2"
+          >
+            {loading ? 'Loading...' : 'Load More'}
+          </Button>
+        </div>
+      )}
+    </>
   );
 };
 

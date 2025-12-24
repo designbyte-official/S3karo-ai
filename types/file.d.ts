@@ -16,5 +16,7 @@ export interface File {
   key?: string;
   $createdAt: string;
   $updatedAt: string;
+  isFolder?: boolean;
+  folderPath?: string;
 }
 

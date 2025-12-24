@@ -24,7 +24,7 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
 
   useEffect(() => {
     // Check storage mode on mount and when it changes
-    const updateMode = () => {
+    const updateMode = async () => {
       if (typeof window === 'undefined') return;
       
       const mode = getStorageMode();
@@ -32,11 +32,13 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
       
       // Check if S3 config exists for own-s3 mode
       if (mode === 'own-s3') {
-        getS3Config().then(config => {
+        try {
+          const config = await getS3Config();
           setHasS3Config(!!(config && config.accessKeyId && config.secretAccessKey && config.bucket));
-        }).catch(() => {
+        } catch (error) {
+          console.error('Error loading S3 config:', error);
           setHasS3Config(false);
-        });
+        }
       } else {
         setHasS3Config(false);
       }

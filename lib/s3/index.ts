@@ -145,67 +145,97 @@ export const listS3Files = async (
   const client = await createS3Client();
   const bucket = await getS3Bucket();
   
+  // Try with ownerId prefix first, then fallback to all files
   const prefix = `${ownerId}/`;
-  
-  const command = new ListObjectsV2Command({
-    Bucket: bucket,
-    Prefix: prefix,
-    MaxKeys: options.limit || 1000,
-    ContinuationToken: options.continuationToken,
-  });
-
   let response;
+  
   try {
+    const command = new ListObjectsV2Command({
+      Bucket: bucket,
+      Prefix: prefix,
+      MaxKeys: options.limit || 1000,
+      ContinuationToken: options.continuationToken,
+    });
+
     response = await client.send(command);
+    
+    console.log('S3 ListObjects response (with prefix):', {
+      keyCount: response.KeyCount,
+      contentsLength: response.Contents?.length || 0,
+      isTruncated: response.IsTruncated,
+      prefix: prefix,
+      bucket: bucket
+    });
   } catch (error: any) {
-    console.error('Error listing S3 files:', error);
+    console.error('Error listing with prefix:', error);
     throw new Error(`Failed to list S3 files: ${error.message || 'Unknown error'}`);
   }
   
-  console.log('S3 ListObjects response:', {
-    keyCount: response.KeyCount,
-    contentsLength: response.Contents?.length || 0,
-    isTruncated: response.IsTruncated,
-    prefix: prefix,
-    bucket: bucket
-  });
-  
+  // If no files found with prefix, try listing all files in bucket
   if (!response.Contents || response.Contents.length === 0) {
-    console.log('No files found in S3 bucket with prefix:', prefix);
-    // Try listing without prefix as fallback (in case files were uploaded directly)
+    console.log('No files found with prefix, trying to list all files in bucket...');
     try {
       const fallbackCommand = new ListObjectsV2Command({
         Bucket: bucket,
         MaxKeys: options.limit || 1000,
       });
       const fallbackResponse = await client.send(fallbackCommand);
-      console.log('Fallback: Found', fallbackResponse.Contents?.length || 0, 'files without prefix');
+      console.log('Fallback: Found', fallbackResponse.Contents?.length || 0, 'files in bucket');
       if (fallbackResponse.Contents && fallbackResponse.Contents.length > 0) {
-        console.warn('Files found without ownerId prefix. These files may not be associated with the current user.');
+        console.warn('Files found without ownerId prefix. Showing all files in bucket.');
+        response = fallbackResponse;
+      } else {
+        console.log('No files found in bucket at all');
+        return { documents: [], total: 0 };
       }
-    } catch (fallbackError) {
+    } catch (fallbackError: any) {
       console.error('Fallback list also failed:', fallbackError);
+      return { documents: [], total: 0 };
     }
-    return { documents: [], total: 0 };
+  } else {
+    console.log(`Found ${response.Contents.length} objects in S3 with prefix ${prefix}`);
   }
-  
-  console.log(`Found ${response.Contents.length} objects in S3 with prefix ${prefix}`);
 
   const files: S3File[] = [];
+  const folders = new Set<string>(); // Track unique folders
   
   for (const object of response.Contents) {
     if (!object.Key) continue;
     
-    // Skip directories (keys ending with /)
-    if (object.Key.endsWith('/')) continue;
+    // Handle folders (keys ending with /)
+    if (object.Key.endsWith('/')) {
+      const folderName = object.Key.slice(0, -1).split('/').pop() || object.Key.slice(0, -1);
+      const folderPath = object.Key.slice(0, -1);
+      
+      // Only add folder once
+      if (!folders.has(folderPath)) {
+        folders.add(folderPath);
+        files.push({
+          $id: folderPath,
+          name: folderName,
+          type: 'folder',
+          extension: '',
+          size: 0,
+          url: '', // Folders don't have URLs
+          $createdAt: object.LastModified?.toISOString() || new Date().toISOString(),
+          $updatedAt: object.LastModified?.toISOString() || new Date().toISOString(),
+          owner: ownerId,
+          accountId: accountId,
+          users: [],
+          bucketFileId: folderPath,
+          key: folderPath,
+        });
+      }
+      continue;
+    }
     
     let metadata: Record<string, string> = {};
     let originalName = object.Key.split('/').pop() || 'unknown';
     let fileType = 'other';
     let extension = '';
     
+    // Try to get metadata (may fail for files uploaded outside app)
     try {
-      // Try to get metadata (may fail for files uploaded outside app)
       const headResponse = await client.send(
         new HeadObjectCommand({
           Bucket: bucket,
@@ -214,52 +244,37 @@ export const listS3Files = async (
       );
       metadata = headResponse.Metadata || {};
       
-      // Use metadata if available, otherwise extract from key
+      // Use metadata if available
       if (metadata.originalName) {
         originalName = metadata.originalName;
       } else {
         // Extract filename from key (remove ownerId prefix and timestamp if present)
-        // Format: ownerId/timestamp-filename or ownerId/filename
         const parts = object.Key.split('/');
         const filename = parts[parts.length - 1];
-        // Remove timestamp prefix if present (format: timestamp-filename)
-        originalName = filename.replace(/^\d+-/, '');
+        originalName = filename.replace(/^\d+-/, ''); // Remove timestamp prefix
       }
       
-      // Get file type from metadata or infer from extension
       if (metadata.type) {
         fileType = metadata.type;
-      } else {
-        // Infer type from filename extension
-        const ext = originalName.split('.').pop()?.toLowerCase() || '';
-        extension = ext;
-        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
-          fileType = 'image';
-        } else if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].includes(ext)) {
-          fileType = 'document';
-        } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(ext)) {
-          fileType = 'video';
-        } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(ext)) {
-          fileType = 'audio';
-        } else {
-          fileType = 'other';
-        }
       }
-      
       if (metadata.extension) {
         extension = metadata.extension;
-      } else if (!extension) {
-        extension = originalName.split('.').pop()?.toLowerCase() || '';
       }
     } catch (error) {
       // If HeadObject fails, use basic info from ListObjects response
-      console.warn(`Could not get metadata for ${object.Key}, using basic info:`, error);
+      console.warn(`Could not get metadata for ${object.Key}, using basic info`);
       // Extract filename from key
       const parts = object.Key.split('/');
       const filename = parts[parts.length - 1];
       originalName = filename.replace(/^\d+-/, '');
+    }
+    
+    // If no metadata, infer type and extension from filename
+    if (!extension) {
       extension = originalName.split('.').pop()?.toLowerCase() || '';
-      
+    }
+    
+    if (!fileType || fileType === 'other') {
       // Infer type from extension
       if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(extension)) {
         fileType = 'image';
@@ -285,7 +300,11 @@ export const listS3Files = async (
       }
     }
 
-    const fileUrl = await getS3ViewUrl(object.Key);
+    // Only get URL for files (not folders) - images will be lazy loaded in Thumbnail component
+    let fileUrl = '';
+    if (fileType !== 'folder') {
+      fileUrl = await getS3ViewUrl(object.Key);
+    }
     
     files.push({
       $id: object.Key,
@@ -296,18 +315,23 @@ export const listS3Files = async (
       url: fileUrl,
       $createdAt: object.LastModified?.toISOString() || new Date().toISOString(),
       $updatedAt: object.LastModified?.toISOString() || new Date().toISOString(),
-      owner: metadata.owner || ownerId,
-      accountId: metadata.accountId || accountId,
+      owner: metadata.owner || ownerId, // Use ownerId even if file doesn't have prefix
+      accountId: metadata.accountId || accountId, // Use accountId even if file doesn't have prefix
       users: [],
       bucketFileId: object.Key,
       key: object.Key,
+      isFolder: false,
     });
   }
-
-  // Apply sorting
+  
+  // Apply sorting (folders first, then by user sort option)
   if (options.sort) {
     const [sortBy, orderBy] = options.sort.split('-');
     files.sort((a, b) => {
+      // Keep folders first
+      if (a.type === 'folder' && b.type !== 'folder') return -1;
+      if (a.type !== 'folder' && b.type === 'folder') return 1;
+      
       let aVal: any = a[sortBy as keyof S3File];
       let bVal: any = b[sortBy as keyof S3File];
       
@@ -321,6 +345,13 @@ export const listS3Files = async (
       } else {
         return aVal < bVal ? 1 : -1;
       }
+    });
+  } else {
+    // Default: folders first, then by name
+    files.sort((a, b) => {
+      if (a.type === 'folder' && b.type !== 'folder') return -1;
+      if (a.type !== 'folder' && b.type === 'folder') return 1;
+      return a.name.localeCompare(b.name);
     });
   }
 

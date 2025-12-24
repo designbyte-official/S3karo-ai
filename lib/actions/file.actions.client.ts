@@ -79,6 +79,7 @@ export const getFiles = async ({
   searchText = "",
   sort = "$createdAt-desc",
   limit,
+  continuationToken,
   ownerId,
   accountId,
 }: {
@@ -86,6 +87,7 @@ export const getFiles = async ({
   searchText?: string;
   sort?: string;
   limit?: number;
+  continuationToken?: string;
   ownerId: string;
   accountId: string;
 }) => {
@@ -100,11 +102,13 @@ export const getFiles = async ({
           searchText,
           sort,
           limit,
+          continuationToken,
         });
         
         return {
           documents: result.documents,
           total: result.total,
+          continuationToken: result.continuationToken,
         };
       } else {
         // For platform-s3, this should go through API

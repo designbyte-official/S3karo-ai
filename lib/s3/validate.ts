@@ -16,7 +16,7 @@ export interface ConnectionResult {
  */
 export const testS3Connection = async (config?: S3Config): Promise<ConnectionResult> => {
   try {
-    const s3Config = config || await getS3Config();
+    const s3Config = config || getS3Config();
     
     if (!s3Config) {
       return {

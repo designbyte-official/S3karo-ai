@@ -252,9 +252,9 @@ const StorageModeToggle = () => {
       if (result.status === 'connected') {
         // Save config only if connection is successful
         if (user?.id) {
-          setS3Config(config, user.id);
+          await setS3Config(config, user.id);
         } else {
-          setS3Config(config); // Fallback without userId
+          await setS3Config(config); // Fallback without userId
         }
         setS3ConfigStore(config);
         setStorageMode('own-s3');
@@ -276,9 +276,9 @@ const StorageModeToggle = () => {
         
         // Still save the config (user might want to fix credentials later)
         if (user?.id) {
-          setS3Config(config, user.id);
+          await setS3Config(config, user.id);
         } else {
-          setS3Config(config);
+          await setS3Config(config);
         }
         setS3ConfigStore(config);
       }
