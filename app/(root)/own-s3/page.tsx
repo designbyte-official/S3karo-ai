@@ -33,21 +33,51 @@ const OwnS3Page = () => {
   }, [router, reload]);
 
   useEffect(() => {
-    if (!hasConfig && !loading && user) {
+    // Redirect to setup if no config and user is loaded
+    if (!loading && user && !hasConfig) {
       router.push('/own-s3/setup');
     }
   }, [hasConfig, loading, user, router]);
 
   useEffect(() => {
+    // Redirect on S3 config error
     if (error?.includes('S3 configuration not found')) {
       router.push('/own-s3/setup');
     }
   }, [error, router]);
 
-  if (loading || !user) {
+  // Show loading only while fetching user
+  if (loading && !user) {
     return (
       <div className="page-container">
         <p className="body-2 text-light-100">Loading...</p>
+      </div>
+    );
+  }
+
+  // If no user after loading, show error
+  if (!user && !loading) {
+    return (
+      <div className="page-container">
+        <div className="mb-6 p-4 rounded-lg border border-red/30 bg-red/10 shadow-drop-1">
+          <p className="body-2 text-red font-medium">Error: User not found. Please sign in.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If redirecting to setup, show nothing
+  if (!hasConfig && !loading) {
+    return null;
+  }
+
+  // Show loading state while fetching files (but user is loaded)
+  if (loading && user && hasConfig) {
+    return (
+      <div className="page-container">
+        <div className="flex items-center justify-center py-12">
+          <p className="body-2 text-light-200">Loading your files...</p>
+        </div>
       </div>
     );
   }
@@ -78,13 +108,22 @@ const OwnS3Page = () => {
         {error && !error.includes('S3 configuration not found') && (
           <div className="mb-6 p-4 rounded-lg border border-red/30 bg-red/10 shadow-drop-1">
             <p className="body-2 text-red font-medium mb-2">Error: {error}</p>
-            <Button
-              onClick={() => router.push('/own-s3/setup')}
-              variant="outline"
-              className="button border border-red/30 bg-red/10 text-red hover:bg-red/20 shadow-drop-1"
-            >
-              Go to Setup Page
-            </Button>
+            <div className="flex gap-2 mt-3">
+              <Button
+                onClick={() => reload()}
+                variant="outline"
+                className="button border border-red/30 bg-red/10 text-red hover:bg-red/20 shadow-drop-1"
+              >
+                Retry
+              </Button>
+              <Button
+                onClick={() => router.push('/own-s3/setup')}
+                variant="outline"
+                className="button border border-red/30 bg-red/10 text-red hover:bg-red/20 shadow-drop-1"
+              >
+                Go to Setup Page
+              </Button>
+            </div>
           </div>
         )}
 

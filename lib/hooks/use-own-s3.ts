@@ -45,18 +45,27 @@ export const useOwnS3 = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        setUser({
-          $id: currentUser.$id || currentUser.id || '',
-          id: currentUser.id || currentUser.$id,
-          accountId: currentUser.accountId || currentUser.$id || '',
-        });
-        
-        // Check if S3 config exists
-        const config = getS3Config(currentUser.$id || currentUser.id);
-        const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
-        setHasConfig(configExists);
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          setUser({
+            $id: currentUser.$id || currentUser.id || '',
+            id: currentUser.id || currentUser.$id,
+            accountId: currentUser.accountId || currentUser.$id || '',
+          });
+          
+          // Check if S3 config exists
+          const config = getS3Config(currentUser.$id || currentUser.id);
+          const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
+          setHasConfig(configExists);
+        } else {
+          setError('User not found');
+        }
+      } catch (error: any) {
+        console.error('Error fetching user:', error);
+        setError(error?.message || 'Failed to load user');
+      } finally {
+        setLoading(false);
       }
     };
     fetchUser();
@@ -68,7 +77,12 @@ export const useOwnS3 = () => {
     setLoading(true);
     setError(null);
     try {
-      const [filesData, spaceData] = await Promise.all([
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Request timeout - please check your S3 connection')), 30000); // 30 second timeout
+      });
+
+      const dataPromise = Promise.all([
         getFilesClient({
           types: [],
           ownerId: user.$id,
@@ -76,6 +90,8 @@ export const useOwnS3 = () => {
         }),
         getTotalSpaceUsedClient(user.$id),
       ]);
+
+      const [filesData, spaceData] = await Promise.race([dataPromise, timeoutPromise]) as [any, any];
       setFiles(filesData);
       setTotalSpace(spaceData);
     } catch (error: any) {
@@ -83,9 +99,14 @@ export const useOwnS3 = () => {
       if (error?.message?.includes('S3 configuration not found')) {
         setError('S3 configuration not found');
         setHasConfig(false);
+      } else if (error?.message?.includes('timeout')) {
+        setError('Connection timeout - please check your S3 credentials and network');
       } else {
         setError(error?.message || 'Failed to load files');
       }
+      // Set empty data on error so UI can still render
+      setFiles({ documents: [], total: 0 });
+      setTotalSpace(null);
     } finally {
       setLoading(false);
     }
@@ -94,6 +115,10 @@ export const useOwnS3 = () => {
   useEffect(() => {
     if (user && hasConfig) {
       loadData();
+    } else if (user && !hasConfig) {
+      // User exists but no config - set loading to false so page can redirect
+      setLoading(false);
+      setError('S3 configuration not found');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, hasConfig]);
