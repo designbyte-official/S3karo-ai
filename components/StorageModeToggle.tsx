@@ -394,109 +394,131 @@ const StorageModeToggle = () => {
             Settings
           </Button>
         </DialogTrigger>
-        <DialogContent className="shad-dialog max-w-lg">
-          <DialogHeader>
+        <DialogContent className="shad-dialog max-w-lg max-h-[90vh] flex flex-col !p-0">
+          {/* Fixed Header */}
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-light-300 flex-shrink-0">
             <DialogTitle className="text-center text-light-100">
               {s3Config ? 'Edit AWS S3 Configuration' : 'Configure Your Own AWS S3 Storage'}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex flex-col gap-4">
-            {/* Input Fields */}
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="flex flex-col gap-4">
-              <div className="shad-form-item">
-                <Label htmlFor="accessKeyId" className="shad-form-label">
-                  AWS Access Key ID
-                </Label>
-                <Input
-                  id="accessKeyId"
-                  type="text"
-                  value={config.accessKeyId}
-                  onChange={(e) => setConfig({ ...config, accessKeyId: e.target.value })}
-                  placeholder="AKIAIOSFODNN7EXAMPLE"
-                  className="shad-input"
-                />
-              </div>
-
-              <div className="shad-form-item">
-                <Label htmlFor="secretAccessKey" className="shad-form-label">
-                  AWS Secret Access Key
-                </Label>
-                <Input
-                  id="secretAccessKey"
-                  type="password"
-                  value={config.secretAccessKey}
-                  onChange={(e) => setConfig({ ...config, secretAccessKey: e.target.value })}
-                  placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-                  className="shad-input"
-                />
-              </div>
-
-              <div className="shad-form-item">
-                <Label htmlFor="region" className="shad-form-label">
-                  AWS Region
-                </Label>
-                <Input
-                  id="region"
-                  type="text"
-                  value={config.region}
-                  onChange={(e) => setConfig({ ...config, region: e.target.value })}
-                  placeholder="us-east-1"
-                  className="shad-input"
-                />
-              </div>
-
-              <div className="shad-form-item">
-                <Label htmlFor="bucket" className="shad-form-label">
-                  S3 Bucket Name
-                </Label>
-                <Input
-                  id="bucket"
-                  type="text"
-                  value={config.bucket}
-                  onChange={(e) => setConfig({ ...config, bucket: e.target.value })}
-                  placeholder="my-storage-bucket"
-                  className="shad-input"
-                />
-              </div>
-            </div>
-
-            {/* Connection Status Display - Only show after testing */}
-            {connectionStatus !== 'idle' && (
-              <div className="flex items-center gap-3 p-4 rounded-lg border border-light-300 bg-white shadow-drop-1">
-                <div className="flex items-center gap-3 flex-1">
-                  {getConnectionStatusIcon()}
-                  <div className="flex flex-col">
-                    <span className="body-2 font-semibold text-light-100">
-                      {getConnectionStatusText()}
-                    </span>
-                    {connectionMessage && (
-                      <span className="caption text-light-200 mt-1">
-                        {connectionMessage}
-                      </span>
-                    )}
-                  </div>
+              {/* Input Fields */}
+              <div className="flex flex-col gap-4">
+                <div className="shad-form-item">
+                  <Label htmlFor="accessKeyId" className="shad-form-label">
+                    AWS Access Key ID
+                  </Label>
+                  <Input
+                    id="accessKeyId"
+                    type="text"
+                    value={config.accessKeyId}
+                    onChange={(e) => setConfig({ ...config, accessKeyId: e.target.value })}
+                    placeholder="AKIAIOSFODNN7EXAMPLE"
+                    className="shad-input"
+                  />
                 </div>
-                <Button
-                  onClick={() => checkConnection(config)}
-                  disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
-                  variant="outline"
-                  className="button h-[36px] px-4 body-2 border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
-                  title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test S3 connection"}
-                >
-                  {isTestingConnection ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Testing...
-                    </>
-                  ) : (
-                    'Test Now'
-                  )}
-                </Button>
-              </div>
-            )}
 
-            {/* Action Buttons */}
+                <div className="shad-form-item">
+                  <Label htmlFor="secretAccessKey" className="shad-form-label">
+                    AWS Secret Access Key
+                  </Label>
+                  <Input
+                    id="secretAccessKey"
+                    type="password"
+                    value={config.secretAccessKey}
+                    onChange={(e) => setConfig({ ...config, secretAccessKey: e.target.value })}
+                    placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                    className="shad-input"
+                  />
+                </div>
+
+                <div className="shad-form-item">
+                  <Label htmlFor="region" className="shad-form-label">
+                    AWS Region
+                  </Label>
+                  <Input
+                    id="region"
+                    type="text"
+                    value={config.region}
+                    onChange={(e) => setConfig({ ...config, region: e.target.value })}
+                    placeholder="us-east-1"
+                    className="shad-input"
+                  />
+                </div>
+
+                <div className="shad-form-item">
+                  <Label htmlFor="bucket" className="shad-form-label">
+                    S3 Bucket Name
+                  </Label>
+                  <Input
+                    id="bucket"
+                    type="text"
+                    value={config.bucket}
+                    onChange={(e) => setConfig({ ...config, bucket: e.target.value })}
+                    placeholder="my-storage-bucket"
+                    className="shad-input"
+                  />
+                </div>
+              </div>
+
+              {/* Connection Status Display - Only show after testing */}
+              {connectionStatus !== 'idle' && (
+                <div className="flex items-center gap-3 p-4 rounded-lg border border-light-300 bg-white shadow-drop-1">
+                  <div className="flex items-center gap-3 flex-1">
+                    {getConnectionStatusIcon()}
+                    <div className="flex flex-col">
+                      <span className="body-2 font-semibold text-light-100">
+                        {getConnectionStatusText()}
+                      </span>
+                      {connectionMessage && (
+                        <span className="caption text-light-200 mt-1">
+                          {connectionMessage}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => checkConnection(config)}
+                    disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
+                    variant="outline"
+                    className="button h-[36px] px-4 body-2 border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
+                    title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test S3 connection"}
+                  >
+                    {isTestingConnection ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      'Test Now'
+                    )}
+                  </Button>
+                </div>
+              )}
+
+              <p className="caption text-center text-light-200">
+                Your credentials are stored locally in your browser and never sent to our servers.
+              </p>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  setS3SettingsOpen(false);
+                  setS3SetupGuideOpen(true);
+                }}
+                variant="outline"
+                className="w-full button border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 h-[40px]"
+              >
+                View Setup Guide (CORS & IAM)
+              </Button>
+            </div>
+          </div>
+
+          {/* Fixed Footer with Action Buttons */}
+          <div className="px-6 pt-4 pb-6 border-t border-light-300 flex-shrink-0 bg-white">
             <div className="flex flex-col gap-3">
               <Button 
                 onClick={handleSaveConfig} 
@@ -549,22 +571,6 @@ const StorageModeToggle = () => {
                 </Button>
               )}
             </div>
-
-            <p className="caption text-center text-light-200">
-              Your credentials are stored locally in your browser and never sent to our servers.
-            </p>
-
-            <Button
-              type="button"
-              onClick={() => {
-                setS3SettingsOpen(false);
-                setS3SetupGuideOpen(true);
-              }}
-              variant="outline"
-              className="w-full button border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 h-[40px]"
-            >
-              View Setup Guide (CORS & IAM)
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
