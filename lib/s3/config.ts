@@ -69,7 +69,7 @@ const getStorage = (): Storage | null => {
  * - Use HTTPS only
  * - Consider sessionStorage or cookies for more security
  */
-export const getS3Config = (userId?: string): S3Config | null => {
+export const getS3Config = async (userId?: string): Promise<S3Config | null> => {
   let encryptedConfig: string | null = null;
   
   // Get from appropriate storage
@@ -84,7 +84,7 @@ export const getS3Config = (userId?: string): S3Config | null => {
   if (!encryptedConfig) return null;
   
   try {
-    const decrypted = decryptS3Config(encryptedConfig, userId);
+    const decrypted = await decryptS3Config(encryptedConfig, userId);
     return decrypted;
   } catch (error) {
     console.error('Failed to get S3 config:', error);
@@ -99,9 +99,9 @@ export const getS3Config = (userId?: string): S3Config | null => {
  * 
  * SECURITY: Credentials are encrypted before storage
  */
-export const setS3Config = (config: S3Config, userId?: string) => {
+export const setS3Config = async (config: S3Config, userId?: string): Promise<void> => {
   try {
-    const encryptedConfig = encryptS3Config(config, userId);
+    const encryptedConfig = await encryptS3Config(config, userId);
     
     // Store in appropriate storage
     if (STORAGE_TYPE === 'cookies') {

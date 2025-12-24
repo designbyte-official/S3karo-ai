@@ -55,7 +55,7 @@ export const useOwnS3 = () => {
           });
           
           // Check if S3 config exists
-          const config = getS3Config(currentUser.$id || currentUser.id);
+          const config = await getS3Config(currentUser.$id || currentUser.id);
           const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
           setHasConfig(configExists);
         } else {
