@@ -243,7 +243,9 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
                         const url = await getDownloadUrl(file.bucketFileId);
                         setDownloadUrl(url);
                         // Trigger download
-                        window.location.href = url;
+                        if (typeof window !== 'undefined') {
+                          window.location.href = url;
+                        }
                       } catch (error) {
                         console.error('Download error:', error);
                         toast({

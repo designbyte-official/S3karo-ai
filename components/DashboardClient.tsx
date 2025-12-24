@@ -97,8 +97,10 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorageChange);
+      return () => window.removeEventListener('storage', handleStorageChange);
+    }
   }, [user]);
 
   if (!totalSpace) {

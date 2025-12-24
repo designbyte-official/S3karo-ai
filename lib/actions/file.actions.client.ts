@@ -34,7 +34,7 @@ export const uploadFile = async ({
       
       // For platform-s3: Save metadata to DB via API
       if (mode === 'platform-s3') {
-        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
         const response = await fetch(`${API_BASE}/api/files`, {
           method: 'POST',
           headers: {
@@ -140,7 +140,7 @@ export const deleteFile = async ({
       
       // For platform-s3: Delete from database
       if (mode === 'platform-s3') {
-        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
         const response = await fetch(`${API_BASE}/api/files/${fileId}`, {
           method: 'DELETE',
         });
@@ -189,7 +189,7 @@ export const renameFile = async ({
       
       // For platform-s3: Update in database
       if (mode === 'platform-s3') {
-        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
         const response = await fetch(`${API_BASE}/api/files/${fileId}`, {
           method: 'PATCH',
           headers: {

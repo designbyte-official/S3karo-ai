@@ -39,7 +39,9 @@ export default function DatabaseStatus({ variant = "header" }: DatabaseStatusPro
   }, []);
 
   const handleOpenDrizzleStudio = () => {
-    window.open('http://localhost:4984', '_blank');
+    if (typeof window !== 'undefined') {
+      window.open('http://localhost:4984', '_blank');
+    }
     toast({
       description: "Opening Drizzle Studio...",
     });

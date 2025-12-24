@@ -81,7 +81,8 @@ export function useDeleteFile() {
     mutationFn: async ({ fileId, bucketFileId }: { fileId: string; bucketFileId: string }) => {
       if (mode === "own-s3") {
         const { deleteFile: deleteFileClient } = await import("@/lib/actions/file.actions.client");
-        return await deleteFileClient({ fileId, bucketFileId, path: window.location.pathname });
+        const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+        return await deleteFileClient({ fileId, bucketFileId, path });
       } else {
         const response = await fetch(`/api/files/${fileId}`, { method: "DELETE" });
         if (!response.ok) throw new Error("Failed to delete file");
@@ -116,7 +117,8 @@ export function useRenameFile() {
     }) => {
       if (mode === "own-s3") {
         const { renameFile: renameFileClient } = await import("@/lib/actions/file.actions.client");
-        return await renameFileClient({ fileId, name, extension, path: window.location.pathname, ownerId, bucketFileId });
+        const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+        return await renameFileClient({ fileId, name, extension, path, ownerId, bucketFileId });
       } else {
         const response = await fetch(`/api/files/${fileId}`, {
           method: "PATCH",

@@ -123,6 +123,27 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - Rotate secrets regularly
 - Keep AWS credentials secure (use IAM with minimal permissions)
 
+### 🔒 Credential Storage Security
+
+**Own S3 Credentials (User-Provided):**
+- ✅ Encrypted with **PBKDF2 + AES-256-CBC** before storing in browser
+- ✅ Random salt and IV for each encryption (prevents rainbow table attacks)
+- ✅ User-specific key derivation (extra protection layer)
+- ✅ Stored in browser localStorage (encrypted)
+
+**Platform S3 Credentials (Server-Side):**
+- ✅ Stored in server environment variables (never exposed to client)
+- ✅ Only accessible server-side
+- ✅ Use IAM with minimal permissions
+
+**Protection Against:**
+- ✅ XSS attacks (CSP headers configured)
+- ✅ Brute force (PBKDF2 with 10,000 iterations)
+- ✅ Rainbow tables (random salt per encryption)
+- ✅ Same plaintext detection (random IV per encryption)
+
+**See:** `local-docs/SECURITY.md` for detailed security guide
+
 ---
 
 ---

@@ -76,6 +76,8 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
 
   // Listen for storage changes (when files are uploaded/deleted)
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const handleStorageChange = () => {
       if (user) {
         const mode = getStorageMode();
