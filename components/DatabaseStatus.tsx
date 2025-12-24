@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Database, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useStorageStore } from "@/lib/stores/storage-store";
 
 interface DatabaseStatusProps {
   variant?: "header" | "sidebar";
@@ -12,6 +13,8 @@ interface DatabaseStatusProps {
 export default function DatabaseStatus({ variant = "header" }: DatabaseStatusProps) {
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDevelopment, setIsDevelopment] = useState(false);
+  const { mode } = useStorageStore();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -21,10 +24,12 @@ export default function DatabaseStatus({ variant = "header" }: DatabaseStatusPro
         if (response.ok) {
           const data = await response.json();
           setIsConfigured(data.configured);
+          setIsDevelopment(data.isDevelopment || false);
         }
       } catch (error) {
         console.error('Failed to check database status:', error);
         setIsConfigured(false);
+        setIsDevelopment(process.env.NODE_ENV === 'development');
       } finally {
         setIsLoading(false);
       }
@@ -41,6 +46,11 @@ export default function DatabaseStatus({ variant = "header" }: DatabaseStatusPro
   };
 
   if (isLoading) {
+    return null;
+  }
+
+  // Hide DB status if using own-s3 (no DB needed)
+  if (mode === "own-s3") {
     return null;
   }
 
@@ -61,16 +71,18 @@ export default function DatabaseStatus({ variant = "header" }: DatabaseStatusPro
           <Database className="w-6 h-6 nav-icon-active" />
           <p className="hidden lg:block">Database</p>
         </li>
-        <li>
-          <button
-            onClick={handleOpenDrizzleStudio}
-            className="sidebar-nav-item hover:bg-light-300 cursor-pointer"
-            title="Open Drizzle Studio"
-          >
-            <ExternalLink className="w-6 h-6 nav-icon" />
-            <p className="hidden lg:block">DB Studio</p>
-          </button>
-        </li>
+        {isDevelopment && (
+          <li>
+            <button
+              onClick={handleOpenDrizzleStudio}
+              className="sidebar-nav-item hover:bg-light-300 cursor-pointer"
+              title="Open Drizzle Studio (Development Only)"
+            >
+              <ExternalLink className="w-6 h-6 nav-icon" />
+              <p className="hidden lg:block">DB Studio</p>
+            </button>
+          </li>
+        )}
       </>
     );
   }
@@ -101,15 +113,17 @@ export default function DatabaseStatus({ variant = "header" }: DatabaseStatusPro
         <Database className="w-4 h-4 mr-2" />
         DB
       </Button>
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleOpenDrizzleStudio}
-        className="button h-[40px] w-[40px] rounded-full border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 flex-center p-0"
-        title="Open Drizzle Studio to view database"
-      >
-        <ExternalLink className="w-4 h-4" />
-      </Button>
+      {isDevelopment && (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleOpenDrizzleStudio}
+          className="button h-[40px] w-[40px] rounded-full border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 flex-center p-0"
+          title="Open Drizzle Studio (Development Only)"
+        >
+          <ExternalLink className="w-4 h-4" />
+        </Button>
+      )}
     </div>
   );
 }

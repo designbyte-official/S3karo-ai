@@ -30,7 +30,7 @@ export function useFiles(filters?: {
           accountId: user.accountId || user.id,
         });
       } else {
-        // For platform-s3 or custom backend, fetch from API
+        // For platform-s3, always use API (requires DB)
         const params = new URLSearchParams();
         if (filters?.types && filters.types.length > 0) {
           params.append("types", filters.types.join(","));

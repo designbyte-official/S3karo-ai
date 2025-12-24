@@ -28,14 +28,14 @@ export const uploadFile = async ({
 }) => {
   const mode = getStorageMode();
   
-  if (mode === 's3') {
+  if (mode === 'own-s3' || mode === 'platform-s3') {
     try {
       const uploadedFile = await uploadFileToS3(file, ownerId, accountId);
       
-      // Save file metadata to database via API
-      const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-      try {
-        await fetch(`${API_BASE}/api/files`, {
+      // For platform-s3: Save metadata to DB via API
+      if (mode === 'platform-s3') {
+        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+        const response = await fetch(`${API_BASE}/api/files`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -46,15 +46,18 @@ export const uploadFile = async ({
             extension: uploadedFile.extension,
             size: uploadedFile.size,
             url: uploadedFile.url,
-            storageType: 's3',
+            storageType: mode,
             storageKey: uploadedFile.key,
-            bucketName: '', // Will be set from S3 config
+            bucketName: '',
           }),
         });
-      } catch (apiError) {
-        console.error('Failed to save file metadata to database:', apiError);
-        // Continue even if API call fails
+        
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ error: 'Failed to save to database' }));
+          throw new Error(error.error || 'Failed to save file metadata to database');
+        }
       }
+      // For own-s3: File is in S3, no DB operation needed
       
       // Trigger revalidation
       if (typeof window !== 'undefined') {
@@ -67,34 +70,7 @@ export const uploadFile = async ({
       throw error;
     }
   } else {
-    // For custom backend, we still use S3 but save to our database
-    // Appwrite mode is deprecated
-    const uploadedFile = await uploadFileToS3(file, ownerId, accountId);
-    
-    // Save to our database
-    const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    try {
-      await fetch(`${API_BASE}/api/files`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: uploadedFile.name,
-          type: uploadedFile.type,
-          extension: uploadedFile.extension,
-          size: uploadedFile.size,
-          url: uploadedFile.url,
-          storageType: 's3',
-          storageKey: uploadedFile.key,
-          bucketName: '',
-        }),
-      });
-    } catch (apiError) {
-      console.error('Failed to save file metadata:', apiError);
-    }
-    
-    return uploadedFile;
+    throw new Error('Invalid storage mode');
   }
 };
 
@@ -116,27 +92,32 @@ export const getFiles = async ({
 }) => {
   const mode = getStorageMode();
   
-  if (mode === 's3') {
+  if (mode === 'own-s3' || mode === 'platform-s3') {
     try {
-      const result = await listS3Files(ownerId, accountId, {
-        types,
-        searchText,
-        sort,
-        limit,
-      });
-      
-      return {
-        documents: result.documents,
-        total: result.total,
-      };
+      // For own-s3, use client-side S3 operations
+      if (mode === 'own-s3') {
+        const result = await listS3Files(ownerId, accountId, {
+          types,
+          searchText,
+          sort,
+          limit,
+        });
+        
+        return {
+          documents: result.documents,
+          total: result.total,
+        };
+      } else {
+        // For platform-s3, this should go through API
+        // But if called from client, return empty (API handles it)
+        return { documents: [], total: 0 };
+      }
     } catch (error) {
       console.error('S3 list error:', error);
       return { documents: [], total: 0 };
     }
   } else {
-    // For Appwrite, we need to use server actions
-    // This should be called from a server component or through an API route
-    // For now, return empty - the server component will handle it
+    // Fallback - return empty
     return { documents: [], total: 0 };
   }
 };
@@ -153,14 +134,22 @@ export const deleteFile = async ({
 }) => {
   const mode = getStorageMode();
   
-  if (mode === 's3') {
+  if (mode === 'own-s3' || mode === 'platform-s3') {
     try {
       await deleteFileFromS3(bucketFileId);
       
-      // Remove from localStorage
-      const files = JSON.parse(localStorage.getItem('s3-files') || '[]');
-      const updatedFiles = files.filter((f: S3File) => f.$id !== fileId);
-      localStorage.setItem('s3-files', JSON.stringify(updatedFiles));
+      // For platform-s3: Delete from database
+      if (mode === 'platform-s3') {
+        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+        const response = await fetch(`${API_BASE}/api/files/${fileId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete file from database');
+        }
+      }
+      // For own-s3: File deleted from S3, no DB operation needed
       
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('storage'));
@@ -172,9 +161,7 @@ export const deleteFile = async ({
       throw error;
     }
   } else {
-    // Use Appwrite server action - import and call directly
-    const { deleteFile: deleteFileAppwrite } = await import('./file.actions');
-    return await deleteFileAppwrite({ fileId, bucketFileId, path });
+    throw new Error('Invalid storage mode');
   }
 };
 
@@ -196,16 +183,26 @@ export const renameFile = async ({
 }) => {
   const mode = getStorageMode();
   
-  if (mode === 's3') {
+  if (mode === 'own-s3' || mode === 'platform-s3') {
     try {
       const renamedFile = await renameFileInS3(bucketFileId, `${name}.${extension}`, ownerId);
       
-      // Update localStorage
-      const files = JSON.parse(localStorage.getItem('s3-files') || '[]');
-      const updatedFiles = files.map((f: S3File) => 
-        f.$id === fileId ? renamedFile : f
-      );
-      localStorage.setItem('s3-files', JSON.stringify(updatedFiles));
+      // For platform-s3: Update in database
+      if (mode === 'platform-s3') {
+        const API_BASE = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+        const response = await fetch(`${API_BASE}/api/files/${fileId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: `${name}.${extension}` }),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to update file in database');
+        }
+      }
+      // For own-s3: File renamed in S3, no DB operation needed
       
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('storage'));
@@ -217,9 +214,7 @@ export const renameFile = async ({
       throw error;
     }
   } else {
-    // Use Appwrite server action
-    const { renameFile: renameFileAppwrite } = await import('./file.actions');
-    return await renameFileAppwrite({ fileId, name, extension, path });
+    throw new Error('Invalid storage mode');
   }
 };
 
@@ -227,7 +222,7 @@ export const renameFile = async ({
 export const getTotalSpaceUsed = async (ownerId: string) => {
   const mode = getStorageMode();
   
-  if (mode === 's3') {
+  if (mode === 'own-s3' || mode === 'platform-s3') {
     try {
       return await getS3TotalSpaceUsed(ownerId);
     } catch (error) {
@@ -243,9 +238,16 @@ export const getTotalSpaceUsed = async (ownerId: string) => {
       };
     }
   } else {
-    // Use Appwrite server action
-    const { getTotalSpaceUsed: getTotalSpaceUsedAppwrite } = await import('./file.actions');
-    return await getTotalSpaceUsedAppwrite();
+    // Fallback
+    return {
+      image: { size: 0, latestDate: "" },
+      document: { size: 0, latestDate: "" },
+      video: { size: 0, latestDate: "" },
+      audio: { size: 0, latestDate: "" },
+      other: { size: 0, latestDate: "" },
+      used: 0,
+      all: 2 * 1024 * 1024 * 1024 * 1024,
+    };
   }
 };
 
@@ -253,14 +255,10 @@ export const getTotalSpaceUsed = async (ownerId: string) => {
 export const getDownloadUrl = async (bucketFileId: string): Promise<string> => {
   const mode = getStorageMode();
   
-  if (mode === 's3') {
+  if (mode === 'own-s3' || mode === 'platform-s3') {
     return await getS3DownloadUrl(bucketFileId);
   } else {
-    // Appwrite URL construction
-    const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-    const bucket = process.env.NEXT_PUBLIC_APPWRITE_BUCKET;
-    const project = process.env.NEXT_PUBLIC_APPWRITE_PROJECT;
-    return `${endpoint}/storage/buckets/${bucket}/files/${bucketFileId}/download?project=${project}`;
+    throw new Error('Invalid storage mode');
   }
 };
 
@@ -268,14 +266,10 @@ export const getDownloadUrl = async (bucketFileId: string): Promise<string> => {
 export const getViewUrl = async (bucketFileId: string): Promise<string> => {
   const mode = getStorageMode();
   
-  if (mode === 's3') {
+  if (mode === 'own-s3' || mode === 'platform-s3') {
     return await getS3ViewUrl(bucketFileId);
   } else {
-    // Appwrite URL construction
-    const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT;
-    const bucket = process.env.NEXT_PUBLIC_APPWRITE_BUCKET;
-    const project = process.env.NEXT_PUBLIC_APPWRITE_PROJECT;
-    return `${endpoint}/storage/buckets/${bucket}/files/${bucketFileId}/view?project=${project}`;
+    throw new Error('Invalid storage mode');
   }
 };
 

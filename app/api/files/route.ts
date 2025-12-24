@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFilesForUser, createFile } from '@/lib/database/queries';
 import { getCurrentUser } from '@/lib/auth/utils';
+import { isDatabaseConfigured } from '@/lib/database/db';
+import { listS3Files } from '@/lib/s3/index';
+import { getS3Config } from '@/lib/s3/config';
 
 // GET - List files
 export async function GET(request: NextRequest) {
@@ -20,7 +23,15 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || '$createdAt-desc';
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
 
-    // Get files using Drizzle
+    // Platform S3 requires database
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured. Platform S3 requires database connection.' },
+        { status: 503 }
+      );
+    }
+
+    // Get files using Drizzle (database is configured)
     const files = await getFilesForUser(user.id, {
       types: types.length > 0 ? types : undefined,
       searchText: searchText || undefined,
@@ -80,6 +91,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
+      );
+    }
+
+    // Platform S3 requires database
+    if (!isDatabaseConfigured()) {
+      return NextResponse.json(
+        { error: 'Database not configured. Platform S3 requires database connection.' },
+        { status: 503 }
       );
     }
 

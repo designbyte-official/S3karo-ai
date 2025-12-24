@@ -125,6 +125,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ---
 
+---
+
 ## Quick Reference
 
 | Feature | Env Vars Needed | User Action |
