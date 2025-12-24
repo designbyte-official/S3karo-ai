@@ -2,13 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getStorageMode, setStorageMode, getS3Config, setS3Config, clearS3Config, S3Config, type StorageMode } from "@/lib/s3/config";
@@ -383,197 +377,188 @@ const StorageModeToggle = () => {
         </Button>
       </div>
 
-      <Dialog open={isS3SettingsOpen} onOpenChange={setS3SettingsOpen}>
-        <DialogTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            className="button h-[40px] px-4 rounded-full border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
-            onClick={() => setS3SettingsOpen(true)}
-          >
-            Settings
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="shad-dialog max-w-lg max-h-[90vh] flex flex-col !p-0">
-          {/* Fixed Header */}
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-light-300 flex-shrink-0">
-            <DialogTitle className="text-center text-light-100">
-              {s3Config ? 'Edit AWS S3 Configuration' : 'Configure Your Own AWS S3 Storage'}
-            </DialogTitle>
-          </DialogHeader>
-          
-          {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            <div className="flex flex-col gap-4">
-              {/* Input Fields */}
-              <div className="flex flex-col gap-4">
-                <div className="shad-form-item">
-                  <Label htmlFor="accessKeyId" className="shad-form-label">
-                    AWS Access Key ID
-                  </Label>
-                  <Input
-                    id="accessKeyId"
-                    type="text"
-                    value={config.accessKeyId}
-                    onChange={(e) => setConfig({ ...config, accessKeyId: e.target.value })}
-                    placeholder="AKIAIOSFODNN7EXAMPLE"
-                    className="shad-input"
-                  />
-                </div>
-
-                <div className="shad-form-item">
-                  <Label htmlFor="secretAccessKey" className="shad-form-label">
-                    AWS Secret Access Key
-                  </Label>
-                  <Input
-                    id="secretAccessKey"
-                    type="password"
-                    value={config.secretAccessKey}
-                    onChange={(e) => setConfig({ ...config, secretAccessKey: e.target.value })}
-                    placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-                    className="shad-input"
-                  />
-                </div>
-
-                <div className="shad-form-item">
-                  <Label htmlFor="region" className="shad-form-label">
-                    AWS Region
-                  </Label>
-                  <Input
-                    id="region"
-                    type="text"
-                    value={config.region}
-                    onChange={(e) => setConfig({ ...config, region: e.target.value })}
-                    placeholder="us-east-1"
-                    className="shad-input"
-                  />
-                </div>
-
-                <div className="shad-form-item">
-                  <Label htmlFor="bucket" className="shad-form-label">
-                    S3 Bucket Name
-                  </Label>
-                  <Input
-                    id="bucket"
-                    type="text"
-                    value={config.bucket}
-                    onChange={(e) => setConfig({ ...config, bucket: e.target.value })}
-                    placeholder="my-storage-bucket"
-                    className="shad-input"
-                  />
-                </div>
-              </div>
-
-              {/* Connection Status Display - Only show after testing */}
-              {connectionStatus !== 'idle' && (
-                <div className="flex items-center gap-3 p-4 rounded-lg border border-light-300 bg-white shadow-drop-1">
-                  <div className="flex items-center gap-3 flex-1">
-                    {getConnectionStatusIcon()}
-                    <div className="flex flex-col">
-                      <span className="body-2 font-semibold text-light-100">
-                        {getConnectionStatusText()}
-                      </span>
-                      {connectionMessage && (
-                        <span className="caption text-light-200 mt-1">
-                          {connectionMessage}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => checkConnection(config)}
-                    disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
-                    variant="outline"
-                    className="button h-[36px] px-4 body-2 border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
-                    title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test S3 connection"}
-                  >
-                    {isTestingConnection ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Testing...
-                      </>
-                    ) : (
-                      'Test Now'
-                    )}
-                  </Button>
-                </div>
+      <Button
+        type="button"
+        variant="outline"
+        className="button h-[40px] px-4 rounded-full border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
+        onClick={() => setS3SettingsOpen(true)}
+      >
+        Settings
+      </Button>
+      
+      <ScrollableDialog
+        open={isS3SettingsOpen}
+        onOpenChange={setS3SettingsOpen}
+        title={s3Config ? 'Edit AWS S3 Configuration' : 'Configure Your Own AWS S3 Storage'}
+        maxWidth="lg"
+        className="lg:min-w-[500px]"
+        footer={
+          <div className="flex flex-col gap-3">
+            <Button 
+              onClick={handleSaveConfig} 
+              disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
+              className="w-full primary-btn shadow-drop-2 h-[44px]"
+              title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to save" : s3Config ? "Update and test connection" : "Save and test connection"}
+            >
+              {isTestingConnection ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Testing...
+                </>
+              ) : s3Config ? (
+                'Update Configuration'
+              ) : (
+                'Save Configuration'
               )}
-
-              <p className="caption text-center text-light-200">
-                Your credentials are stored locally in your browser and never sent to our servers.
-              </p>
-
-              <Button
-                type="button"
+            </Button>
+            
+            <Button
+              onClick={() => checkConnection(config)}
+              disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
+              variant="outline"
+              className="w-full button border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 h-[40px]"
+              title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test connection without saving"}
+            >
+              {isTestingConnection ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Testing Connection...
+                </>
+              ) : (
+                'Test Connection (Don\'t Save)'
+              )}
+            </Button>
+            
+            {/* Delete/Clear Button */}
+            {(user?.id ? getS3Config(user.id) : getS3Config()) && (
+              <Button 
                 onClick={() => {
-                  setS3SettingsOpen(false);
-                  setS3SetupGuideOpen(true);
-                }}
+                  if (confirm('Are you sure you want to delete your S3 configuration? This will clear all saved credentials.')) {
+                    handleClearConfig();
+                  }
+                }} 
                 variant="outline"
-                className="w-full button border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 h-[40px]"
+                className="w-full button border border-red/30 bg-red/10 text-red hover:bg-red/20 hover:text-red shadow-drop-1 h-[40px]"
+                title="Delete saved S3 credentials"
               >
-                View Setup Guide (CORS & IAM)
+                Delete Configuration
               </Button>
+            )}
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {/* Input Fields */}
+          <div className="flex flex-col gap-4">
+            <div className="shad-form-item">
+              <Label htmlFor="accessKeyId" className="shad-form-label">
+                AWS Access Key ID
+              </Label>
+              <Input
+                id="accessKeyId"
+                type="text"
+                value={config.accessKeyId}
+                onChange={(e) => setConfig({ ...config, accessKeyId: e.target.value })}
+                placeholder="AKIAIOSFODNN7EXAMPLE"
+                className="shad-input"
+              />
+            </div>
+
+            <div className="shad-form-item">
+              <Label htmlFor="secretAccessKey" className="shad-form-label">
+                AWS Secret Access Key
+              </Label>
+              <Input
+                id="secretAccessKey"
+                type="password"
+                value={config.secretAccessKey}
+                onChange={(e) => setConfig({ ...config, secretAccessKey: e.target.value })}
+                placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                className="shad-input"
+              />
+            </div>
+
+            <div className="shad-form-item">
+              <Label htmlFor="region" className="shad-form-label">
+                AWS Region
+              </Label>
+              <Input
+                id="region"
+                type="text"
+                value={config.region}
+                onChange={(e) => setConfig({ ...config, region: e.target.value })}
+                placeholder="us-east-1"
+                className="shad-input"
+              />
+            </div>
+
+            <div className="shad-form-item">
+              <Label htmlFor="bucket" className="shad-form-label">
+                S3 Bucket Name
+              </Label>
+              <Input
+                id="bucket"
+                type="text"
+                value={config.bucket}
+                onChange={(e) => setConfig({ ...config, bucket: e.target.value })}
+                placeholder="my-storage-bucket"
+                className="shad-input"
+              />
             </div>
           </div>
 
-          {/* Fixed Footer with Action Buttons */}
-          <div className="px-6 pt-4 pb-6 border-t border-light-300 flex-shrink-0 bg-white">
-            <div className="flex flex-col gap-3">
-              <Button 
-                onClick={handleSaveConfig} 
+          {/* Connection Status Display - Only show after testing */}
+          {connectionStatus !== 'idle' && (
+            <div className="flex items-center gap-3 p-4 rounded-lg border border-light-300 bg-white shadow-drop-1">
+              <div className="flex items-center gap-3 flex-1">
+                {getConnectionStatusIcon()}
+                <div className="flex flex-col">
+                  <span className="body-2 font-semibold text-light-100">
+                    {getConnectionStatusText()}
+                  </span>
+                  {connectionMessage && (
+                    <span className="caption text-light-200 mt-1">
+                      {connectionMessage}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <Button
+                onClick={() => checkConnection(config)}
                 disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
-                className="w-full primary-btn shadow-drop-2 h-[44px]"
-                title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to save" : s3Config ? "Update and test connection" : "Save and test connection"}
+                variant="outline"
+                className="button h-[36px] px-4 body-2 border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1"
+                title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test S3 connection"}
               >
                 {isTestingConnection ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                     Testing...
                   </>
-                ) : s3Config ? (
-                  'Update Configuration'
                 ) : (
-                  'Save Configuration'
+                  'Test Now'
                 )}
               </Button>
-              
-              <Button
-                onClick={() => checkConnection(config)}
-                disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
-                variant="outline"
-                className="w-full button border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 h-[40px]"
-                title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to test" : "Test connection without saving"}
-              >
-                {isTestingConnection ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Testing Connection...
-                  </>
-                ) : (
-                  'Test Connection (Don\'t Save)'
-                )}
-              </Button>
-              
-              {/* Delete/Clear Button */}
-              {(user?.id ? getS3Config(user.id) : getS3Config()) && (
-                <Button 
-                  onClick={() => {
-                    if (confirm('Are you sure you want to delete your S3 configuration? This will clear all saved credentials.')) {
-                      handleClearConfig();
-                    }
-                  }} 
-                  variant="outline"
-                  className="w-full button border border-red/30 bg-red/10 text-red hover:bg-red/20 hover:text-red shadow-drop-1 h-[40px]"
-                  title="Delete saved S3 credentials"
-                >
-                  Delete Configuration
-                </Button>
-              )}
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          )}
+
+          <p className="caption text-center text-light-200">
+            Your credentials are stored locally in your browser and never sent to our servers.
+          </p>
+
+          <Button
+            type="button"
+            onClick={() => {
+              setS3SettingsOpen(false);
+              setS3SetupGuideOpen(true);
+            }}
+            variant="outline"
+            className="w-full button border border-light-300 bg-white text-light-100 hover:bg-light-300 shadow-drop-1 h-[40px]"
+          >
+            View Setup Guide (CORS & IAM)
+          </Button>
+        </div>
+      </ScrollableDialog>
 
       <S3SetupGuide
         isOpen={isS3SetupGuideOpen}
