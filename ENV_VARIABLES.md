@@ -17,13 +17,41 @@ JWT_SECRET=your-jwt-secret-here
 - **Required:** Yes
 - **Purpose:** Signing JWT tokens for authentication
 
-### Encryption
+### Encryption (AES-256-GCM)
 ```env
-NEXT_PUBLIC_ENCRYPTION_SECRET=your-encryption-secret-here
+NEXT_PUBLIC_AES_KEY=your-32-byte-base64-encoded-key
+NEXT_PUBLIC_AES_IV=your-12-byte-base64-encoded-iv
 ```
-- **Generate:** `openssl rand -base64 32`
-- **Required:** Yes
-- **Purpose:** Encrypting S3 credentials in browser
+- **Generate AES Key (32 bytes = 256 bits):**
+  ```bash
+  # Using Node.js
+  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+  
+  # Or using OpenSSL
+  openssl rand -base64 32
+  ```
+
+- **Generate AES IV (12 bytes for AES-GCM):**
+  ```bash
+  # Using Node.js
+  node -e "console.log(require('crypto').randomBytes(12).toString('base64'))"
+  
+  # Or using OpenSSL
+  openssl rand -base64 12
+  ```
+
+- **Quick Generation (Both at once):**
+  ```bash
+  echo "NEXT_PUBLIC_AES_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('base64'))")"
+  echo "NEXT_PUBLIC_AES_IV=$(node -e "console.log(require('crypto').randomBytes(12).toString('base64'))")"
+  ```
+
+- **Required:** Yes (AES_KEY), Optional (AES_IV - will generate from key if not provided)
+- **Purpose:** Encrypting S3 credentials in browser using AES-256-GCM
+- **Note:** 
+  - Uses Web Crypto API with Buffer - no external dependencies
+  - Falls back to `NEXT_PUBLIC_ENCRYPTION_SECRET` if `NEXT_PUBLIC_AES_KEY` is not set (for backward compatibility)
+  - IV will be auto-generated from key if not provided
 
 ### App URL
 ```env
@@ -98,7 +126,8 @@ FROM_NAME=Storage App
 # ===== REQUIRED =====
 DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
 JWT_SECRET=your-jwt-secret-here
-NEXT_PUBLIC_ENCRYPTION_SECRET=your-encryption-secret-here
+NEXT_PUBLIC_AES_KEY=your-32-byte-base64-encoded-key
+NEXT_PUBLIC_AES_IV=your-12-byte-base64-encoded-iv
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # ===== OPTIONAL: Platform S3 =====
@@ -126,10 +155,11 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ### 🔒 Credential Storage Security
 
 **Own S3 Credentials (User-Provided):**
-- ✅ Encrypted with **PBKDF2 + AES-256-CBC** before storing in browser
-- ✅ Random salt and IV for each encryption (prevents rainbow table attacks)
-- ✅ User-specific key derivation (extra protection layer)
+- ✅ Encrypted with **AES-256-GCM** before storing in browser
+- ✅ Uses Web Crypto API (SubtleCrypto) - native browser API
+- ✅ Fixed key and IV from environment variables (consistent encryption)
 - ✅ Stored in browser localStorage (encrypted)
+- ✅ No external dependencies (uses Buffer and native crypto)
 
 **Platform S3 Credentials (Server-Side):**
 - ✅ Stored in server environment variables (never exposed to client)
@@ -138,9 +168,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 **Protection Against:**
 - ✅ XSS attacks (CSP headers configured)
-- ✅ Brute force (PBKDF2 with 10,000 iterations)
-- ✅ Rainbow tables (random salt per encryption)
-- ✅ Same plaintext detection (random IV per encryption)
+- ✅ Brute force (AES-256 with 256-bit key)
+- ✅ Data tampering (AES-GCM provides authentication)
+- ✅ Replay attacks (fixed IV ensures consistent encryption)
 
 **See:** `local-docs/SECURITY.md` for detailed security guide
 

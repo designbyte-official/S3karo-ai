@@ -36,8 +36,8 @@ export const uploadFileToS3 = async (
   ownerId: string,
   accountId: string
 ): Promise<S3File> => {
-  const client = createS3Client();
-  const bucket = getS3Bucket();
+  const client = await createS3Client();
+  const bucket = await getS3Bucket();
   
   const fileType = getFileType(file.name);
   const key = `${ownerId}/${Date.now()}-${file.name}`;
@@ -98,8 +98,8 @@ export const uploadFileToS3 = async (
 
 // Get download URL for S3 file
 export const getS3DownloadUrl = async (key: string): Promise<string> => {
-  const client = createS3Client();
-  const bucket = getS3Bucket();
+  const client = await createS3Client();
+  const bucket = await getS3Bucket();
   
   return await getSignedUrl(
     client,
@@ -113,8 +113,8 @@ export const getS3DownloadUrl = async (key: string): Promise<string> => {
 
 // Get view URL for S3 file
 export const getS3ViewUrl = async (key: string): Promise<string> => {
-  const client = createS3Client();
-  const bucket = getS3Bucket();
+  const client = await createS3Client();
+  const bucket = await getS3Bucket();
   
   return await getSignedUrl(
     client,
@@ -142,8 +142,8 @@ export const listS3Files = async (
   total: number;
   continuationToken?: string;
 }> => {
-  const client = createS3Client();
-  const bucket = getS3Bucket();
+  const client = await createS3Client();
+  const bucket = await getS3Bucket();
   
   const prefix = `${ownerId}/`;
   
@@ -154,31 +154,129 @@ export const listS3Files = async (
     ContinuationToken: options.continuationToken,
   });
 
-  const response = await client.send(command);
+  let response;
+  try {
+    response = await client.send(command);
+  } catch (error: any) {
+    console.error('Error listing S3 files:', error);
+    throw new Error(`Failed to list S3 files: ${error.message || 'Unknown error'}`);
+  }
   
-  if (!response.Contents) {
+  console.log('S3 ListObjects response:', {
+    keyCount: response.KeyCount,
+    contentsLength: response.Contents?.length || 0,
+    isTruncated: response.IsTruncated,
+    prefix: prefix,
+    bucket: bucket
+  });
+  
+  if (!response.Contents || response.Contents.length === 0) {
+    console.log('No files found in S3 bucket with prefix:', prefix);
+    // Try listing without prefix as fallback (in case files were uploaded directly)
+    try {
+      const fallbackCommand = new ListObjectsV2Command({
+        Bucket: bucket,
+        MaxKeys: options.limit || 1000,
+      });
+      const fallbackResponse = await client.send(fallbackCommand);
+      console.log('Fallback: Found', fallbackResponse.Contents?.length || 0, 'files without prefix');
+      if (fallbackResponse.Contents && fallbackResponse.Contents.length > 0) {
+        console.warn('Files found without ownerId prefix. These files may not be associated with the current user.');
+      }
+    } catch (fallbackError) {
+      console.error('Fallback list also failed:', fallbackError);
+    }
     return { documents: [], total: 0 };
   }
+  
+  console.log(`Found ${response.Contents.length} objects in S3 with prefix ${prefix}`);
 
   const files: S3File[] = [];
   
   for (const object of response.Contents) {
     if (!object.Key) continue;
     
-    // Get metadata
-    const headResponse = await client.send(
-      new HeadObjectCommand({
-        Bucket: bucket,
-        Key: object.Key,
-      })
-    );
-
-    const metadata = headResponse.Metadata || {};
-    const originalName = metadata.originalName || object.Key.split('/').pop() || 'unknown';
+    // Skip directories (keys ending with /)
+    if (object.Key.endsWith('/')) continue;
+    
+    let metadata: Record<string, string> = {};
+    let originalName = object.Key.split('/').pop() || 'unknown';
+    let fileType = 'other';
+    let extension = '';
+    
+    try {
+      // Try to get metadata (may fail for files uploaded outside app)
+      const headResponse = await client.send(
+        new HeadObjectCommand({
+          Bucket: bucket,
+          Key: object.Key,
+        })
+      );
+      metadata = headResponse.Metadata || {};
+      
+      // Use metadata if available, otherwise extract from key
+      if (metadata.originalName) {
+        originalName = metadata.originalName;
+      } else {
+        // Extract filename from key (remove ownerId prefix and timestamp if present)
+        // Format: ownerId/timestamp-filename or ownerId/filename
+        const parts = object.Key.split('/');
+        const filename = parts[parts.length - 1];
+        // Remove timestamp prefix if present (format: timestamp-filename)
+        originalName = filename.replace(/^\d+-/, '');
+      }
+      
+      // Get file type from metadata or infer from extension
+      if (metadata.type) {
+        fileType = metadata.type;
+      } else {
+        // Infer type from filename extension
+        const ext = originalName.split('.').pop()?.toLowerCase() || '';
+        extension = ext;
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(ext)) {
+          fileType = 'image';
+        } else if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].includes(ext)) {
+          fileType = 'document';
+        } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(ext)) {
+          fileType = 'video';
+        } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(ext)) {
+          fileType = 'audio';
+        } else {
+          fileType = 'other';
+        }
+      }
+      
+      if (metadata.extension) {
+        extension = metadata.extension;
+      } else if (!extension) {
+        extension = originalName.split('.').pop()?.toLowerCase() || '';
+      }
+    } catch (error) {
+      // If HeadObject fails, use basic info from ListObjects response
+      console.warn(`Could not get metadata for ${object.Key}, using basic info:`, error);
+      // Extract filename from key
+      const parts = object.Key.split('/');
+      const filename = parts[parts.length - 1];
+      originalName = filename.replace(/^\d+-/, '');
+      extension = originalName.split('.').pop()?.toLowerCase() || '';
+      
+      // Infer type from extension
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'].includes(extension)) {
+        fileType = 'image';
+      } else if (['pdf', 'doc', 'docx', 'txt', 'rtf', 'odt'].includes(extension)) {
+        fileType = 'document';
+      } else if (['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension)) {
+        fileType = 'video';
+      } else if (['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a'].includes(extension)) {
+        fileType = 'audio';
+      } else {
+        fileType = 'other';
+      }
+    }
     
     // Apply filters
     if (options.types && options.types.length > 0) {
-      if (!options.types.includes(metadata.type || 'other')) continue;
+      if (!options.types.includes(fileType)) continue;
     }
     
     if (options.searchText) {
@@ -192,8 +290,8 @@ export const listS3Files = async (
     files.push({
       $id: object.Key,
       name: originalName,
-      type: metadata.type || 'other',
-      extension: metadata.extension || '',
+      type: fileType,
+      extension: extension,
       size: object.Size || 0,
       url: fileUrl,
       $createdAt: object.LastModified?.toISOString() || new Date().toISOString(),
@@ -235,8 +333,8 @@ export const listS3Files = async (
 
 // Delete file from S3
 export const deleteFileFromS3 = async (key: string): Promise<void> => {
-  const client = createS3Client();
-  const bucket = getS3Bucket();
+  const client = await createS3Client();
+  const bucket = await getS3Bucket();
   
   await client.send(
     new DeleteObjectCommand({
@@ -252,8 +350,8 @@ export const renameFileInS3 = async (
   newName: string,
   ownerId: string
 ): Promise<S3File> => {
-  const client = createS3Client();
-  const bucket = getS3Bucket();
+  const client = await createS3Client();
+  const bucket = await getS3Bucket();
   
   // Get old file metadata
   const headResponse = await client.send(
@@ -318,8 +416,8 @@ export const getS3TotalSpaceUsed = async (
   used: number;
   all: number;
 }> => {
-  const client = createS3Client();
-  const bucket = getS3Bucket();
+  const client = await createS3Client();
+  const bucket = await getS3Bucket();
   
   const prefix = `${ownerId}/`;
   const command = new ListObjectsV2Command({

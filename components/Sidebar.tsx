@@ -32,8 +32,11 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
       
       // Check if S3 config exists for own-s3 mode
       if (mode === 'own-s3') {
-        const config = getS3Config();
-        setHasS3Config(!!(config && config.accessKeyId && config.secretAccessKey && config.bucket));
+        getS3Config().then(config => {
+          setHasS3Config(!!(config && config.accessKeyId && config.secretAccessKey && config.bucket));
+        }).catch(() => {
+          setHasS3Config(false);
+        });
       } else {
         setHasS3Config(false);
       }

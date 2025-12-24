@@ -32,7 +32,7 @@ const OwnS3SetupPage = () => {
       
       // Check if S3 config exists
       if (currentUser?.$id) {
-        const config = getS3Config(currentUser.$id);
+        const config = await getS3Config(currentUser.$id);
         const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
         setHasConfig(configExists);
         
@@ -48,9 +48,9 @@ const OwnS3SetupPage = () => {
   // Listen for config changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const handleStorageChange = () => {
+      const handleStorageChange = async () => {
         if (user?.$id) {
-          const config = getS3Config(user.$id);
+          const config = await getS3Config(user.$id);
           const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
           if (configExists) {
             router.push('/own-s3');

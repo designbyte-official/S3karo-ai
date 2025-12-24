@@ -60,48 +60,54 @@ const StorageModeToggle = () => {
   }, [user?.id, setPlatformAccess]);
 
   useEffect(() => {
-    const currentMode = getStorageMode();
-    setStorageModeStore(currentMode);
-    
-    if (user?.id) {
-      const savedConfig = getS3Config(user.id);
-      if (savedConfig) {
-        setConfig(savedConfig);
-        setS3ConfigStore(savedConfig);
-        // Check connection status if config exists
-        if (mode === 'own-s3') {
-          checkConnection(savedConfig);
+    const loadConfig = async () => {
+      const currentMode = getStorageMode();
+      setStorageModeStore(currentMode);
+      
+      if (user?.id) {
+        const savedConfig = await getS3Config(user.id);
+        if (savedConfig) {
+          setConfig(savedConfig);
+          setS3ConfigStore(savedConfig);
+          // Check connection status if config exists
+          if (mode === 'own-s3') {
+            checkConnection(savedConfig);
+          }
+        } else {
+          // Reset config if no saved config
+          setConfig({
+            accessKeyId: '',
+            secretAccessKey: '',
+            region: 'us-east-1',
+            bucket: '',
+          });
         }
-      } else {
-        // Reset config if no saved config
-        setConfig({
-          accessKeyId: '',
-          secretAccessKey: '',
-          region: 'us-east-1',
-          bucket: '',
-        });
       }
-    }
+    };
+    loadConfig();
   }, [user?.id, setStorageModeStore, setS3ConfigStore, mode]);
 
   // Load config when settings dialog opens
   useEffect(() => {
-    if (isS3SettingsOpen && user?.id) {
-      const savedConfig = getS3Config(user.id);
-      if (savedConfig) {
-        setConfig(savedConfig);
-      } else {
-        // Reset config if no saved config
-        setConfig({
-          accessKeyId: '',
-          secretAccessKey: '',
-          region: 'us-east-1',
-          bucket: '',
-        });
+    const loadConfig = async () => {
+      if (isS3SettingsOpen && user?.id) {
+        const savedConfig = await getS3Config(user.id);
+        if (savedConfig) {
+          setConfig(savedConfig);
+        } else {
+          // Reset config if no saved config
+          setConfig({
+            accessKeyId: '',
+            secretAccessKey: '',
+            region: 'us-east-1',
+            bucket: '',
+          });
+        }
+        // Reset connection status when dialog opens
+        setConnectionStatus('idle', '');
       }
-      // Reset connection status when dialog opens
-      setConnectionStatus('idle', '');
-    }
+    };
+    loadConfig();
   }, [isS3SettingsOpen, user?.id, setConnectionStatus]);
 
   // Check connection when mode changes to own-s3
@@ -148,11 +154,11 @@ const StorageModeToggle = () => {
     }
   };
 
-  const handleModeChange = (newMode: StorageMode) => {
+  const handleModeChange = async (newMode: StorageMode) => {
     // If clicking the same mode, open settings or show status
     if (newMode === mode) {
       if (newMode === 'own-s3') {
-        const savedConfig = user?.id ? getS3Config(user.id) : s3Config;
+        const savedConfig = user?.id ? await getS3Config(user.id) : s3Config;
         if (savedConfig && savedConfig.accessKeyId && savedConfig.secretAccessKey && savedConfig.bucket) {
           // If config exists, test connection
           checkConnection(savedConfig);
@@ -178,7 +184,7 @@ const StorageModeToggle = () => {
 
     // Check if own-s3 needs configuration
     if (newMode === 'own-s3') {
-      const savedConfig = user?.id ? getS3Config(user.id) : s3Config;
+      const savedConfig = user?.id ? await getS3Config(user.id) : s3Config;
       if (!savedConfig || !savedConfig.accessKeyId || !savedConfig.secretAccessKey || !savedConfig.bucket) {
         // Open settings dialog to configure
         setS3SettingsOpen(true);
@@ -430,7 +436,7 @@ const StorageModeToggle = () => {
             </Button>
             
             {/* Delete/Clear Button */}
-            {(user?.id ? getS3Config(user.id) : getS3Config()) && (
+            {s3Config && (
               <Button 
                 onClick={() => {
                   if (confirm('Are you sure you want to delete your S3 configuration? This will clear all saved credentials.')) {
