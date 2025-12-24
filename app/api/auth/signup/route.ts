@@ -74,9 +74,11 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         email: user.email,
-        fullName: user.full_name,
+        fullName: user.fullName,
         avatar: user.avatar,
+        emailVerified: user.emailVerified,
       },
+      message: "Account created successfully. Please check your email to verify your account.",
     });
   } catch (error: any) {
     console.error('Signup error:', error);

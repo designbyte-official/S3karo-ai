@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
         email: user.email,
         fullName: user.fullName,
         avatar: user.avatar,
+        emailVerified: user.emailVerified,
       },
     });
   } catch (error: any) {

@@ -69,16 +69,28 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
       if (!response.ok) {
         if (data.needsVerification) {
-          setErrorMessage(data.message || "Please verify your email address before signing in.");
+          setErrorMessage(data.message || "Please verify your email address before signing in. Check your inbox for the verification email.");
         } else {
           setErrorMessage(data.error || "Failed to authenticate. Please try again.");
         }
         return;
       }
 
-      // Redirect to dashboard on success
-      router.push("/");
-      router.refresh();
+      // For signup, show success message about email verification
+      if (type === "sign-up" && data.message) {
+        setErrorMessage(""); // Clear any errors
+        // Show success message
+        alert(data.message || "Account created! Please check your email to verify your account.");
+      }
+
+      // Redirect to dashboard on success (only for sign-in, or if email is already verified)
+      if (type === "sign-in" || data.user?.emailVerified === "true") {
+        router.push("/");
+        router.refresh();
+      } else if (type === "sign-up") {
+        // For signup, redirect to sign-in with message
+        router.push("/sign-in?message=Please verify your email to continue");
+      }
     } catch (error) {
       setErrorMessage("An error occurred. Please try again.");
     } finally {
