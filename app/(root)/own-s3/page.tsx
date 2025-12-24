@@ -1,21 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { getStorageMode } from "@/lib/s3/config";
-import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
-import { getTotalSpaceUsed as getTotalSpaceUsedClient } from "@/lib/actions/file.actions.client";
-import { getCurrentUser } from "@/lib/actions/user.actions";
-import { Models } from "node-appwrite";
+import { useOwnS3 } from "@/lib/hooks/use-own-s3";
 import Card from "@/components/Card";
 import FileUploader from "@/components/FileUploader";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const OwnS3Page = () => {
-  const [files, setFiles] = useState<{ documents: Models.Document[]; total: number }>({ documents: [], total: 0 });
-  const [totalSpace, setTotalSpace] = useState<any>(null);
-  const [user, setUser] = useState<{ $id: string; accountId: string } | null>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { files, totalSpace, user, loading, hasConfig, error, reload } = useOwnS3();
 
   useEffect(() => {
     const checkMode = () => {
@@ -30,59 +25,24 @@ const OwnS3Page = () => {
     if (typeof window !== 'undefined') {
       const handleStorageChange = () => {
         checkMode();
-        loadData();
+        reload();
       };
       window.addEventListener('storage', handleStorageChange);
       return () => window.removeEventListener('storage', handleStorageChange);
     }
-  }, [router]);
+  }, [router, reload]);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    };
-    fetchUser();
-  }, []);
-
-  const loadData = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const [filesData, spaceData] = await Promise.all([
-        getFilesClient({
-          types: [],
-          ownerId: user.$id,
-          accountId: user.accountId,
-        }),
-        getTotalSpaceUsedClient(user.$id),
-      ]);
-      setFiles(filesData);
-      setTotalSpace(spaceData);
-    } catch (error) {
-      console.error('Error loading data:', error);
-    } finally {
-      setLoading(false);
+    if (!hasConfig && !loading && user) {
+      router.push('/own-s3/setup');
     }
-  };
+  }, [hasConfig, loading, user, router]);
 
   useEffect(() => {
-    if (user) {
-      loadData();
+    if (error?.includes('S3 configuration not found')) {
+      router.push('/own-s3/setup');
     }
-  }, [user]);
-
-  // Listen for file changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && user) {
-      const handleStorageChange = () => {
-        loadData();
-      };
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
-  }, [user]);
+  }, [error, router]);
 
   if (loading || !user) {
     return (
@@ -110,10 +70,23 @@ const OwnS3Page = () => {
               Direct S3 operations - Upload, view, open, and delete files
             </p>
           </div>
-          {user && (
+          {user && hasConfig && (
             <FileUploader ownerId={user.$id} accountId={user.accountId} />
           )}
         </div>
+
+        {error && !error.includes('S3 configuration not found') && (
+          <div className="mb-6 p-4 rounded-lg border border-red/30 bg-red/10 shadow-drop-1">
+            <p className="body-2 text-red font-medium mb-2">Error: {error}</p>
+            <Button
+              onClick={() => router.push('/own-s3/setup')}
+              variant="outline"
+              className="button border border-red/30 bg-red/10 text-red hover:bg-red/20 shadow-drop-1"
+            >
+              Go to Setup Page
+            </Button>
+          </div>
+        )}
 
         {/* Storage Summary */}
         {totalSpace && (
@@ -141,11 +114,11 @@ const OwnS3Page = () => {
         <div className="mb-6 p-4 rounded-lg border border-blue/30 bg-blue/10">
           <p className="body-2 text-blue font-medium mb-2">What you can do:</p>
           <ul className="caption text-blue/80 space-y-1">
-            <li>• <strong className="text-blue">Upload files</strong> - Click the Upload button above</li>
-            <li>• <strong className="text-blue">View files</strong> - Browse all your files below</li>
-            <li>• <strong className="text-blue">Open files</strong> - Click on any file to open it</li>
-            <li>• <strong className="text-blue">Delete files</strong> - Use the actions menu (three dots) on any file</li>
-            <li>• <strong className="text-blue">Rename files</strong> - Use the actions menu to rename</li>
+            <li>• <strong className="text-blue font-semibold">Upload files</strong> - Click the Upload button above</li>
+            <li>• <strong className="text-blue font-semibold">View files</strong> - Browse all your files below</li>
+            <li>• <strong className="text-blue font-semibold">Open files</strong> - Click on any file to open it</li>
+            <li>• <strong className="text-blue font-semibold">Delete files</strong> - Use the actions menu (three dots) on any file</li>
+            <li>• <strong className="text-blue font-semibold">Rename files</strong> - Use the actions menu to rename</li>
           </ul>
         </div>
 
@@ -157,7 +130,7 @@ const OwnS3Page = () => {
           </div>
         ) : (
           <section className="file-list">
-            {files.documents.map((file: Models.Document) => (
+            {files.documents.map((file) => (
               <Card key={file.$id} file={file} />
             ))}
           </section>

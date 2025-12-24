@@ -1,0 +1,20 @@
+export interface File {
+  $id: string;
+  id?: string;
+  name: string;
+  type: string;
+  extension: string;
+  size: number;
+  url: string;
+  owner?: {
+    $id: string;
+    fullName?: string;
+  };
+  accountId?: string;
+  users?: string[];
+  bucketFileId?: string;
+  key?: string;
+  $createdAt: string;
+  $updatedAt: string;
+}
+

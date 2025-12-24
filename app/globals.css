@@ -319,6 +319,22 @@
   .file-card-details {
     @apply flex flex-col gap-2 text-light-100 !important;
   }
+  
+  /* Upload Button */
+  .uploader-button {
+    @apply bg-brand hover:bg-brand-100 text-white rounded-full px-4 h-[40px] shadow-drop-2 transition-all flex items-center gap-2 !important;
+  }
+  
+  /* Upload Preview */
+  .uploader-preview-list {
+    @apply mt-4 space-y-3 !important;
+  }
+  .uploader-preview-item {
+    @apply flex items-center justify-between p-3 rounded-lg bg-light-300 border border-light-300 !important;
+  }
+  .preview-item-name {
+    @apply text-[14px] leading-[20px] font-semibold mb-2 line-clamp-1 max-w-[300px] text-light-100 !important;
+  }
 
   /* Chart */
   .chart {

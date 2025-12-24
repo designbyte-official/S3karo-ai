@@ -11,8 +11,7 @@ import {
   getS3ViewUrl,
   S3File,
 } from "@/lib/s3/index";
-import { uploadFile as uploadFileAppwrite } from "./file.actions";
-import { revalidatePath } from "next/cache";
+// Removed Appwrite import - using only S3 now
 
 // Unified file upload
 export const uploadFile = async ({
@@ -112,8 +111,12 @@ export const getFiles = async ({
         // But if called from client, return empty (API handles it)
         return { documents: [], total: 0 };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('S3 list error:', error);
+      // Re-throw config errors so they can be handled by the UI
+      if (error?.message?.includes('S3 configuration not found')) {
+        throw error;
+      }
       return { documents: [], total: 0 };
     }
   } else {

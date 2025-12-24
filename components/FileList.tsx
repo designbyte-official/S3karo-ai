@@ -2,19 +2,18 @@
 
 import { useEffect, useState } from "react";
 import { getStorageMode } from "@/lib/s3/config";
-import { getFiles as getFilesAppwrite } from "@/lib/actions/file.actions";
 import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
 import { getCurrentUser } from "@/lib/actions/user.actions";
-import { Models } from "node-appwrite";
 import Card from "@/components/Card";
 import { FileType } from "@/types/index.d";
+import { File } from "@/types/file";
 
 interface FileListProps {
   types: FileType[];
   searchText?: string;
   sort?: string;
   initialFiles?: {
-    documents: Models.Document[];
+    documents: File[];
     total: number;
   };
   currentUser?: {
@@ -56,12 +55,8 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
           });
           setFiles(result);
         } else {
-          const result = await getFilesAppwrite({
-            types,
-            searchText,
-            sort,
-          });
-          setFiles(result);
+          // No Appwrite - return empty
+          setFiles({ documents: [], total: 0 });
         }
       } catch (error) {
         console.error('Error loading files:', error);
@@ -110,7 +105,7 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
 
   return (
     <section className="file-list">
-      {files.documents.map((file: Models.Document) => (
+      {files.documents.map((file) => (
         <Card key={file.$id} file={file} />
       ))}
     </section>

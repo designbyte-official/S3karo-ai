@@ -3,21 +3,20 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Models } from "node-appwrite";
 import ActionDropdown from "@/components/ActionDropdown";
 import { Chart } from "@/components/Chart";
 import { FormattedDateTime } from "@/components/FormattedDateTime";
 import { Thumbnail } from "@/components/Thumbnail";
 import { Separator } from "@/components/ui/separator";
-import { getFiles as getFilesAppwrite, getTotalSpaceUsed as getTotalSpaceUsedAppwrite } from "@/lib/actions/file.actions";
 import { getFiles as getFilesClient, getTotalSpaceUsed as getTotalSpaceUsedClient } from "@/lib/actions/file.actions.client";
 import { getStorageMode } from "@/lib/s3/config";
 import { getCurrentUser } from "@/lib/actions/user.actions";
 import { convertFileSize, getUsageSummary } from "@/lib/utils";
+import { File } from "@/types/file";
 
 interface DashboardClientProps {
   initialFiles?: {
-    documents: Models.Document[];
+    documents: File[];
     total: number;
   };
   initialTotalSpace?: any;
@@ -64,12 +63,9 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
           setFiles(filesData);
           setTotalSpace(spaceData);
         } else {
-          const [filesData, spaceData] = await Promise.all([
-            getFilesAppwrite({ types: [], limit: 10 }),
-            getTotalSpaceUsedAppwrite(),
-          ]);
-          setFiles(filesData);
-          setTotalSpace(spaceData);
+          // No Appwrite - return empty
+          setFiles({ documents: [], total: 0 });
+          setTotalSpace(null);
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -159,7 +155,7 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
           <p className="empty-list">Loading...</p>
         ) : files.documents.length > 0 ? (
           <ul className="mt-5 flex flex-col gap-5">
-            {files.documents.map((file: Models.Document) => (
+            {files.documents.map((file) => (
               <Link
                 href={file.url}
                 target="_blank"

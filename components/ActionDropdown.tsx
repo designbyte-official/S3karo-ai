@@ -18,15 +18,12 @@ import {
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Models } from "node-appwrite";
 import { actionsDropdownItems } from "@/constants";
 import Link from "next/link";
 import { constructDownloadUrl } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  deleteFile as deleteFileAppwrite,
-  renameFile as renameFileAppwrite,
   updateFileUsers,
 } from "@/lib/actions/file.actions";
 import {
@@ -37,8 +34,9 @@ import {
 import { getStorageMode } from "@/lib/s3/config";
 import { usePathname, useRouter } from "next/navigation";
 import { FileDetails, ShareInput } from "@/components/ActionsModalContent";
+import { File } from "@/types/file";
 
-const ActionDropdown = ({ file }: { file: Models.Document }) => {
+const ActionDropdown = ({ file }: { file: File }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [action, setAction] = useState<ActionType | null>(null);
@@ -71,7 +69,7 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
           const nameParts = name.split('.');
           const extension = nameParts.length > 1 ? nameParts.pop() || '' : file.extension || '';
           const nameWithoutExt = nameParts.join('.');
-          const ownerId = (file as any).owner || (file as any).accountId || '';
+          const ownerId = file.owner?.$id || file.accountId || '';
           success = await renameFileClient({
             fileId: file.$id,
             name: nameWithoutExt,
@@ -80,37 +78,21 @@ const ActionDropdown = ({ file }: { file: Models.Document }) => {
             ownerId,
             bucketFileId: file.bucketFileId,
           });
-        } else {
-          const nameParts = name.split('.');
-          const extension = nameParts.length > 1 ? nameParts.pop() || '' : file.extension || '';
-          const nameWithoutExt = nameParts.join('.');
-          success = await renameFileAppwrite({
-            fileId: file.$id,
-            name: nameWithoutExt,
-            extension: extension || file.extension,
-            path,
-          });
         }
       } else if (action.value === "share") {
-        // Share functionality only works with Platform S3 (database) or Appwrite
-        if (storageMode === 'platform-s3' || storageMode === 'appwrite') {
+        // Share functionality only works with Platform S3 (database)
+        if (storageMode === 'platform-s3') {
           success = await updateFileUsers({ fileId: file.$id, emails, path });
         } else {
           // Own S3 doesn't support sharing (no database)
           toast({
-            description: "File sharing requires Platform S3 (with database) or Appwrite mode",
+            description: "File sharing requires Platform S3 (with database)",
             className: "error-toast",
           });
         }
       } else if (action.value === "delete") {
         if (storageMode === 'own-s3' || storageMode === 'platform-s3') {
           success = await deleteFileClient({
-            fileId: file.$id,
-            bucketFileId: file.bucketFileId,
-            path,
-          });
-        } else {
-          success = await deleteFileAppwrite({
             fileId: file.$id,
             bucketFileId: file.bucketFileId,
             path,

@@ -79,18 +79,6 @@ export const getFiles = async ({
       documents: transformedFiles,
       total: transformedFiles.length,
     };
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Failed to fetch files:', response.status, errorText);
-      return { documents: [], total: 0 };
-    }
-
-    const data = await response.json();
-    return {
-      documents: data.documents || [],
-      total: data.total || 0,
-    };
   } catch (error) {
     console.error('Get files error:', error);
     return { documents: [], total: 0 };

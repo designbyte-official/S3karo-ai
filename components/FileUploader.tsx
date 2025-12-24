@@ -9,7 +9,6 @@ import Image from "next/image";
 import Thumbnail from "@/components/Thumbnail";
 import { MAX_FILE_SIZE } from "@/constants";
 import { useToast } from "@/hooks/use-toast";
-import { uploadFile as uploadFileAppwrite } from "@/lib/actions/file.actions";
 import { uploadFile } from "@/lib/actions/file.actions.client";
 import { getStorageMode } from "@/lib/s3/config";
 import { usePathname, useRouter } from "next/navigation";
@@ -49,7 +48,7 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
         }
 
         try {
-          if (storageMode === 's3') {
+          if (storageMode === 'own-s3' || storageMode === 'platform-s3') {
             // Use client-side S3 upload
             const uploadedFile = await uploadFile({ file, ownerId, accountId, path });
             if (uploadedFile) {
@@ -57,14 +56,6 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
                 prevFiles.filter((f) => f.name !== file.name),
               );
               router.refresh();
-            }
-          } else {
-            // Use Appwrite server action
-            const uploadedFile = await uploadFileAppwrite({ file, ownerId, accountId, path });
-            if (uploadedFile) {
-              setFiles((prevFiles) =>
-                prevFiles.filter((f) => f.name !== file.name),
-              );
             }
           }
         } catch (error) {
@@ -108,7 +99,7 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
       </Button>
       {files.length > 0 && (
         <ul className="uploader-preview-list">
-          <h4 className="h4 text-light-100">Uploading</h4>
+          <h4 className="text-[18px] leading-[20px] font-medium text-light-100">Uploading</h4>
 
           {files.map((file, index) => {
             const { type, extension } = getFileType(file.name);
@@ -142,6 +133,7 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
                   height={24}
                   alt="Remove"
                   onClick={(e) => handleRemoveFile(e, file.name)}
+                  className="cursor-pointer hover:opacity-70 transition-opacity"
                 />
               </li>
             );

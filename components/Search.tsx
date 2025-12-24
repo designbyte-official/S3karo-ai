@@ -5,20 +5,19 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { getFiles as getFilesAppwrite } from "@/lib/actions/file.actions";
 import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
 import { getStorageMode } from "@/lib/s3/config";
 import { getCurrentUser } from "@/lib/actions/user.actions";
-import { Models } from "node-appwrite";
 import Thumbnail from "@/components/Thumbnail";
 import FormattedDateTime from "@/components/FormattedDateTime";
 import { useDebounce } from "use-debounce";
+import { File } from "@/types/file";
 
 const Search = () => {
   const [query, setQuery] = useState("");
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("query") || "";
-  const [results, setResults] = useState<Models.Document[]>([]);
+  const [results, setResults] = useState<File[]>([]);
   const [open, setOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
@@ -51,15 +50,12 @@ const Search = () => {
           ownerId: user.$id,
           accountId: user.accountId,
         });
-      } else {
-        files = await getFilesAppwrite({ types: [], searchText: debouncedQuery });
+        setResults(files.documents);
+        setOpen(true);
       }
-      
-      setResults(files.documents);
-      setOpen(true);
     };
 
-    if (user || getStorageMode() === 'appwrite') {
+    if (user) {
       fetchFiles();
     }
   }, [debouncedQuery, user]);
@@ -70,7 +66,7 @@ const Search = () => {
     }
   }, [searchQuery]);
 
-  const handleClickItem = (file: Models.Document) => {
+  const handleClickItem = (file: File) => {
     setOpen(false);
     setResults([]);
 
