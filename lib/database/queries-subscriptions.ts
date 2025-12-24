@@ -1,4 +1,4 @@
-import { db } from './db';
+import { db, isDatabaseConfigured } from './db';
 import { subscriptions } from './schema';
 import { eq, and, gte } from 'drizzle-orm';
 import type { Subscription, NewSubscription } from './schema';
@@ -7,6 +7,9 @@ import type { Subscription, NewSubscription } from './schema';
  * Get active subscription for a user
  */
 export async function getActiveSubscription(userId: string): Promise<Subscription | null> {
+  if (!db || !isDatabaseConfigured()) {
+    return null;
+  }
   try {
     const result = await db
       .select()
@@ -45,6 +48,9 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
  * Check if user has platform S3 access
  */
 export async function hasPlatformAccess(userId: string): Promise<boolean> {
+  if (!isDatabaseConfigured()) {
+    return false;
+  }
   const subscription = await getActiveSubscription(userId);
   if (!subscription) return false;
   

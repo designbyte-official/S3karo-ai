@@ -4,6 +4,7 @@ import Image from "next/image";
 import Search from "@/components/Search";
 import FileUploader from "@/components/FileUploader";
 import StorageModeToggle from "@/components/StorageModeToggle";
+import DatabaseStatus from "@/components/DatabaseStatus";
 import { signOutUser } from "@/lib/actions/user.actions";
 
 const Header = ({
@@ -17,6 +18,7 @@ const Header = ({
     <header className="header">
       <Search />
       <div className="header-wrapper">
+        <DatabaseStatus />
         <StorageModeToggle />
         <FileUploader ownerId={userId} accountId={accountId} />
         <form

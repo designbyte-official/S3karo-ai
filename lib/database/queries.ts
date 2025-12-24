@@ -1,20 +1,46 @@
 import { eq, and, ilike, inArray, desc, asc, sql } from "drizzle-orm";
-import { db } from "./db";
+import { db, isDatabaseConfigured } from "./db";
 import { users, files, type User, type NewUser, type File, type NewFile } from "./schema";
+
+// Helper to check database before queries
+const requireDatabase = () => {
+  if (!db || !isDatabaseConfigured()) {
+    throw new Error("Database not configured. Please add DATABASE_URL to .env.local");
+  }
+  return db;
+};
 
 // User queries
 export async function getUserById(userId: string): Promise<User | null> {
-  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-  return result[0] || null;
+  if (!isDatabaseConfigured()) {
+    return null;
+  }
+  try {
+    const database = requireDatabase();
+    const result = await database.select().from(users).where(eq(users.id, userId)).limit(1);
+    return result[0] || null;
+  } catch (error) {
+    console.warn("Database query failed:", error);
+    return null;
+  }
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.email, email.toLowerCase()))
-    .limit(1);
-  return result[0] || null;
+  if (!isDatabaseConfigured()) {
+    return null;
+  }
+  try {
+    const database = requireDatabase();
+    const result = await database
+      .select()
+      .from(users)
+      .where(eq(users.email, email.toLowerCase()))
+      .limit(1);
+    return result[0] || null;
+  } catch (error) {
+    console.warn("Database query failed:", error);
+    return null;
+  }
 }
 
 export async function createUser(data: {
@@ -25,7 +51,8 @@ export async function createUser(data: {
   verificationToken?: string;
   verificationTokenExpiry?: Date;
 }): Promise<User> {
-  const result = await db
+  const database = requireDatabase();
+  const result = await database
     .insert(users)
     .values({
       email: data.email.toLowerCase(),
@@ -42,7 +69,12 @@ export async function createUser(data: {
 
 // Verify user email
 export async function verifyUserEmail(token: string): Promise<User | null> {
-  const result = await db
+  if (!isDatabaseConfigured()) {
+    return null;
+  }
+  try {
+    const database = requireDatabase();
+    const result = await database
     .select()
     .from(users)
     .where(eq(users.verificationToken, token))
@@ -57,17 +89,21 @@ export async function verifyUserEmail(token: string): Promise<User | null> {
   }
   
   // Update user to verified
-  const updated = await db
-    .update(users)
-    .set({
-      emailVerified: "true",
-      verificationToken: null,
-      verificationTokenExpiry: null,
-    })
-    .where(eq(users.id, user.id))
-    .returning();
-  
-  return updated[0] || null;
+    const updated = await database
+      .update(users)
+      .set({
+        emailVerified: "true",
+        verificationToken: null,
+        verificationTokenExpiry: null,
+      })
+      .where(eq(users.id, user.id))
+      .returning();
+    
+    return updated[0] || null;
+  } catch (error) {
+    console.warn("Database query failed:", error);
+    return null;
+  }
 }
 
 // Update verification token
@@ -95,19 +131,24 @@ export async function getFilesForUser(
     limit?: number;
   }
 ): Promise<File[]> {
-  // Build conditions array
-  const conditions = [eq(files.userId, userId)];
-
-  if (filters?.types && filters.types.length > 0) {
-    conditions.push(inArray(files.type, filters.types));
+  if (!isDatabaseConfigured()) {
+    return [];
   }
+  try {
+    const database = requireDatabase();
+    // Build conditions array
+    const conditions = [eq(files.userId, userId)];
 
-  if (filters?.searchText) {
-    conditions.push(ilike(files.name, `%${filters.searchText}%`));
-  }
+    if (filters?.types && filters.types.length > 0) {
+      conditions.push(inArray(files.type, filters.types));
+    }
 
-  // Build base query
-  let query = db.select().from(files).where(and(...conditions));
+    if (filters?.searchText) {
+      conditions.push(ilike(files.name, `%${filters.searchText}%`));
+    }
+
+    // Build base query
+    let query = database.select().from(files).where(and(...conditions));
 
   // Apply sorting
   if (filters?.sort) {
@@ -137,7 +178,12 @@ export async function getFilesForUser(
     query = query.limit(filters.limit);
   }
 
-  return await query;
+  const result = await query;
+  return result;
+  } catch (error) {
+    console.warn("Database query failed:", error);
+    return [];
+  }
 }
 
 export async function createFile(data: {

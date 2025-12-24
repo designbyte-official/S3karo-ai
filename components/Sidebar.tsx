@@ -5,6 +5,7 @@ import Image from "next/image";
 import { navItems } from "@/constants";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import DatabaseStatus from "@/components/DatabaseStatus";
 
 interface Props {
   fullName: string;
@@ -60,6 +61,11 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
             </Link>
           ))}
         </ul>
+        
+        {/* Database Status in Sidebar */}
+        <div className="mt-4 space-y-2">
+          <DatabaseStatus variant="sidebar" />
+        </div>
       </nav>
 
       <Image
