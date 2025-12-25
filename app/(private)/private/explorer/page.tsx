@@ -34,11 +34,13 @@ const OwnS3Client = () => {
     setSubPath
   } = useOwnS3(searchText, sort);
 
+  /* Redirect removed as per user request
   useEffect(() => {
     if (!loading && user && !hasConfig) {
       router.push('/private/settings');
     }
   }, [hasConfig, loading, user, router]);
+  */
 
   if (loading && !files.length) {
     return (
@@ -58,9 +60,30 @@ const OwnS3Client = () => {
     );
   }
 
-  if (!hasConfig) return null;
-
   const totalUsedFormatted = totalSpace ? convertFileSize(totalSpace.used) : "0 Bytes";
+
+  if (!hasConfig) {
+    return (
+      <div className="page-container !items-start !max-w-full lg:px-10">
+        <header className="flex flex-col gap-6 mb-8 w-full">
+          <h1 className="h1 capitalize">Own S3 Explorer</h1>
+        </header>
+        <div className="w-full p-6 rounded-[20px] bg-red/5 border border-red/20 flex flex-col items-center justify-center text-center gap-4 shadow-drop-1">
+          <div className="p-3 bg-red/10 rounded-full text-3xl">⚠️</div>
+          <h3 className="h3 text-red">Configuration Required</h3>
+          <p className="body-1 text-light-100 max-w-md">
+            To view and manage your files, you need to configure your S3 bucket credentials first.
+          </p>
+          <Button
+            onClick={() => router.push('/private/settings')}
+            className="shad-submit-btn px-8"
+          >
+            Go to Settings
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container !items-start !max-w-full lg:px-10">
