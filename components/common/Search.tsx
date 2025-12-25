@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 
 import Image from "next/image";
+import { Search as SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
@@ -19,32 +20,37 @@ interface Props {
 }
 
 const Search = ({ mode = "managed" }: Props) => {
-  const [query, setQuery] = useState("");
   const searchParams = useSearchParams();
   const searchQuery = searchParams.get("query") || "";
+  const [query, setQuery] = useState(searchQuery);
   const [results, setResults] = useState<File[]>([]);
   const [open, setOpen] = useState(false);
   const user = useAuthStore((state: any) => state.user);
   const router = useRouter();
   const path = usePathname();
-  const [debouncedQuery] = useDebounce(query, 300);
+  const [debouncedQuery] = useDebounce(query, 500);
 
+  // Sync query from URL only on mount or when URL changes externally
   useEffect(() => {
-    const updateUrl = () => {
+    if (searchQuery !== query && !query) {
+      setQuery(searchQuery);
+    }
+  }, [searchQuery]);
+
+  // Update URL only after debounce completes
+  useEffect(() => {
+    if (debouncedQuery !== searchQuery) {
       const params = new URLSearchParams(searchParams.toString());
       if (debouncedQuery) {
         params.set("query", debouncedQuery);
       } else {
         params.delete("query");
       }
-      router.push(`${path}?${params.toString()}`);
-    };
-
-    if (debouncedQuery !== searchQuery) {
-      updateUrl();
+      router.replace(`${path}?${params.toString()}`, { scroll: false });
     }
-  }, [debouncedQuery, path, router, searchParams, searchQuery]);
+  }, [debouncedQuery]);
 
+  // Fetch search results
   useEffect(() => {
     const fetchFiles = async () => {
       if (debouncedQuery.length === 0) {
@@ -88,31 +94,24 @@ const Search = ({ mode = "managed" }: Props) => {
     }
   }, [debouncedQuery, user, mode]);
 
-  useEffect(() => {
-    if (!searchQuery) {
-      setQuery("");
-    }
-  }, [searchQuery]);
-
   const handleClickItem = (file: File) => {
     setOpen(false);
     setResults([]);
 
-    const base = mode === 'private' ? '/private/explorer' : '';
+    if (mode === 'private') {
+      router.push(`/private/explorer?query=${file.name}`);
+      return;
+    }
+
     router.push(
-      `${base}/${file.type === "video" || file.type === "audio" ? "media" : file.type + "s"}?query=${debouncedQuery}`,
+      `/${file.type === "video" || file.type === "audio" ? "media" : file.type + "s"}?query=${debouncedQuery}`,
     );
   };
 
   return (
     <div className="search">
-      <div className="search-input-wrapper">
-        <Image
-          src="/assets/icons/search.svg"
-          alt="Search"
-          width={24}
-          height={24}
-        />
+      <div className="search-input-wrapper !bg-light-300">
+        <SearchIcon size={20} className="text-light-200" />
         <Input
           value={query}
           placeholder="Search..."
@@ -120,7 +119,7 @@ const Search = ({ mode = "managed" }: Props) => {
           onChange={(e) => setQuery(e.target.value)}
         />
 
-        {open && (
+        {open && mode !== 'private' && (
           <ul className="search-result">
             {results.length > 0 ? (
               results.map((file) => (

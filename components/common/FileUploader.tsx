@@ -17,9 +17,10 @@ interface Props {
     accountId: string;
     className?: string;
     mode?: "managed" | "private";
+    path?: string;
 }
 
-const FileUploader = ({ ownerId, accountId, className, mode = "managed" }: Props) => {
+const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: uploadPath = "" }: Props) => {
     const [files, setFiles] = useState<File[]>([]);
     const [isUploading, setIsUploading] = useState(false);
     const { toast } = useToast();
@@ -62,7 +63,7 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed" }: Props
                         file,
                         ownerId,
                         accountId,
-                        path: "", // Root for now
+                        path: uploadPath,
                     });
                 } else {
                     // Need to implement uploadFile in platformStorageService or use an action

@@ -58,7 +58,7 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     queryFn: async () => {
       const config = await s3ConfigService.getConfig(user!.$id);
       if (!config) throw new Error("No S3 config");
-      return s3ExplorerService.getBucketStats(config, `${user!.$id}/${user!.accountId}/`);
+      return s3ExplorerService.getBucketStats(config, ""); // Stats for entire bucket access
     },
     enabled: !!(user && hasConfig),
   });
@@ -69,8 +69,7 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
   };
 
   const navigateToFolder = (path: string) => {
-    const relativePath = path.replace(`${user?.$id}/${user?.accountId}/`, '');
-    setSubPath(relativePath);
+    setSubPath(path);
   };
 
   const navigateBack = () => {
@@ -97,6 +96,8 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
       if (!config) throw new Error("No config");
       await s3ExplorerService.createFolder({
         config,
+        ownerId: user!.$id,
+        accountId: user!.accountId,
         name,
         path: subPath
       });

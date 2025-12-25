@@ -40,7 +40,7 @@ export const DashboardLayout = ({
     const usageSummary = totalSpace.document ? getUsageSummary(totalSpace) : [];
 
     return (
-        <div className={totalSpace?.all !== undefined ? "dashboard-container" : "page-container !items-start"}>
+        <div className={totalSpace?.all !== undefined ? "dashboard-container" : "w-full"}>
             {totalSpace?.all !== undefined && (
                 <section>
                     <StorageChart used={totalSpace.used} total={totalSpace.all} variant={variant} />
@@ -83,7 +83,7 @@ export const DashboardLayout = ({
                 {isLoading ? (
                     <p className="body-1 mt-10 text-center text-light-200">Loading...</p>
                 ) : files.length > 0 ? (
-                    <FileList files={files} currentUser={currentUser} onFolderClick={onFolderClick} view={"list"} />
+                    <FileList files={files} currentUser={currentUser} onFolderClick={onFolderClick} view={view} />
                 ) : (
                     <p className="empty-list">No files uploaded yet</p>
                 )}

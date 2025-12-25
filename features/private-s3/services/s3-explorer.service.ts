@@ -32,13 +32,15 @@ export const s3ExplorerService = {
         sort?: string;
     }): Promise<{ documents: File[]; total: number }> {
         const client = getS3Client(params.config);
+
+        // REVERTED: Use subPath directly to restore visibility for existing files
         const prefix = params.subPath ? (params.subPath.endsWith('/') ? params.subPath : `${params.subPath}/`) : "";
 
         try {
             const command = new ListObjectsV2Command({
                 Bucket: params.config.bucket,
-                Prefix: prefix,
-                Delimiter: "/",
+                Prefix: params.searchText ? "" : prefix, // Recursive search from root if searchText target
+                Delimiter: params.searchText ? undefined : "/",
             });
 
             const response: ListObjectsV2CommandOutput = await client.send(command);
@@ -46,14 +48,14 @@ export const s3ExplorerService = {
             const files: File[] = [];
 
             // Process Folders (CommonPrefixes)
-            if (response.CommonPrefixes) {
-                response.CommonPrefixes.forEach((prefix) => {
-                    const name = prefix.Prefix!.replace(response.Prefix!, "").replace("/", "");
+            if (response.CommonPrefixes && !params.searchText) {
+                response.CommonPrefixes.forEach((p) => {
+                    const name = p.Prefix!.replace(prefix, "").replace("/", "");
                     if (!name) return;
 
                     files.push({
-                        $id: prefix.Prefix!,
-                        bucketFileId: prefix.Prefix!,
+                        $id: p.Prefix!,
+                        bucketFileId: p.Prefix!,
                         name: name,
                         type: "folder",
                         size: 0,
@@ -62,7 +64,7 @@ export const s3ExplorerService = {
                         users: [],
                         accountId: params.accountId,
                         owner: {
-                            $id: "user-me",
+                            $id: params.ownerId,
                             fullName: "Me",
                         },
                         $createdAt: new Date().toISOString(),
@@ -74,24 +76,31 @@ export const s3ExplorerService = {
             // Process Files (Contents)
             if (response.Contents) {
                 response.Contents.forEach((item) => {
-                    if (item.Key === response.Prefix) return; // Skip the folder object itself
-                    const name = item.Key!.replace(response.Prefix!, "");
+                    if (item.Key === prefix || !item.Key) return;
 
-                    // Correctly determine type and extension
+                    const name = item.Key.split('/').pop() || "";
+                    if (!name) return;
+
                     const { type, extension } = getFileType(name);
+
+                    const baseUrl = params.config.endpoint
+                        ? params.config.endpoint.endsWith('/') ? params.config.endpoint : `${params.config.endpoint}/`
+                        : `https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com/`;
+
+                    const url = `${baseUrl}${item.Key}`;
 
                     files.push({
                         $id: item.Key!,
                         bucketFileId: item.Key!,
                         name: name,
-                        type: type, // This is key! 'image', 'video', 'document' etc.
+                        type: type,
                         size: item.Size || 0,
                         extension: extension,
-                        url: `https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com/${item.Key}`,
+                        url: url,
                         users: [],
                         accountId: params.accountId,
                         owner: {
-                            $id: "user-me",
+                            $id: params.ownerId,
                             fullName: "Me",
                         },
                         $createdAt: item.LastModified?.toISOString() || new Date().toISOString(),
@@ -100,7 +109,6 @@ export const s3ExplorerService = {
                 });
             }
 
-            // Client-side Search/Sort
             let resultFiles = files;
             if (params.searchText) {
                 const lowerQuery = params.searchText.toLowerCase();
@@ -115,15 +123,43 @@ export const s3ExplorerService = {
         }
     },
 
+    async getBucketStats(config: S3Config, prefix: string = "") {
+        const client = getS3Client(config);
+        try {
+            const command = new ListObjectsV2Command({
+                Bucket: config.bucket,
+                Prefix: prefix,
+            });
+            const response = await client.send(command);
+
+            let totalSize = 0;
+            if (response.Contents) {
+                totalSize = response.Contents.reduce((acc, item) => acc + (item.Size || 0), 0);
+            }
+
+            return {
+                used: totalSize,
+                all: undefined, // Total bucket capacity is usually not available via API
+            };
+        } catch (error) {
+            console.error("S3 Stats Error", error);
+            return { used: 0, all: undefined };
+        }
+    },
+
     async uploadFile(params: {
         config: S3Config;
-        file: globalThis.File; // Browser File object
+        file: globalThis.File;
         ownerId: string;
         accountId: string;
         path: string;
     }) {
         const client = getS3Client(params.config);
-        const key = params.path ? `${params.path}${params.file.name}` : params.file.name;
+
+        let path = params.path || "";
+        if (path && !path.endsWith('/')) path += '/';
+
+        const key = `${path}${params.file.name}`;
 
         try {
             const command = new PutObjectCommand({
@@ -160,13 +196,18 @@ export const s3ExplorerService = {
 
     async createFolder(params: {
         config: S3Config;
+        ownerId: string;
+        accountId: string;
         name: string;
         path: string;
     }) {
         const client = getS3Client(params.config);
-        const folderKey = params.path
-            ? `${params.path}${params.name.endsWith('/') ? params.name : params.name + '/'}`
-            : `${params.name.endsWith('/') ? params.name : params.name + '/'}`;
+
+        let path = params.path || "";
+        if (path && !path.endsWith('/')) path += '/';
+
+        const folderName = params.name.endsWith('/') ? params.name : `${params.name}/`;
+        const folderKey = `${path}${folderName}`;
 
         try {
             const command = new PutObjectCommand({
@@ -180,10 +221,4 @@ export const s3ExplorerService = {
             throw error;
         }
     },
-
-    async getBucketStats(config: S3Config, prefix: string) {
-        // Stats are expensive in S3 (need to list all). 
-        // Returning 0 used and undefined total to hide the chart in Private mode.
-        return { used: 0, all: undefined };
-    }
 };

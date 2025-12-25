@@ -27,7 +27,7 @@ const OwnS3Page = () => {
   return <OwnS3Client />;
 };
 
-import { LayoutGrid, List as ListIcon } from "lucide-react";
+import { LayoutGrid, List as ListIcon, Plus, FolderPlus, Search as SearchIcon, ChevronRight } from "lucide-react";
 
 // ... (OwnS3Client component definition)
 
@@ -111,44 +111,49 @@ const OwnS3Client = () => {
           </div>
           <div className="flex items-center gap-3">
             <NewFolderDialog onCreate={createFolder} />
-            <FileUploader ownerId={user.$id} accountId={user.accountId} mode="private" />
+            <FileUploader ownerId={user.$id} accountId={user.accountId} mode="private" path={subPath} />
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-col xl:flex-row items-center justify-between gap-6 bg-white p-5 rounded-[20px] shadow-drop-1 border border-light-300 w-full">
           {/* Breadcrumbs / Navigation */}
-          <div className="flex items-center gap-2 overflow-x-auto py-2 no-scrollbar bg-white/5 px-4 rounded-xl border border-white/5 flex-1 min-w-0">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0 max-w-full xl:max-w-[50%]">
             <Button
               variant="ghost"
-              className="h-8 px-2 text-light-200 hover:text-white hover:bg-white/10"
+              className="h-10 px-4 text-light-100 hover:bg-light-300 rounded-xl flex items-center gap-2 shrink-0"
               onClick={() => setSubPath("")}
             >
-              Root
+              <span className={!subPath ? "font-bold text-brand" : "font-medium"}>Root</span>
             </Button>
             {subPath.split('/').filter(Boolean).map((part, i, arr) => (
-              <ReactFragment key={i}>
-                <span className="text-light-200 opacity-50">/</span>
+              <React.Fragment key={i}>
+                <ChevronRight size={16} className="text-light-200 shrink-0 opacity-50" />
                 <Button
                   variant="ghost"
-                  className="h-8 px-2 text-light-200 hover:text-white hover:bg-white/10"
+                  className="h-10 px-4 text-light-100 hover:bg-light-300 rounded-xl shrink-0"
                   onClick={() => setSubPath(arr.slice(0, i + 1).join('/'))}
                 >
-                  {part}
+                  <span className={i === arr.length - 1 ? "font-bold text-brand" : "font-medium"}>{part}</span>
                 </Button>
-              </ReactFragment>
+              </React.Fragment>
             ))}
           </div>
 
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <Search mode="private" />
-            <Sort />
+          <div className="flex items-center gap-4 w-full xl:w-auto justify-end">
+            <div className="flex-1 sm:flex-none sm:w-80">
+              <Search mode="private" />
+            </div>
+
+            <div className="hidden sm:block">
+              <Sort />
+            </div>
 
             {/* View Toggle */}
-            <div className="flex items-center bg-white/5 rounded-xl border border-white/10 p-1">
+            <div className="flex items-center bg-light-300 rounded-2xl p-1 shrink-0 shadow-inner">
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-9 w-9 rounded-lg ${view === 'grid' ? 'bg-brand text-white' : 'text-light-200 hover:bg-white/10'}`}
+                className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'grid' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
                 onClick={() => setView('grid')}
               >
                 <LayoutGrid size={18} />
@@ -156,7 +161,7 @@ const OwnS3Client = () => {
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-9 w-9 rounded-lg ${view === 'list' ? 'bg-brand text-white' : 'text-light-200 hover:bg-white/10'}`}
+                className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'list' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
                 onClick={() => setView('list')}
               >
                 <ListIcon size={18} />
@@ -204,9 +209,9 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="shad-button-primary h-[52px] gap-2">
-          <Image src="/assets/icons/add.svg" alt="add" width={24} height={24} />
-          <span className="hidden sm:block">New Folder</span>
+        <Button className="shad-button-primary h-[52px] gap-2 px-6 bg-dark-100 hover:bg-dark-200 text-white rounded-full transition-all shadow-drop-1">
+          <FolderPlus size={20} />
+          <span className="hidden sm:block font-medium">New Folder</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="shad-dialog button">
