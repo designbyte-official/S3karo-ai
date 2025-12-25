@@ -117,21 +117,29 @@ export async function POST(request: NextRequest) {
     const storageKey = `managed/${user.id}/${cleanPath}${Date.now()}-${file.name}`;
 
     try {
+      console.log(`Attempting S3 upload to bucket: ${bucket}, key: ${storageKey}`);
       await client.send(new PutObjectCommand({
         Bucket: bucket,
         Key: storageKey,
         Body: buffer,
         ContentType: file.type,
       }));
+      console.log("S3 upload successful");
     } catch (s3Error: any) {
-      console.error("S3 Upload Error:", s3Error);
+      console.error("S3 Upload Error Detail:", {
+        message: s3Error.message,
+        code: s3Error.code,
+        requestId: s3Error.$metadata?.requestId,
+        bucket,
+        region: process.env.AWS_REGION
+      });
       return NextResponse.json(
-        { error: 'Failed to upload to storage', details: s3Error.message },
+        { error: 'Failed to upload to storage', details: s3Error.message, code: s3Error.name },
         { status: 500 }
       );
     }
 
-    const url = `https://${bucket}.s3.${process.env.S3_REGION}.amazonaws.com/${storageKey}`;
+    const url = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${storageKey}`;
     const { type, extension } = getFileType(file.name);
 
     // Create file using Drizzle

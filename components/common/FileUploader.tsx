@@ -79,7 +79,7 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed" }: Props
 
                     if (!res.ok) {
                         const errorData = await res.json();
-                        throw new Error(errorData.error || "Upload failed");
+                        throw new Error(errorData.details || errorData.error || "Upload failed");
                     }
                 }
 
