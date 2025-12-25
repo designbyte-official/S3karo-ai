@@ -10,6 +10,9 @@ import {
     GetObjectCommand,
     ListObjectsV2CommandOutput
 } from "@aws-sdk/client-s3";
+import { handleS3Error, S3Error } from "../utils/errors";
+import { validateFileName, validatePath, validateFileSize, validateS3Config, sanitizeFileName, normalizePath } from "../utils/validation";
+import { withRetry } from "../utils/retry";
 
 /**
  * Normalizes a base URL to always end with a trailing slash
@@ -109,9 +112,15 @@ const constructFileUrl = (baseUrl: string, fileKey: string): string => {
     }
 };
 
-const getS3Client = (config: S3Config) => {
-    // IMPORTANT: Only use 'endpoint' for S3 API operations (e.g., MinIO)
-    // NEVER use 'cdnUrl' here - it's only for viewing files, not API operations
+/**
+ * Creates an S3 client with validated configuration
+ * IMPORTANT: Only use 'endpoint' for S3 API operations (e.g., MinIO)
+ * NEVER use 'cdnUrl' here - it's only for viewing files, not API operations
+ */
+const getS3Client = (config: S3Config): S3Client => {
+    // Validate config before creating client
+    validateS3Config(config);
+    
     return new S3Client({
         region: config.region,
         credentials: {
@@ -120,10 +129,17 @@ const getS3Client = (config: S3Config) => {
         },
         endpoint: config.endpoint || undefined, // Only S3 API endpoint, NOT cdnUrl
         forcePathStyle: !!config.endpoint, // Needed for MinIO/Custom endpoints
+        // Add request timeout
+        requestHandler: {
+            requestTimeout: 30000, // 30 seconds
+        },
     });
 };
 
 export const s3ExplorerService = {
+    /**
+     * Lists items in S3 bucket with validation and error handling
+     */
     async listItems(params: {
         config: S3Config;
         ownerId: string;
@@ -131,20 +147,31 @@ export const s3ExplorerService = {
         subPath?: string;
         searchText?: string;
         sort?: string;
-    }): Promise<{ documents: File[]; total: number }> {
-        const client = getS3Client(params.config);
+        limit?: number;
+        continuationToken?: string;
+    }): Promise<{ documents: File[]; total: number; continuationToken?: string }> {
+        // Validate inputs
+        if (params.subPath) {
+            validatePath(params.subPath);
+        }
 
-        // REVERTED: Use subPath directly to restore visibility for existing files
-        const prefix = params.subPath ? (params.subPath.endsWith('/') ? params.subPath : `${params.subPath}/`) : "";
+        return withRetry(async () => {
+            const client = getS3Client(params.config);
 
-        try {
-            const command = new ListObjectsV2Command({
-                Bucket: params.config.bucket,
-                Prefix: params.searchText ? "" : prefix, // Recursive search from root if searchText target
-                Delimiter: params.searchText ? undefined : "/",
-            });
+            // Normalize and validate path
+            const normalizedPath = params.subPath ? normalizePath(params.subPath) : "";
+            const prefix = normalizedPath ? `${normalizedPath}/` : "";
 
-            const response: ListObjectsV2CommandOutput = await client.send(command);
+            try {
+                const command = new ListObjectsV2Command({
+                    Bucket: params.config.bucket,
+                    Prefix: params.searchText ? "" : prefix, // Recursive search from root if searchText
+                    Delimiter: params.searchText ? undefined : "/",
+                    MaxKeys: params.limit || 1000, // Default limit
+                    ContinuationToken: params.continuationToken,
+                });
+
+                const response: ListObjectsV2CommandOutput = await client.send(command);
 
             const files: File[] = [];
 
@@ -221,95 +248,183 @@ export const s3ExplorerService = {
                 });
             }
 
-            let resultFiles = files;
-            if (params.searchText) {
-                const lowerQuery = params.searchText.toLowerCase();
-                resultFiles = resultFiles.filter(f => f.name.toLowerCase().includes(lowerQuery));
+                let resultFiles = files;
+                if (params.searchText) {
+                    const lowerQuery = params.searchText.toLowerCase().trim();
+                    resultFiles = resultFiles.filter(f => f.name.toLowerCase().includes(lowerQuery));
+                }
+
+                // Apply sorting if provided
+                if (params.sort) {
+                    const [sortBy, order] = params.sort.split('-');
+                    const orderMultiplier = order === 'asc' ? 1 : -1;
+                    
+                    resultFiles.sort((a, b) => {
+                        let comparison = 0;
+                        switch (sortBy) {
+                            case 'name':
+                                comparison = a.name.localeCompare(b.name);
+                                break;
+                            case 'size':
+                                comparison = a.size - b.size;
+                                break;
+                            case '$createdAt':
+                            default:
+                                comparison = new Date(a.$createdAt).getTime() - new Date(b.$createdAt).getTime();
+                                break;
+                        }
+                        return comparison * orderMultiplier;
+                    });
+                }
+
+                return {
+                    documents: resultFiles,
+                    total: resultFiles.length,
+                    continuationToken: response.NextContinuationToken,
+                };
+            } catch (error) {
+                throw handleS3Error(error, 'List files');
             }
-
-            return { documents: resultFiles, total: resultFiles.length };
-
-        } catch (error) {
-            console.error("S3 List Error", error);
-            return { documents: [], total: 0 };
-        }
+        }, {
+            maxRetries: 2, // Fewer retries for list operations
+        });
     },
 
+    /**
+     * Gets bucket statistics with error handling
+     */
     async getBucketStats(config: S3Config, prefix: string = "") {
-        const client = getS3Client(config);
-        try {
-            const command = new ListObjectsV2Command({
-                Bucket: config.bucket,
-                Prefix: prefix,
-            });
-            const response = await client.send(command);
-
-            let totalSize = 0;
-            if (response.Contents) {
-                totalSize = response.Contents.reduce((acc, item) => acc + (item.Size || 0), 0);
-            }
-
-            return {
-                used: totalSize,
-                all: undefined, // Total bucket capacity is usually not available via API
-            };
-        } catch (error) {
-            console.error("S3 Stats Error", error);
-            return { used: 0, all: undefined };
+        if (prefix) {
+            validatePath(prefix);
         }
+
+        return withRetry(async () => {
+            const client = getS3Client(config);
+            
+            try {
+                const normalizedPrefix = prefix ? normalizePath(prefix) : "";
+                const command = new ListObjectsV2Command({
+                    Bucket: config.bucket,
+                    Prefix: normalizedPrefix ? `${normalizedPrefix}/` : "",
+                });
+                const response = await client.send(command);
+
+                let totalSize = 0;
+                let fileCount = 0;
+                
+                if (response.Contents) {
+                    totalSize = response.Contents.reduce((acc, item) => {
+                        if (item.Size) {
+                            fileCount++;
+                            return acc + item.Size;
+                        }
+                        return acc;
+                    }, 0);
+                }
+
+                return {
+                    used: totalSize,
+                    fileCount,
+                    all: undefined, // Total bucket capacity is usually not available via API
+                };
+            } catch (error) {
+                throw handleS3Error(error, 'Get bucket stats');
+            }
+        });
     },
 
+    /**
+     * Uploads a file to S3 with validation and error handling
+     */
     async uploadFile(params: {
         config: S3Config;
         file: globalThis.File;
         ownerId: string;
         accountId: string;
         path: string;
+        onProgress?: (progress: number) => void;
     }) {
-        const client = getS3Client(params.config);
-
-        let path = params.path || "";
-        if (path && !path.endsWith('/')) path += '/';
-
-        const key = `${path}${params.file.name}`;
-
-        try {
-            // Convert File to ArrayBuffer for AWS SDK
-            const arrayBuffer = await params.file.arrayBuffer();
-            const buffer = Buffer.from(arrayBuffer);
-
-            const command = new PutObjectCommand({
-                Bucket: params.config.bucket,
-                Key: key,
-                Body: buffer,
-                ContentType: params.file.type,
-            });
-
-            await client.send(command);
-            return { success: true };
-        } catch (error) {
-            console.error("S3 Upload Error", error);
-            throw error;
+        // Validate inputs
+        validateFileSize(params.file.size);
+        validateFileName(params.file.name);
+        if (params.path) {
+            validatePath(params.path);
         }
+
+        return withRetry(async () => {
+            const client = getS3Client(params.config);
+
+            // Normalize and sanitize
+            const normalizedPath = params.path ? normalizePath(params.path) : "";
+            const sanitizedName = sanitizeFileName(params.file.name);
+            const key = normalizedPath ? `${normalizedPath}/${sanitizedName}` : sanitizedName;
+
+            try {
+                // Report progress start
+                params.onProgress?.(0);
+
+                // Convert File to ArrayBuffer for AWS SDK
+                const arrayBuffer = await params.file.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+
+                // Report progress (50% - data loaded)
+                params.onProgress?.(50);
+
+                const command = new PutObjectCommand({
+                    Bucket: params.config.bucket,
+                    Key: key,
+                    Body: buffer,
+                    ContentType: params.file.type || 'application/octet-stream',
+                    Metadata: {
+                        'original-name': params.file.name,
+                        'uploaded-by': params.ownerId,
+                    },
+                });
+
+                await client.send(command);
+
+                // Report progress complete
+                params.onProgress?.(100);
+
+                return { success: true, key };
+            } catch (error) {
+                throw handleS3Error(error, 'Upload file');
+            }
+        }, {
+            maxRetries: 2, // Fewer retries for uploads to avoid duplicate uploads
+        });
     },
 
+    /**
+     * Deletes an item from S3 with validation
+     */
     async deleteItem(params: {
         config: S3Config;
         key: string;
     }) {
-        const client = getS3Client(params.config);
-        try {
-            const command = new DeleteObjectCommand({
-                Bucket: params.config.bucket,
-                Key: params.key,
-            });
-            await client.send(command);
-        } catch (error) {
-            console.error("S3 Delete Error", error);
-            throw error;
+        if (!params.key || typeof params.key !== 'string') {
+            throw new S3Error('Key is required for deletion', 'VALIDATION_ERROR');
         }
+
+        return withRetry(async () => {
+            const client = getS3Client(params.config);
+            
+            try {
+                const command = new DeleteObjectCommand({
+                    Bucket: params.config.bucket,
+                    Key: params.key,
+                });
+                await client.send(command);
+                return { success: true };
+            } catch (error) {
+                throw handleS3Error(error, 'Delete item');
+            }
+        });
     },
 
+    /**
+     * Creates a folder in S3 with validation
+     */
     async createFolder(params: {
         config: S3Config;
         ownerId: string;
@@ -317,89 +432,146 @@ export const s3ExplorerService = {
         name: string;
         path: string;
     }) {
-        const client = getS3Client(params.config);
-
-        let path = params.path || "";
-        if (path && !path.endsWith('/')) path += '/';
-
-        const folderName = params.name.endsWith('/') ? params.name : `${params.name}/`;
-        const folderKey = `${path}${folderName}`;
-
-        try {
-            const command = new PutObjectCommand({
-                Bucket: params.config.bucket,
-                Key: folderKey,
-            });
-            await client.send(command);
-            return { success: true };
-        } catch (error) {
-            console.error("S3 Create Folder Error", error);
-            throw error;
+        // Validate folder name
+        const folderName = params.name.trim();
+        if (!folderName) {
+            throw new S3Error('Folder name is required', 'VALIDATION_ERROR');
         }
+        
+        validatePath(folderName);
+        if (params.path) {
+            validatePath(params.path);
+        }
+
+        return withRetry(async () => {
+            const client = getS3Client(params.config);
+
+            // Normalize paths
+            const normalizedPath = params.path ? normalizePath(params.path) : "";
+            const normalizedFolderName = normalizePath(folderName);
+            const folderKey = normalizedPath 
+                ? `${normalizedPath}/${normalizedFolderName}/` 
+                : `${normalizedFolderName}/`;
+
+            try {
+                const command = new PutObjectCommand({
+                    Bucket: params.config.bucket,
+                    Key: folderKey,
+                    Metadata: {
+                        'created-by': params.ownerId,
+                        'folder': 'true',
+                    },
+                });
+                await client.send(command);
+                return { success: true, key: folderKey };
+            } catch (error) {
+                throw handleS3Error(error, 'Create folder');
+            }
+        });
     },
 
-    // Get signed URL for download
+    /**
+     * Gets a signed URL for downloading a file
+     */
     async getSignedUrl(config: S3Config, key: string, expiresIn: number = 3600): Promise<string> {
-        const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
-        const client = getS3Client(config);
-
-        try {
-            const command = new GetObjectCommand({
-                Bucket: config.bucket,
-                Key: key,
-            });
-            return await getSignedUrl(client, command, { expiresIn });
-        } catch (error) {
-            console.error("S3 Get Signed URL Error", error);
-            throw error;
+        if (!key || typeof key !== 'string') {
+            throw new S3Error('Key is required for signed URL', 'VALIDATION_ERROR');
         }
+
+        if (expiresIn < 1 || expiresIn > 604800) { // Max 7 days
+            throw new S3Error('Expiration time must be between 1 and 604800 seconds', 'VALIDATION_ERROR');
+        }
+
+        return withRetry(async () => {
+            const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+            const client = getS3Client(config);
+
+            try {
+                const command = new GetObjectCommand({
+                    Bucket: config.bucket,
+                    Key: key,
+                });
+                return await getSignedUrl(client, command, { expiresIn });
+            } catch (error) {
+                throw handleS3Error(error, 'Get signed URL');
+            }
+        });
     },
 
-    // Get object metadata
+    /**
+     * Gets object metadata
+     */
     async head(config: S3Config, key: string) {
-        const client = getS3Client(config);
-
-        try {
-            const command = new HeadObjectCommand({
-                Bucket: config.bucket,
-                Key: key,
-            });
-            const response = await client.send(command);
-            return {
-                metadata: response.Metadata || {},
-                contentType: response.ContentType,
-                contentLength: response.ContentLength,
-            };
-        } catch (error) {
-            console.error("S3 Head Error", error);
-            throw error;
+        if (!key || typeof key !== 'string') {
+            throw new S3Error('Key is required', 'VALIDATION_ERROR');
         }
+
+        return withRetry(async () => {
+            const client = getS3Client(config);
+
+            try {
+                const command = new HeadObjectCommand({
+                    Bucket: config.bucket,
+                    Key: key,
+                });
+                const response = await client.send(command);
+                return {
+                    metadata: response.Metadata || {},
+                    contentType: response.ContentType,
+                    contentLength: response.ContentLength,
+                    lastModified: response.LastModified,
+                    etag: response.ETag,
+                };
+            } catch (error) {
+                throw handleS3Error(error, 'Get object metadata');
+            }
+        });
     },
 
-    // Rename file (copy + delete)
+    /**
+     * Renames a file (copy + delete) with validation
+     */
     async rename(config: S3Config, oldKey: string, newKey: string, metadata?: Record<string, string>) {
-        const { CopyObjectCommand } = await import("@aws-sdk/client-s3");
-        const client = getS3Client(config);
-
-        try {
-            // Copy to new key
-            const copyCommand = new CopyObjectCommand({
-                Bucket: config.bucket,
-                CopySource: `${config.bucket}/${oldKey}`,
-                Key: newKey,
-                Metadata: metadata,
-                MetadataDirective: metadata ? "REPLACE" : "COPY",
-            });
-            await client.send(copyCommand);
-
-            // Delete old key
-            await this.deleteItem({ config, key: oldKey });
-
-            return { success: true };
-        } catch (error) {
-            console.error("S3 Rename Error", error);
-            throw error;
+        if (!oldKey || typeof oldKey !== 'string') {
+            throw new S3Error('Old key is required', 'VALIDATION_ERROR');
         }
+
+        if (!newKey || typeof newKey !== 'string') {
+            throw new S3Error('New key is required', 'VALIDATION_ERROR');
+        }
+
+        // Validate new key (extract filename if it's a path)
+        const newKeyParts = newKey.split('/');
+        const newFileName = newKeyParts[newKeyParts.length - 1];
+        if (newFileName) {
+            validateFileName(newFileName);
+        }
+
+        return withRetry(async () => {
+            const { CopyObjectCommand } = await import("@aws-sdk/client-s3");
+            const client = getS3Client(config);
+
+            try {
+                // Copy to new key
+                const copyCommand = new CopyObjectCommand({
+                    Bucket: config.bucket,
+                    CopySource: `${config.bucket}/${oldKey}`,
+                    Key: newKey,
+                    Metadata: metadata,
+                    MetadataDirective: metadata ? "REPLACE" : "COPY",
+                });
+                await client.send(copyCommand);
+
+                // Delete old key
+                await this.deleteItem({ config, key: oldKey });
+
+                return { success: true, newKey };
+            } catch (error) {
+                throw handleS3Error(error, 'Rename file');
+            }
+        }, {
+            maxRetries: 1, // Don't retry rename to avoid duplicate files
+        });
     },
 
     // Alias for deleteItem to match ActionDropdown expectations
