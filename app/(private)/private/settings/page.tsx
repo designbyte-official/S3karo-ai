@@ -20,10 +20,28 @@ const OwnS3SetupPage = () => {
         if (storedConfig) {
           setConfig(storedConfig);
           setHasConfig(true);
+        } else {
+          setConfig(null);
+          setHasConfig(false);
         }
       }
     };
+
     loadConfig();
+
+    // Listen for storage events to refresh config when updated (e.g., CDN URL update)
+    const handleStorageChange = () => {
+      loadConfig();
+    };
+
+    // Listen for both standard storage events (cross-tab) and custom events (same-tab)
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('s3-config-updated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('s3-config-updated', handleStorageChange);
+    };
   }, [user]);
 
   if (!user) {
@@ -52,7 +70,8 @@ const OwnS3SetupPage = () => {
               <S3ConfigForm
                 userId={user.$id}
                 defaultValues={config}
-                onConfigSaved={() => {
+                onConfigSaved={async () => {
+                  // Config will be reloaded automatically via storage event listener
                   // Optional: Don't auto redirect immediately if you want them to see success state
                   // router.push('/private/explorer') 
                 }}
