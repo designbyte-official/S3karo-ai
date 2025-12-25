@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { S3File as File } from "@/types/file";
 import Card from "@/components/common/Card";
 import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
@@ -20,18 +20,37 @@ interface Props {
 }
 
 const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, onFolderClick, view = "grid", showThumbnails = false, hideOwner = false }: Props) => {
-    const displayFiles = files || initialFiles?.documents || [];
+    // Memoize display files to prevent unnecessary recalculations
+    const displayFiles = useMemo(() => files || initialFiles?.documents || [], [files, initialFiles]);
+    
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-    const handleImageClick = (file: File) => {
+    // Memoize callback to prevent Card re-renders
+    const handleImageClick = useCallback((file: File) => {
         setSelectedFile(file);
         setIsDetailsOpen(true);
-    };
+    }, []);
+
+    // Memoize dialog close handler
+    const handleDialogClose = useCallback((open: boolean) => {
+        setIsDetailsOpen(open);
+        if (!open) {
+            setSelectedFile(null);
+        }
+    }, []);
+
+    // Memoize the list container class to avoid recalculation
+    const listClassName = useMemo(() => 
+        view === "grid" 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" 
+            : "flex flex-col gap-4",
+        [view]
+    );
 
     return (
         <>
-            <ul className={view === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-4"}>
+            <ul className={listClassName}>
                 {displayFiles.map((file, index) => (
                     <Card
                         key={file.$id}
@@ -50,7 +69,7 @@ const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, o
             {selectedFile && (
                 <ScrollableDialog
                     open={isDetailsOpen}
-                    onOpenChange={setIsDetailsOpen}
+                    onOpenChange={handleDialogClose}
                     title={selectedFile.name}
                     fullScreen={true}
                 >
@@ -61,4 +80,4 @@ const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, o
     );
 };
 
-export default FileList;
+export default React.memo(FileList);

@@ -1,11 +1,12 @@
 import Link from "next/link";
+import React from "react";
 import Thumbnail from "./Thumbnail";
 import { cn, convertFileSize } from "@/features/shared/utils";
 import FormattedDateTime from "./FormattedDateTime";
 import ActionDropdown from "./ActionDropdown";
 import { S3File } from "@/types/file";
 
-const Card = ({
+const Card = React.memo(({
   file,
   onFolderClick,
   view = "grid",
@@ -192,6 +193,8 @@ const Card = ({
       )}
     </Link>
   );
-};
+});
+
+Card.displayName = "Card";
 
 export default Card;

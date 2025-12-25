@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search as SearchIcon, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { S3File as File } from "@/types/file";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface LocalSearchProps {
     files: File[];
@@ -12,20 +13,27 @@ interface LocalSearchProps {
 
 const LocalSearch = ({ files, onFilteredFilesChange }: LocalSearchProps) => {
     const [query, setQuery] = useState("");
+    const debouncedQuery = useDebounce(query, 300); // Debounce with 300ms delay
+
+    // Memoize filtered results to avoid recalculating on every render
+    const filteredFiles = useMemo(() => {
+        if (!debouncedQuery.trim()) {
+            return files;
+        }
+
+        const lowerQuery = debouncedQuery.toLowerCase();
+        return files.filter(file =>
+            file.name.toLowerCase().includes(lowerQuery)
+        );
+    }, [files, debouncedQuery]);
+
+    // Update filtered files when debounced query changes
+    useEffect(() => {
+        onFilteredFilesChange(filteredFiles);
+    }, [filteredFiles, onFilteredFilesChange]);
 
     const handleSearch = (value: string) => {
         setQuery(value);
-
-        if (!value.trim()) {
-            onFilteredFilesChange(files);
-            return;
-        }
-
-        const lowerQuery = value.toLowerCase();
-        const filtered = files.filter(file =>
-            file.name.toLowerCase().includes(lowerQuery)
-        );
-        onFilteredFilesChange(filtered);
     };
 
     const handleClear = () => {
