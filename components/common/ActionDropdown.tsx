@@ -58,12 +58,12 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
         setIsLoading(true);
         let success = false;
 
-        // Check if it's managed storage or own s3
-        const isManaged = !path.includes('/private/explorer');
-        const storageMode = isManaged ? 'managed-storage' : 'own-s3';
+        // Check if it's managed storage or own s3 based on path
+        const isPrivateS3 = path.includes('/private/explorer');
+        const storageMode = isPrivateS3 ? 'own-s3' : 'managed-storage';
 
         // Pro gating for managed storage destructive actions
-        if (isManaged && !user?.isPro && (action.value === 'rename' || action.value === 'delete' || action.value === 'share')) {
+        if (!isPrivateS3 && !user?.isPro && (action.value === 'rename' || action.value === 'delete' || action.value === 'share')) {
             toast({
                 description: "Modifying or deleting files in Managed Storage is limited to Pro users. Please switch to Own S3 or upgrade.",
                 variant: "destructive",
@@ -235,9 +235,9 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {actionsDropdownItems.map((actionItem) => {
-                        const storageMode = s3ConfigService.getMode();
+                        const isPrivateS3 = path.includes('/private/explorer');
                         // Hide share option for Own S3 (no database)
-                        if (actionItem.value === "share" && storageMode === 'own-s3') {
+                        if (actionItem.value === "share" && isPrivateS3) {
                             return null;
                         }
 
@@ -263,13 +263,13 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                                         download={file.name}
                                         className="flex items-center gap-2"
                                         onClick={async (e) => {
-                                            const storageMode = s3ConfigService.getMode();
+                                            const isPrivateS3 = path.includes('/private/explorer');
                                             if (!downloadUrl) {
                                                 e.preventDefault();
                                                 try {
                                                     const ownerId = file.owner?.$id || file.accountId || '';
                                                     let url;
-                                                    if (storageMode === 'own-s3') {
+                                                    if (isPrivateS3) {
                                                         const config = await s3ConfigService.getConfig(user.$id);
                                                         if (!config) {
                                                             toast({

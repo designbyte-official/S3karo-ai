@@ -7,6 +7,7 @@ import {
     PutObjectCommand,
     DeleteObjectCommand,
     HeadObjectCommand,
+    GetObjectCommand,
     ListObjectsV2CommandOutput
 } from "@aws-sdk/client-s3";
 
@@ -220,5 +221,74 @@ export const s3ExplorerService = {
             console.error("S3 Create Folder Error", error);
             throw error;
         }
+    },
+
+    // Get signed URL for download
+    async getSignedUrl(config: S3Config, key: string, expiresIn: number = 3600): Promise<string> {
+        const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+        const client = getS3Client(config);
+
+        try {
+            const command = new GetObjectCommand({
+                Bucket: config.bucket,
+                Key: key,
+            });
+            return await getSignedUrl(client, command, { expiresIn });
+        } catch (error) {
+            console.error("S3 Get Signed URL Error", error);
+            throw error;
+        }
+    },
+
+    // Get object metadata
+    async head(config: S3Config, key: string) {
+        const client = getS3Client(config);
+
+        try {
+            const command = new HeadObjectCommand({
+                Bucket: config.bucket,
+                Key: key,
+            });
+            const response = await client.send(command);
+            return {
+                metadata: response.Metadata || {},
+                contentType: response.ContentType,
+                contentLength: response.ContentLength,
+            };
+        } catch (error) {
+            console.error("S3 Head Error", error);
+            throw error;
+        }
+    },
+
+    // Rename file (copy + delete)
+    async rename(config: S3Config, oldKey: string, newKey: string, metadata?: Record<string, string>) {
+        const { CopyObjectCommand } = await import("@aws-sdk/client-s3");
+        const client = getS3Client(config);
+
+        try {
+            // Copy to new key
+            const copyCommand = new CopyObjectCommand({
+                Bucket: config.bucket,
+                CopySource: `${config.bucket}/${oldKey}`,
+                Key: newKey,
+                Metadata: metadata,
+                MetadataDirective: metadata ? "REPLACE" : "COPY",
+            });
+            await client.send(copyCommand);
+
+            // Delete old key
+            await this.deleteItem({ config, key: oldKey });
+
+            return { success: true };
+        } catch (error) {
+            console.error("S3 Rename Error", error);
+            throw error;
+        }
+    },
+
+    // Alias for deleteItem to match ActionDropdown expectations
+    async delete(config: S3Config, key: string) {
+        return this.deleteItem({ config, key });
     },
 };

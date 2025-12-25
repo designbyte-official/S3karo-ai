@@ -11,7 +11,7 @@ import { platformStorageService } from "@/features/managed-storage/services/mana
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import Thumbnail from "./Thumbnail";
 import FormattedDateTime from "./FormattedDateTime";
-import { useDebounce } from "use-debounce";
+import { useDebounce } from "@/hooks/useDebounce";
 import { S3File as File } from "@/types/file";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 
@@ -28,7 +28,7 @@ const Search = ({ mode = "managed" }: Props) => {
   const user = useAuthStore((state: any) => state.user);
   const router = useRouter();
   const path = usePathname();
-  const [debouncedQuery] = useDebounce(query, 500);
+  const debouncedQuery = useDebounce(query, 500);
 
   // Sync query from URL only on mount or when URL changes externally
   useEffect(() => {

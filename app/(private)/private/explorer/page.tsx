@@ -38,7 +38,6 @@ const OwnS3Client = () => {
   const searchText = searchParams.get("query") || "";
   const sort = searchParams.get("sort") || "$createdAt-desc";
   const [view, setView] = React.useState<"grid" | "list">("grid");
-  const [filteredFiles, setFilteredFiles] = React.useState<any[]>([]);
 
   const {
     files,
@@ -55,10 +54,17 @@ const OwnS3Client = () => {
     createFolder
   } = useOwnS3(searchText, sort);
 
-  // Sync filteredFiles with files when files change
+  // LocalSearch manages filteredFiles - we just provide the setter
+  const [filteredFiles, setFilteredFiles] = React.useState<any[]>([]);
+
+  // Update filteredFiles when files change (only when length changes to avoid infinite loop)
+  const prevFilesLength = React.useRef(files.length);
   React.useEffect(() => {
-    setFilteredFiles(files);
-  }, [files]);
+    if (files.length !== prevFilesLength.current) {
+      setFilteredFiles(files);
+      prevFilesLength.current = files.length;
+    }
+  }, [files.length]);
 
   // ... (auth checks are unchanged)
 
