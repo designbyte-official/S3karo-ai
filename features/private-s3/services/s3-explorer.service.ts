@@ -61,11 +61,11 @@ export const s3ExplorerService = {
                         users: [],
                         accountId: params.accountId,
                         owner: {
+                            $id: "user-me",
                             fullName: "Me",
-                            email: "",
-                            avatar: "",
                         },
                         $createdAt: new Date().toISOString(),
+                        $updatedAt: new Date().toISOString(),
                     });
                 });
             }
@@ -88,18 +88,23 @@ export const s3ExplorerService = {
                         users: [],
                         accountId: params.accountId,
                         owner: {
+                            $id: "user-me",
                             fullName: "Me",
-                            email: "",
-                            avatar: "",
                         },
-                        $createdAt: item.LastModified?.toISOString() || new Date().toISOString(),
+                        $createdAt: new Date().toISOString(),
+                        $updatedAt: new Date().toISOString(),
                     });
                 });
             }
 
-            // Simple client-side search/sort if needed, but S3 listing is prefix-based.
-            // For now, return direct list.
-            return { documents: files, total: files.length };
+            // Client-side Search/Sort
+            let resultFiles = files;
+            if (params.searchText) {
+                const lowerQuery = params.searchText.toLowerCase();
+                resultFiles = resultFiles.filter(f => f.name.toLowerCase().includes(lowerQuery));
+            }
+
+            return { documents: resultFiles, total: resultFiles.length };
 
         } catch (error) {
             console.error("S3 List Error", error);
