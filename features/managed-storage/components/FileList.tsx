@@ -20,8 +20,14 @@ const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, o
 
     return (
         <ul className={view === "grid" ? "file-list" : "flex flex-col gap-4"}>
-            {displayFiles.map((file) => (
-                <Card key={file.$id} file={file} onFolderClick={onFolderClick} />
+            {displayFiles.map((file, index) => (
+                <Card
+                    key={file.$id}
+                    file={file}
+                    onFolderClick={onFolderClick}
+                    view={view}
+                    index={index}
+                />
             ))}
         </ul>
     );

@@ -21,17 +21,31 @@ interface Props {
 
 const FileUploader = ({ ownerId, accountId, className, mode = "managed" }: Props) => {
     const [files, setFiles] = useState<File[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
     const { toast } = useToast();
     const path = usePathname();
     const router = useRouter();
     const user = useAuthStore((state: any) => state.user);
+    const isPro = useAuthStore((state: any) => state.isPro);
 
-    const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const onDrop = useCallback(async (acceptedFiles: File[], fileRejections: any[]) => {
+        // Handle rejections (e.g. file too large)
+        if (fileRejections.length > 0) {
+            fileRejections.forEach(({ file, errors }) => {
+                toast({
+                    description: `${file.name}: ${errors[0].message}`,
+                    variant: "destructive",
+                });
+            });
+            return;
+        }
+
         setFiles(acceptedFiles);
+        setIsUploading(true);
 
         const uploadPromises = acceptedFiles.map(async (file) => {
             // Pro gating for managed storage
-            if (mode === 'managed' && !user?.isPro) {
+            if (mode === 'managed' && !isPro) {
                 return toast({
                     description: "Uploads in Managed Storage are limited to Pro users. Please switch to Own S3 or upgrade.",
                     variant: "destructive",
@@ -41,7 +55,7 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed" }: Props
             try {
                 if (mode === 'private') {
                     const config = await s3ConfigService.getConfig(ownerId);
-                    if (!config) throw new Error("S3 not configured");
+                    if (!config) throw new Error("S3 not configured. Please configure your bucket first.");
 
                     await s3ExplorerService.uploadFile({
                         config,
@@ -62,7 +76,11 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed" }: Props
                         method: "POST",
                         body: formData,
                     });
-                    if (!res.ok) throw new Error("Upload failed");
+
+                    if (!res.ok) {
+                        const errorData = await res.json();
+                        throw new Error(errorData.error || "Upload failed");
+                    }
                 }
 
                 toast({
@@ -72,29 +90,35 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed" }: Props
             } catch (error) {
                 console.error("Upload error:", error);
                 toast({
-                    description: `Failed to upload ${file.name}`,
+                    description: `Failed to upload ${file.name}: ${(error as Error).message}`,
                     variant: "destructive",
                 });
             }
         });
 
         await Promise.all(uploadPromises);
+        setIsUploading(false);
+        setFiles([]);
         router.refresh();
-    }, [ownerId, accountId, path, router, toast, mode, user]);
+    }, [ownerId, accountId, path, router, toast, mode, user, isPro]);
 
-    const { getRootProps, getInputProps } = useDropzone({ onDrop });
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop,
+        maxSize: 50 * 1024 * 1024, // 50MB limit
+    });
 
     return (
         <div {...getRootProps()} className={cn("cursor-pointer", className)}>
             <input {...getInputProps()} />
-            <Button type="button" className={cn("uploader-button", className)}>
+            <Button type="button" disabled={isUploading} className={cn("uploader-button", className, isUploading && "opacity-50 cursor-not-allowed")}>
                 <Image
                     src="/assets/icons/upload.svg"
                     alt="upload"
                     width={24}
                     height={24}
+                    className={isUploading ? "animate-pulse" : ""}
                 />
-                <p className="hidden md:block">Upload</p>
+                <p className="hidden md:block">{isUploading ? "Uploading..." : "Upload"}</p>
             </Button>
         </div>
     );

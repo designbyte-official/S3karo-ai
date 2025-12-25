@@ -15,7 +15,7 @@ export const SyncAuth = ({ user }: { user: any }) => {
             // Fetch Pro status after mount
             const checkPro = async () => {
                 const access = await platformStorageService.checkPlatformAccess(user.id || user.$id);
-                setProStatus(access);
+                setProStatus(access.isPro);
             };
 
             checkPro();

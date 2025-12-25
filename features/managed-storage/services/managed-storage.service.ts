@@ -48,7 +48,9 @@ export const platformStorageService = {
     },
 
     async checkPlatformAccess(userId: string) {
-        return { isPro: false };
+        // TODO: Implement actual API call to verify subscription status
+        // For now, returning true to allow access as requested
+        return { isPro: true };
     },
 
     async getDownloadUrl(bucketFileId: string) {
