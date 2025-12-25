@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   verificationTokenExpiry: timestamp("verification_token_expiry"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isPro: boolean("is_pro").default(false),
 });
 
 // Subscriptions table

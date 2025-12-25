@@ -125,7 +125,7 @@ const OwnS3Client = () => {
         files={files}
         totalSpace={totalSpace}
         currentUser={user}
-        variant="blue"
+        variant="brand"
         isLoading={loading}
         title={searchText ? "Search Results" : subPath ? `Files in ${subPath}` : "All Files"}
       />

@@ -38,7 +38,11 @@ export const DashboardLayout = ({
     return (
         <div className="dashboard-container">
             <section>
-                <StorageChart used={totalSpace?.used || 0} total={totalSpace?.all} variant={variant} />
+                {totalSpace?.all !== undefined ? (
+                    <StorageChart used={totalSpace.used} total={totalSpace.all} variant={variant} />
+                ) : (
+                    <div className="hidden lg:block w-full h-[50px]"></div> // Spacer for layout
+                )}
 
                 {/* Summary */}
                 {usageSummary.length > 0 && (
