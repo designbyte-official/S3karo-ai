@@ -2,32 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
-import { getCurrentUser } from "@/features/auth/actions/user.actions";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { S3ConfigForm } from "@/features/private-s3/components/S3ConfigForm";
 
 const OwnS3SetupPage = () => {
-  const [user, setUser] = useState<{ $id: string; accountId: string } | null>(null);
+  const { user } = useAuthStore();
   const [hasConfig, setHasConfig] = useState(false);
   const [config, setConfig] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-
-      if (currentUser?.$id) {
-        const storedConfig = await s3ConfigService.getConfig(currentUser.$id);
+    const loadConfig = async () => {
+      if (user?.$id) {
+        const storedConfig = await s3ConfigService.getConfig(user.$id);
         if (storedConfig) {
           setConfig(storedConfig);
           setHasConfig(true);
         }
       }
     };
-    fetchUser();
-  }, []);
+    loadConfig();
+  }, [user]);
 
   if (!user) {
     return (
