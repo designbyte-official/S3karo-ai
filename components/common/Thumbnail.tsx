@@ -53,40 +53,54 @@ export const Thumbnail = ({
     return () => observer.disconnect();
   }, [shouldShowThumbnail, url, shouldLoadImage]);
 
+  // Determine what to show
+  const getImageSource = () => {
+    // Always show folder icon for folders
+    if (isFolder) {
+      return "/assets/icons/folder.svg";
+    }
+    
+    // If thumbnails are disabled, always show file type icon
+    if (!showThumbnail) {
+      return getFileIcon(extension, type);
+    }
+    
+    // If thumbnails enabled and it's an image
+    if (shouldShowThumbnail) {
+      // Show actual image if loaded successfully, otherwise show icon
+      if (shouldLoadImage && !imageError && url) {
+        return url;
+      }
+      // Show icon while loading or if error
+      return getFileIcon(extension, type);
+    }
+    
+    // Default: show file type icon
+    return getFileIcon(extension, type);
+  };
+
+  const imageSource = getImageSource();
+  const isActualImage = shouldShowThumbnail && shouldLoadImage && !imageError && url && imageSource === url;
+
   return (
     <figure className={cn("thumbnail", className)} ref={imgRef}>
-      {isFolder ? (
-        <Image
-          src="/assets/icons/folder.svg"
-          alt="folder"
-          width={100}
-          height={100}
-          className={cn("size-8 object-contain", imageClassName)}
-        />
-      ) : shouldShowThumbnail && !shouldLoadImage ? (
-        // Show placeholder icon while image loads (only when thumbnails enabled)
-        <Image
-          src={getFileIcon(extension, type)}
-          alt="thumbnail-placeholder"
-          width={100}
-          height={100}
-          className={cn("size-8 object-contain", imageClassName)}
-        />
-      ) : (
-        <Image
-          src={shouldShowThumbnail && shouldLoadImage && !imageError ? url : getFileIcon(extension, type)}
-          alt="thumbnail"
-          width={100}
-          height={100}
-          loading={shouldShowThumbnail ? "lazy" : "eager"}
-          onError={() => setImageError(true)}
-          className={cn(
-            "size-8 object-contain",
-            imageClassName,
-            shouldShowThumbnail && "thumbnail-image",
-          )}
-        />
-      )}
+      <Image
+        src={imageSource}
+        alt={isFolder ? "folder" : isActualImage ? "thumbnail" : "file-icon"}
+        width={100}
+        height={100}
+        loading={isActualImage ? "lazy" : "eager"}
+        onError={() => {
+          if (shouldShowThumbnail) {
+            setImageError(true);
+          }
+        }}
+        className={cn(
+          "size-8 object-contain",
+          imageClassName,
+          isActualImage && "thumbnail-image",
+        )}
+      />
     </figure>
   );
 };
