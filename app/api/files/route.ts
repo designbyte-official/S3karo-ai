@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFilesForUser, createFile } from '@/lib/database/queries';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
-import { listS3Files } from '@/lib/s3/index';
-import { getS3Config } from '@/lib/s3/config';
+
 
 // GET - List files
 export async function GET(request: NextRequest) {

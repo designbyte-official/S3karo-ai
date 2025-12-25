@@ -5,13 +5,14 @@ import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
-import { getStorageMode } from "@/lib/s3/config";
-import { getCurrentUser } from "@/lib/actions/user.actions";
+import { s3ExplorerService } from "@/lib/services/s3/s3-explorer.service";
+import { platformStorageService } from "@/lib/services/platform/platform-storage.service";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
 import Thumbnail from "@/components/Thumbnail";
 import FormattedDateTime from "@/components/FormattedDateTime";
 import { useDebounce } from "use-debounce";
 import { File } from "@/types/file";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 const Search = () => {
   const [query, setQuery] = useState("");
@@ -19,39 +20,67 @@ const Search = () => {
   const searchQuery = searchParams.get("query") || "";
   const [results, setResults] = useState<File[]>([]);
   const [open, setOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const path = usePathname();
   const [debouncedQuery] = useDebounce(query, 300);
 
+  // No need for fetchUser effect as we use Zustand story
+
   useEffect(() => {
-    const fetchUser = async () => {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
+    const updateUrl = () => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (debouncedQuery) {
+        params.set("query", debouncedQuery);
+      } else {
+        params.delete("query");
+      }
+      router.push(`${path}?${params.toString()}`);
     };
-    fetchUser();
-  }, []);
+
+    if (debouncedQuery !== searchQuery) {
+      updateUrl();
+    }
+  }, [debouncedQuery, path, router, searchParams, searchQuery]);
 
   useEffect(() => {
     const fetchFiles = async () => {
       if (debouncedQuery.length === 0) {
         setResults([]);
         setOpen(false);
-        return router.push(path.replace(searchParams.toString(), ""));
+        return;
       }
 
-      const mode = getStorageMode();
+      const mode = s3ConfigService.getMode();
       let files;
-      
-      if ((mode === 'own-s3' || mode === 'platform-s3') && user) {
-        files = await getFilesClient({
-          types: [],
-          searchText: debouncedQuery,
-          ownerId: user.$id,
-          accountId: user.accountId,
-        });
-        setResults(files.documents);
-        setOpen(true);
+
+      if (user) {
+        try {
+          if (mode === 'own-s3') {
+            const config = await s3ConfigService.getConfig(user.$id);
+            if (!config) {
+              setResults([]);
+              return;
+            }
+            const filesData = await s3ExplorerService.listItems({
+              config,
+              searchText: debouncedQuery,
+              ownerId: user.$id,
+              accountId: user.accountId,
+            });
+            setResults(filesData.documents);
+          } else if (mode === 'managed-storage' || mode === 'platform-s3') {
+            const filesData = await platformStorageService.getFiles({
+              userId: user.$id,
+              searchText: debouncedQuery,
+            });
+            setResults(filesData.documents);
+          }
+          setOpen(true);
+        } catch (error) {
+          console.error("Search error:", error);
+          setResults([]);
+        }
       }
     };
 

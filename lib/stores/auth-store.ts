@@ -6,9 +6,10 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  avatar?: string;
+  avatar?: string | null;
   accountId: string;
   emailVerified?: boolean;
+  isPro?: boolean;
 }
 
 interface AuthState {
@@ -16,6 +17,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   setUser: (user: User | null) => void;
+  setProStatus: (isPro: boolean) => void;
   clearUser: () => void;
   setLoading: (loading: boolean) => void;
 }
@@ -27,6 +29,9 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       setUser: (user) => set({ user, isAuthenticated: !!user }),
+      setProStatus: (isPro) => set((state) => ({
+        user: state.user ? { ...state.user, isPro } : null
+      })),
       clearUser: () => set({ user: null, isAuthenticated: false }),
       setLoading: (isLoading) => set({ isLoading }),
     }),

@@ -1,20 +1,27 @@
-import { getFiles, getTotalSpaceUsed } from "@/lib/actions/file.actions";
+import { platformStorageService } from "@/lib/services/platform/platform-storage.service";
 import { getCurrentUser } from "@/lib/actions/user.actions";
 import DashboardClient from "@/components/DashboardClient";
+import { File as MyFile } from "@/types/file";
 
 const Dashboard = async () => {
-  // Parallel requests for Appwrite mode (will be overridden by client component if S3 mode)
-  const [files, totalSpace, currentUser] = await Promise.all([
-    getFiles({ types: [], limit: 10 }),
-    getTotalSpaceUsed(),
-    getCurrentUser(),
-  ]);
+  const currentUser = await getCurrentUser();
+
+  // Parallel requests for Platform mode (will be overridden by client component if S3 mode)
+  let files: { documents: MyFile[]; total: number } = { documents: [], total: 0 };
+  let totalSpace = null;
+
+  if (currentUser) {
+    [files, totalSpace] = await Promise.all([
+      platformStorageService.getFiles({ userId: currentUser.id, limit: 10 }),
+      platformStorageService.getStorageStats(currentUser.id),
+    ]);
+  }
 
   return (
     <DashboardClient
-      initialFiles={files}
+      initialFiles={files as any}
       initialTotalSpace={totalSpace}
-      currentUser={currentUser}
+      currentUser={currentUser as any}
     />
   );
 };

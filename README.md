@@ -12,10 +12,10 @@
     <img src="https://img.shields.io/badge/-Appwrite-black?style=for-the-badge&logoColor=white&logo=appwrite&color=FD366E" alt="appwrite" />
   </div>
 
-<h3 align="center">Storage and File Sharing Platform</h3>
+<h3 align="center">S3-Karo: Private Storage and File Sharing</h3>
 
    <div align="center">
-     Build this project step by step with our detailed tutorial on <a href="https://www.youtube.com/@javascriptmastery/videos" target="_blank"><b>JavaScript Mastery</b></a> YouTube. Join the JSM family!
+      A powerful, privacy-first file management platform. Use our <b>Managed Storage</b> tier or bring your <b>Own S3</b> bucket.
     </div>
 </div>
 
@@ -25,104 +25,103 @@
 2. ⚙️ [Tech Stack](#tech-stack)
 3. 🔋 [Features](#features)
 4. 🤸 [Quick Start](#quick-start)
-5. 🕸️ [Snippets (Code to Copy)](#snippets)
-6. 🔗 [Assets](#links)
-7. 🚀 [More](#more)
-
-## 🚨 Tutorial
-
-This repository contains the code corresponding to an in-depth tutorial available on our YouTube
-channel, <a href="https://www.youtube.com/@javascriptmastery/videos" target="_blank"><b>JavaScript Mastery</b></a>.
-
-If you prefer visual learning, this is the perfect resource for you. Follow our tutorial to learn how to build projects
-like these step-by-step in a beginner-friendly manner!
-
-<a href="https://youtu.be/lie0cr3wESQ?si=yLQyhMrYLjpysnqE" target="_blank"><img src="https://github.com/sujatagunale/EasyRead/assets/151519281/1736fca5-a031-4854-8c09-bc110e3bc16d" /></a>
+5. 📚 [Documentation](#documentation)
+6. 🚀 [Deployment](#deployment)
 
 ## <a name="introduction">🤖 Introduction</a>
 
-A storage management and file sharing platform that lets users effortlessly upload, organize, and share files. Built with the latest Next.js 15 and the Appwrite Node SDK, utilizing advanced features for seamless file management.
+**S3-Karo** is a storage management and file sharing platform designed for flexibility and privacy. It offers two distinct storage modes:
+- **Managed Storage**: A hassle-free, platform-managed tier with "Pro" subscription gating for advanced operations.
+- **Own S3**: A privacy-first mode where users bring their own AWS credentials. Credentials are encrypted and stored only in the browser—never on our servers.
 
-If you're getting started and need assistance or face any bugs, join our active Discord community with over **34k+**
-members. It's a place where people help each other out.
-
-<a href="https://discord.com/invite/n6EdbFJ" target="_blank"><img src="https://github.com/sujatagunale/EasyRead/assets/151519281/618f4872-1e10-42da-8213-1d69e486d02e" /></a>
+Built with **Next.js 15**, **Drizzle ORM**, and **Neon DB** for high performance and scalability.
 
 ## <a name="tech-stack">⚙️ Tech Stack</a>
 
-- React 19
-- Next.js 15
-- Appwrite
-- TailwindCSS
-- ShadCN
-- TypeScript
+- **Frontend**: Next.js 15 (App Router), React 19, TailwindCSS, ShadCN UI
+- **Backend**: Next.js API Routes, Drizzle ORM
+- **Database**: Neon (PostgreSQL)
+- **Storage**: AWS S3 (Managed or Bring-Your-Own)
+- **State Management**: Zustand
+- **Authentication**: Custom JWT-based Auth
 
 ## <a name="features">🔋 Features</a>
 
-👉 **User Authentication with Appwrite**: Implement signup, login, and logout functionality using Appwrite's authentication system.
+👉 **Dual Storage Modes**: Switch between Managed Storage and your Own S3 instance seamlessly.
 
-👉 **FIle Uploads**: Effortlessly upload a variety of file types, including documents, images, videos, and audio, ensuring all your important data.
+👉 **Managed Storage (Pro)**: High-performance storage tier with subscription gating for Uploads, Renaming, Sharing, and Deletion.
 
-👉 **View and Manage Files**: Users can browse through their uploaded files stored in Appwrite storage, view on a new tab, rename file or delete.
+👉 **Privacy-First Own S3**: Full, unrestricted access to your own S3 bucket. Credentials are encrypted using **PBKDF2 + AES-256-CBC** in the browser.
 
-👉 **Download Files**: Users can download their uploaded files giving them instant access to essential documents.
+👉 **Advanced File Actions**: Rename, share, delete, and download files with a modern, responsive interface.
 
-👉 **File Sharing**: Users can easily share their uploaded files with others, enabling collaboration and easy access to important content.
+👉 **Dynamic Dashboard**: Interactive charts showing storage usage, recent uploads, and file-type summaries.
 
-👉 **Dashboard**: Gain insights at a glance with a dynamic dashboard that showcases total and consumed storage, recent uploads, and a summary of files grouped by type.
+👉 **Global Search & Sorting**: Find files instantly across all storage tiers with advanced sorting options.
 
-👉 **Global Search**: Users can quickly find files and shared content across the platform with a robust global search feature.
-
-👉 **Sorting Options**: Organize files efficiently by sorting them by date, name, or size, making file management a breeze.
-
-👉 **Modern Responsive Design**: A fresh and minimalist UI that emphasizes usability, ensuring a clean aesthetic across all devices.
-
-and many more, including the latest **React 19**, **Next.js 15** and **Appwrite** features alongside code architecture and
-reusability
+👉 **Modern Responsive Design**: A pixel-perfect, mobile-friendly UI built with modern aesthetics.
 
 ## <a name="quick-start">🤸 Quick Start</a>
 
-Follow these steps to set up the project locally on your machine.
+Follow these steps to set up the project locally.
 
 **Prerequisites**
 
-Make sure you have the following installed on your machine:
+- [Node.js](https://nodejs.org/en) (v18+)
+- [pnpm](https://pnpm.io/) or npm
+- [Neon DB Account](https://neon.tech) (Free tier)
 
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/en)
-- [npm](https://www.npmjs.com/) (Node Package Manager)
-
-**Cloning the Repository**
+**1. Clone the Repository**
 
 ```bash
-git clone https://github.com/JavaScript-Mastery-Pro/storage_management_solution.git
-cd storage_management_solution
+git clone https://github.com/JavaScript-Mastery-Pro/s3-karo.git
+cd s3-karo
 ```
 
-**Installation**
-
-Install the project dependencies using npm:
+**2. Install Dependencies**
 
 ```bash
-npm install
+pnpm install
 ```
 
-**Set Up Environment Variables**
+**3. Set Up Environment Variables**
 
-Create a new file named `.env.local` in the root of your project and add the following content:
+Create a `.env.local` file:
 
 ```env
-NEXT_PUBLIC_APPWRITE_ENDPOINT="https://cloud.appwrite.io/v1"
-NEXT_PUBLIC_APPWRITE_PROJECT=""
-NEXT_PUBLIC_APPWRITE_DATABASE=""
-NEXT_PUBLIC_APPWRITE_USERS_COLLECTION=""
-NEXT_PUBLIC_APPWRITE_FILES_COLLECTION=""
-NEXT_PUBLIC_APPWRITE_BUCKET=""
-NEXT_APPWRITE_KEY=""
+DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
+JWT_SECRET=your-jwt-secret-here
+NEXT_PUBLIC_ENCRYPTION_SECRET=your-encryption-secret-here
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Optional: For Managed Storage tier
+# AWS_ACCESS_KEY_ID=...
+# AWS_SECRET_ACCESS_KEY=...
+# AWS_S3_BUCKET=...
+# AWS_REGION=us-east-1
 ```
 
-Replace the values with your actual Appwrite credentials. You can obtain these credentials by signing up &
-creating a new project on the [Appwrite website](https://appwrite.io/).
+**4. Setup Database**
+
+```bash
+pnpm run db:push
+```
+
+**5. Start the Project**
+
+```bash
+pnpm run dev
+```
+
+## <a name="documentation">📚 Documentation</a>
+
+Detailed guides are available in the [local-docs/](file:///local-docs/) directory:
+
+- [Setup Checklist](file:///local-docs/SETUP_CHECKLIST.md) - Step-by-step guide to get running.
+- [Managed Storage Setup](file:///local-docs/MANAGED_STORAGE_SETUP.md) - How the pro-tier works.
+- [S3 Integration](file:///local-docs/S3_INTEGRATION.md) - Technical architecture of the storage layer.
+- [Security Guide](file:///local-docs/SECURITY.md) - Detailed info on how we protect your data.
+- [Environment Variables](file:///local-docs/ENV_VARIABLES.md) - Complete reference for all config.
 
 **Running the Project**
 

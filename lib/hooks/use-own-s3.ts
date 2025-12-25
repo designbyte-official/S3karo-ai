@@ -1,148 +1,95 @@
-import { useEffect, useState } from "react";
-import { getStorageMode, getS3Config } from "@/lib/s3/config";
-import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
-import { getTotalSpaceUsed as getTotalSpaceUsedClient } from "@/lib/actions/file.actions.client";
-import { getCurrentUser } from "@/lib/actions/user.actions";
+"use client";
 
-export interface File {
-  $id: string;
-  id?: string;
-  name: string;
-  type: string;
-  extension: string;
-  size: number;
-  url: string;
-  owner?: {
-    $id: string;
-    fullName?: string;
-  };
-  accountId?: string;
-  users?: string[];
-  bucketFileId?: string;
-  key?: string;
-  $createdAt: string;
-  $updatedAt: string;
-}
+import React from "react";
+import { s3ExplorerService } from "@/lib/services/s3/s3-explorer.service";
+import { useAuthStore } from "@/lib/stores/auth-store";
+import { useS3ConfigStatus } from "./use-s3-config-status";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
+import { useQuery } from "@tanstack/react-query";
 
-export interface User {
-  $id: string;
-  id?: string;
-  accountId: string;
-}
+export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-desc") => {
+  const authUser = useAuthStore((state) => state.user);
+  const storeLoading = useAuthStore((state) => state.isLoading);
+  const [hydrated, setHydrated] = React.useState(false);
+  const [subPath, setSubPath] = React.useState("");
 
-export interface TotalSpace {
-  used: number;
-  total: number;
-}
-
-export const useOwnS3 = () => {
-  const [files, setFiles] = useState<{ documents: File[]; total: number }>({ documents: [], total: 0 });
-  const [totalSpace, setTotalSpace] = useState<TotalSpace | null>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasConfig, setHasConfig] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        if (currentUser) {
-          setUser({
-            $id: currentUser.$id || currentUser.id || '',
-            id: currentUser.id || currentUser.$id,
-            accountId: currentUser.accountId || currentUser.$id || '',
-          });
-          
-          // Check if S3 config exists
-          const config = await getS3Config(currentUser.$id || currentUser.id);
-          const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
-          setHasConfig(configExists);
-        } else {
-          setError('User not found');
-        }
-      } catch (error: any) {
-        console.error('Error fetching user:', error);
-        setError(error?.message || 'Failed to load user');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUser();
+  React.useEffect(() => {
+    setHydrated(true);
   }, []);
 
-  const loadData = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    setError(null);
-    try {
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Request timeout - please check your S3 connection')), 30000); // 30 second timeout
+  const user = authUser ? {
+    $id: authUser.$id || authUser.id || '',
+    id: authUser.id || authUser.$id || '',
+    accountId: authUser.accountId || authUser.$id || authUser.id || '',
+  } : null;
+
+  const authLoading = !hydrated || storeLoading;
+
+  const { data: hasConfig = false, isLoading: loadingConfig } = useS3ConfigStatus(user?.$id);
+
+  const {
+    data: filesData,
+    isLoading: loadingFiles,
+    error: filesError,
+    refetch: refetchFiles
+  } = useQuery({
+    queryKey: ["s3-files", user?.$id, subPath, searchText, sort],
+    queryFn: async () => {
+      const config = await s3ConfigService.getConfig(user!.$id);
+      return s3ExplorerService.listItems({
+        config,
+        ownerId: user!.$id,
+        accountId: user!.accountId,
+        subPath,
+        searchText,
+        sort
       });
+    },
+    enabled: !!(user && hasConfig),
+  });
 
-      const dataPromise = Promise.all([
-        getFilesClient({
-          types: [],
-          ownerId: user.$id,
-          accountId: user.accountId,
-        }),
-        getTotalSpaceUsedClient(user.$id),
-      ]);
+  const {
+    data: statsData,
+    isLoading: loadingStats,
+    error: statsError,
+    refetch: refetchStats
+  } = useQuery({
+    queryKey: ["s3-stats", user?.$id],
+    queryFn: async () => {
+      const config = await s3ConfigService.getConfig(user!.$id);
+      return s3ExplorerService.getBucketStats(config, `${user!.$id}/${user!.accountId}/`);
+    },
+    enabled: !!(user && hasConfig),
+  });
 
-      const [filesData, spaceData] = await Promise.race([dataPromise, timeoutPromise]) as [any, any];
-      setFiles(filesData);
-      setTotalSpace(spaceData);
-    } catch (error: any) {
-      console.error('Error loading data:', error);
-      if (error?.message?.includes('S3 configuration not found')) {
-        setError('S3 configuration not found');
-        setHasConfig(false);
-      } else if (error?.message?.includes('timeout')) {
-        setError('Connection timeout - please check your S3 credentials and network');
-      } else {
-        setError(error?.message || 'Failed to load files');
-      }
-      // Set empty data on error so UI can still render
-      setFiles({ documents: [], total: 0 });
-      setTotalSpace(null);
-    } finally {
-      setLoading(false);
-    }
+  const reload = () => {
+    refetchFiles();
+    refetchStats();
   };
 
-  useEffect(() => {
-    if (user && hasConfig) {
-      loadData();
-    } else if (user && !hasConfig) {
-      // User exists but no config - set loading to false so page can redirect
-      setLoading(false);
-      setError('S3 configuration not found');
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, hasConfig]);
+  const navigateToFolder = (path: string) => {
+    const relativePath = path.replace(`${user?.$id}/${user?.accountId}/`, '');
+    setSubPath(relativePath);
+  };
 
-  // Listen for file changes
-  useEffect(() => {
-    if (typeof window !== 'undefined' && user && hasConfig) {
-      const handleStorageChange = () => {
-        loadData();
-      };
-      window.addEventListener('storage', handleStorageChange);
-      return () => window.removeEventListener('storage', handleStorageChange);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, hasConfig]);
+  const navigateBack = () => {
+    const parts = subPath.split('/').filter(Boolean);
+    parts.pop();
+    setSubPath(parts.join('/'));
+  };
 
   return {
-    files,
-    totalSpace,
+    files: filesData?.documents || [],
+    totalFiles: filesData?.documents?.length || 0,
+    totalSpace: statsData || { used: 0, all: 2 * 1024 * 1024 * 1024 * 1024 },
     user,
-    loading,
+    subPath,
+    loading: authLoading || loadingFiles || loadingStats || loadingConfig,
     hasConfig,
-    error,
-    reload: loadData,
+    error: (filesError as Error)?.message || (statsError as Error)?.message,
+    reload,
+    navigateToFolder,
+    navigateBack,
+    setSubPath,
   };
 };
-

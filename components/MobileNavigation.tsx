@@ -7,7 +7,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Separator } from "@radix-ui/react-separator";
 import { navItems } from "@/constants";
@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import FileUploader from "@/components/FileUploader";
 import { signOutUser } from "@/lib/actions/user.actions";
+
+import { s3ConfigService, StorageMode } from "@/lib/services/s3/s3-config.service";
 
 interface Props {
   $id: string;
@@ -34,6 +36,13 @@ const MobileNavigation = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const [storageMode, setStorageMode] = useState<StorageMode>('managed-storage');
+
+  useEffect(() => {
+    setStorageMode(s3ConfigService.getMode());
+  }, []);
+
+  const visibleNavItems = storageMode === 'own-s3' ? [] : navItems;
 
   return (
     <header className="mobile-header">
@@ -74,7 +83,7 @@ const MobileNavigation = ({
 
           <nav className="mobile-nav">
             <ul className="mobile-nav-list">
-              {navItems.map(({ url, name, icon }) => (
+              {visibleNavItems.map(({ url, name, icon }) => (
                 <Link key={name} href={url} className="lg:w-full">
                   <li
                     className={cn(

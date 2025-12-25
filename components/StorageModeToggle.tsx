@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getStorageMode, setStorageMode, getS3Config, setS3Config, clearS3Config, S3Config, type StorageMode } from "@/lib/s3/config";
+import { s3ConfigService, S3Config, StorageMode, ConnectionStatus } from "@/lib/services/s3/s3-config.service";
 import { useAuth } from "@/lib/hooks/use-auth";
 import { useStorageStore } from "@/lib/stores/storage-store";
 import { useUIStore } from "@/lib/stores/ui-store";
@@ -14,16 +14,15 @@ import { useRouter } from "next/navigation";
 import S3SetupGuide from "@/components/S3SetupGuide";
 import { s3ConfigSchema } from "@/lib/utils/validation";
 import { Lock, CheckCircle2, XCircle, Loader2, AlertCircle } from "lucide-react";
-import { testS3Connection, validateS3Config, type ConnectionStatus } from "@/lib/s3/validate";
 
 const StorageModeToggle = () => {
   const { user } = useAuth();
-  const { 
-    mode, 
-    setMode: setStorageModeStore, 
-    s3Config, 
-    setS3Config: setS3ConfigStore, 
-    hasPlatformAccess, 
+  const {
+    mode,
+    setMode: setStorageModeStore,
+    s3Config,
+    setS3Config: setS3ConfigStore,
+    hasPlatformAccess,
     setPlatformAccess,
     connectionStatus,
     connectionMessage,
@@ -35,6 +34,7 @@ const StorageModeToggle = () => {
     secretAccessKey: '',
     region: 'us-east-1',
     bucket: '',
+    cdnUrl: '',
   });
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const { toast } = useToast();
@@ -44,7 +44,7 @@ const StorageModeToggle = () => {
   useEffect(() => {
     const checkSubscription = async () => {
       if (!user?.id) return;
-      
+
       try {
         const response = await fetch('/api/subscriptions/check');
         if (response.ok) {
@@ -61,11 +61,11 @@ const StorageModeToggle = () => {
 
   useEffect(() => {
     const loadConfig = async () => {
-      const currentMode = getStorageMode();
+      const currentMode = s3ConfigService.getMode();
       setStorageModeStore(currentMode);
-      
+
       if (user?.id) {
-        const savedConfig = await getS3Config(user.id);
+        const savedConfig = await s3ConfigService.getConfig(user.id);
         if (savedConfig) {
           setConfig(savedConfig);
           setS3ConfigStore(savedConfig);
@@ -80,6 +80,7 @@ const StorageModeToggle = () => {
             secretAccessKey: '',
             region: 'us-east-1',
             bucket: '',
+            cdnUrl: '',
           });
         }
       }
@@ -91,7 +92,7 @@ const StorageModeToggle = () => {
   useEffect(() => {
     const loadConfig = async () => {
       if (isS3SettingsOpen && user?.id) {
-        const savedConfig = await getS3Config(user.id);
+        const savedConfig = await s3ConfigService.getConfig(user.id);
         if (savedConfig) {
           setConfig(savedConfig);
         } else {
@@ -101,6 +102,7 @@ const StorageModeToggle = () => {
             secretAccessKey: '',
             region: 'us-east-1',
             bucket: '',
+            cdnUrl: '',
           });
         }
         // Reset connection status when dialog opens
@@ -114,7 +116,7 @@ const StorageModeToggle = () => {
   useEffect(() => {
     if (mode === 'own-s3' && s3Config) {
       checkConnection(s3Config);
-    } else if (mode === 'platform-s3') {
+    } else if (mode === 'managed-storage') {
       setConnectionStatus('idle', '');
     }
   }, [mode, s3Config, setConnectionStatus]);
@@ -128,11 +130,11 @@ const StorageModeToggle = () => {
 
     setIsTestingConnection(true);
     setConnectionStatus('checking', 'Testing connection...');
-    
+
     try {
-      const result = await testS3Connection(configToUse);
+      const result = await s3ConfigService.testConnection(configToUse);
       setConnectionStatus(result.status, result.message);
-      
+
       if (result.status === 'connected') {
         toast({
           description: "Successfully connected to S3",
@@ -155,10 +157,13 @@ const StorageModeToggle = () => {
   };
 
   const handleModeChange = async (newMode: StorageMode) => {
+    // Rebrand platform-s3 to managed-storage
+    const targetMode = newMode;
+
     // If clicking the same mode, open settings or show status
-    if (newMode === mode) {
-      if (newMode === 'own-s3') {
-        const savedConfig = user?.id ? await getS3Config(user.id) : s3Config;
+    if (targetMode === mode) {
+      if (targetMode === 'own-s3') {
+        const savedConfig = user?.id ? await s3ConfigService.getConfig(user.id) : s3Config;
         if (savedConfig && savedConfig.accessKeyId && savedConfig.secretAccessKey && savedConfig.bucket) {
           // If config exists, test connection
           checkConnection(savedConfig);
@@ -173,18 +178,11 @@ const StorageModeToggle = () => {
       return;
     }
 
-    // Check if platform-s3 requires subscription
-    if (newMode === 'platform-s3' && !hasPlatformAccess) {
-      toast({
-        description: "Platform S3 requires an active subscription. Please upgrade your plan.",
-        className: "error-toast",
-      });
-      return;
-    }
+    // ALLOW switching even if not pro, actions are gated elsewhere
 
     // Check if own-s3 needs configuration
-    if (newMode === 'own-s3') {
-      const savedConfig = user?.id ? await getS3Config(user.id) : s3Config;
+    if (targetMode === 'own-s3') {
+      const savedConfig = user?.id ? await s3ConfigService.getConfig(user.id) : s3Config;
       if (!savedConfig || !savedConfig.accessKeyId || !savedConfig.secretAccessKey || !savedConfig.bucket) {
         // Open settings dialog to configure
         setS3SettingsOpen(true);
@@ -194,36 +192,42 @@ const StorageModeToggle = () => {
         });
         return;
       }
-      
+
       // Config exists, switch mode and test connection
-      setStorageMode(newMode);
-      setStorageModeStore(newMode);
+      s3ConfigService.setMode(targetMode);
+      setStorageModeStore(targetMode);
       router.refresh();
-      
+
       // Test connection after switching
       setTimeout(() => {
         checkConnection(savedConfig);
       }, 100);
-      
+
       toast({
         description: "Switched to Your Own S3. Testing connection...",
       });
       return;
     }
-    
-    // For platform-s3
-    setStorageMode(newMode);
-    setStorageModeStore(newMode);
+
+    // For managed-storage
+    s3ConfigService.setMode(targetMode);
+    setStorageModeStore(targetMode);
     router.refresh();
-    
-    toast({
-      description: `Switched to Platform S3`,
-    });
+
+    if (!hasPlatformAccess) {
+      toast({
+        description: "Viewing Managed Storage (Action required Pro subscription)",
+      });
+    } else {
+      toast({
+        description: `Switched to Managed Storage`,
+      });
+    }
   };
 
   const handleSaveConfig = async () => {
     // Validate config format first
-    const formatValidation = validateS3Config(config);
+    const formatValidation = s3ConfigService.validateConfig(config);
     if (!formatValidation.valid) {
       toast({
         description: formatValidation.errors[0] || "Please fill in all required fields",
@@ -232,37 +236,24 @@ const StorageModeToggle = () => {
       return;
     }
 
-    // Validate with schema
-    const validation = s3ConfigSchema.safeParse(config);
-    if (!validation.success) {
-      toast({
-        description: validation.error.errors[0]?.message || "Please fill in all required fields",
-        className: "error-toast",
-      });
-      return;
-    }
-
     // Test connection before saving
     setIsTestingConnection(true);
     setConnectionStatus('checking', 'Testing connection...');
-    
+
     try {
-      const result = await testS3Connection(config);
-      
+      const result = await s3ConfigService.testConnection(config);
+
       if (result.status === 'connected') {
         // Save config only if connection is successful
-        if (user?.id) {
-          await setS3Config(config, user.id);
-        } else {
-          await setS3Config(config); // Fallback without userId
-        }
+        await s3ConfigService.saveConfig(config, user?.id);
+
         setS3ConfigStore(config);
-        setStorageMode('own-s3');
+        s3ConfigService.setMode('own-s3');
         setStorageModeStore('own-s3');
         setConnectionStatus('connected', result.message);
         setS3SettingsOpen(false);
         router.refresh();
-        
+
         toast({
           description: "S3 configuration saved and connected successfully",
         });
@@ -273,13 +264,9 @@ const StorageModeToggle = () => {
           description: result.error || result.message || "Connection test failed. Configuration saved but not connected.",
           className: "error-toast",
         });
-        
+
         // Still save the config (user might want to fix credentials later)
-        if (user?.id) {
-          await setS3Config(config, user.id);
-        } else {
-          await setS3Config(config);
-        }
+        await s3ConfigService.saveConfig(config, user?.id);
         setS3ConfigStore(config);
       }
     } catch (error: any) {
@@ -294,20 +281,21 @@ const StorageModeToggle = () => {
   };
 
   const handleClearConfig = () => {
-    clearS3Config();
+    s3ConfigService.clear();
     setS3ConfigStore(null);
     setConnectionStatus('idle', '');
-    setStorageMode('own-s3');
+    s3ConfigService.setMode('own-s3');
     setStorageModeStore('own-s3');
     setConfig({
       accessKeyId: '',
       secretAccessKey: '',
       region: 'us-east-1',
       bucket: '',
+      cdnUrl: '',
     });
     setS3SettingsOpen(false);
     router.refresh();
-    
+
     toast({
       description: "S3 configuration cleared",
     });
@@ -329,7 +317,7 @@ const StorageModeToggle = () => {
 
   const getConnectionStatusText = () => {
     if (mode !== 'own-s3') return '';
-    
+
     switch (connectionStatus) {
       case 'connected':
         return 'Connected';
@@ -350,11 +338,10 @@ const StorageModeToggle = () => {
         <Button
           type="button"
           onClick={() => handleModeChange('own-s3')}
-          className={`button h-[40px] px-4 rounded-full transition-all relative ${
-            mode === 'own-s3'
-              ? 'bg-brand text-white shadow-drop-2 hover:bg-brand-100'
-              : 'bg-transparent text-light-200 hover:bg-light-300 hover:text-light-100'
-          }`}
+          className={`button h-[40px] px-4 rounded-full transition-all relative ${mode === 'own-s3'
+            ? 'bg-brand text-white shadow-drop-2 hover:bg-brand-100'
+            : 'bg-transparent text-light-200 hover:bg-light-300 hover:text-light-100'
+            }`}
         >
           Own S3
           {mode === 'own-s3' && s3Config && (
@@ -365,18 +352,14 @@ const StorageModeToggle = () => {
         </Button>
         <Button
           type="button"
-          onClick={() => handleModeChange('platform-s3')}
-          disabled={!hasPlatformAccess}
-          className={`button h-[40px] px-4 rounded-full transition-all relative ${
-            mode === 'platform-s3'
-              ? 'bg-brand text-white shadow-drop-2 hover:bg-brand-100'
-              : hasPlatformAccess
-              ? 'bg-transparent text-light-200 hover:bg-light-300 hover:text-light-100'
-              : 'bg-transparent text-light-200 opacity-50 cursor-not-allowed'
-          }`}
-          title={!hasPlatformAccess ? "Requires active subscription" : "Platform S3"}
+          onClick={() => handleModeChange('managed-storage')}
+          className={`button h-[40px] px-4 rounded-full transition-all relative ${mode === 'managed-storage'
+            ? 'bg-brand text-white shadow-drop-2 hover:bg-brand-100'
+            : 'bg-transparent text-light-200 hover:bg-light-300 hover:text-light-100'
+            }`}
+          title={!hasPlatformAccess ? "Actions require Pro subscription" : "Managed Storage"}
         >
-          Platform S3
+          Managed Storage
           {!hasPlatformAccess && (
             <Lock className="absolute -top-1 -right-1 w-3 h-3 text-light-200" />
           )}
@@ -391,7 +374,7 @@ const StorageModeToggle = () => {
       >
         Settings
       </Button>
-      
+
       <ScrollableDialog
         open={isS3SettingsOpen}
         onOpenChange={setS3SettingsOpen}
@@ -400,8 +383,8 @@ const StorageModeToggle = () => {
         className="lg:min-w-[500px]"
         footer={
           <div className="flex flex-col gap-3">
-            <Button 
-              onClick={handleSaveConfig} 
+            <Button
+              onClick={handleSaveConfig}
               disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
               className="w-full primary-btn shadow-drop-2 h-[44px]"
               title={!config.accessKeyId || !config.secretAccessKey || !config.bucket ? "Fill in all fields to save" : s3Config ? "Update and test connection" : "Save and test connection"}
@@ -417,7 +400,7 @@ const StorageModeToggle = () => {
                 'Save Configuration'
               )}
             </Button>
-            
+
             <Button
               onClick={() => checkConnection(config)}
               disabled={isTestingConnection || !config.accessKeyId || !config.secretAccessKey || !config.bucket}
@@ -434,15 +417,15 @@ const StorageModeToggle = () => {
                 'Test Connection (Don\'t Save)'
               )}
             </Button>
-            
+
             {/* Delete/Clear Button */}
             {s3Config && (
-              <Button 
+              <Button
                 onClick={() => {
                   if (confirm('Are you sure you want to delete your S3 configuration? This will clear all saved credentials.')) {
                     handleClearConfig();
                   }
-                }} 
+                }}
                 variant="outline"
                 className="w-full button border border-red/30 bg-red/10 text-red hover:bg-red/20 hover:text-red shadow-drop-1 h-[40px]"
                 title="Delete saved S3 credentials"
@@ -510,6 +493,23 @@ const StorageModeToggle = () => {
                 placeholder="my-storage-bucket"
                 className="shad-input"
               />
+            </div>
+
+            <div className="shad-form-item">
+              <Label htmlFor="cdnUrl" className="shad-form-label">
+                CDN URL (Optional)
+              </Label>
+              <Input
+                id="cdnUrl"
+                type="text"
+                value={config.cdnUrl || ''}
+                onChange={(e) => setConfig({ ...config, cdnUrl: e.target.value })}
+                placeholder="https://cdn.example.com"
+                className="shad-input"
+              />
+              <p className="caption text-light-200 mt-1">
+                If you have a CDN configured, enter the base URL here. Files will be served from CDN instead of S3.
+              </p>
             </div>
           </div>
 

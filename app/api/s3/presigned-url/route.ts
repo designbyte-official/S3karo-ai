@@ -7,12 +7,12 @@ import { createPlatformS3Client, getPlatformS3Bucket } from '@/lib/s3/client-ser
 
 /**
  * Generate presigned URL for S3 operations
- * Supports both OWN S3 (user's credentials) and PLATFORM S3 (requires subscription)
+ * Supports both OWN S3 (user's credentials) and MANAGED STORAGE (requires subscription)
  */
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'Not authenticated' },
@@ -30,20 +30,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if platform S3 requires subscription
-    if (storageMode === 'platform-s3') {
+    // Check if Managed Storage requires subscription
+    if (storageMode === 'managed-storage' || storageMode === 'platform-s3') {
       const access = await hasPlatformAccess(user.id);
       if (!access) {
         return NextResponse.json(
-          { error: 'Platform S3 requires an active subscription' },
+          { error: 'Managed Storage requires an active subscription' },
           { status: 403 }
         );
       }
     }
 
     // For OWN S3, client handles presigned URLs directly
-    // For PLATFORM S3, we generate presigned URLs server-side
-    if (storageMode === 'platform-s3') {
+    // For MANAGED STORAGE, we generate presigned URLs server-side
+    if (storageMode === 'managed-storage' || storageMode === 'platform-s3') {
       const client = createPlatformS3Client();
       const bucket = getPlatformS3Bucket();
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const expiresIn = operation === 'get' || operation === 'download' 
+      const expiresIn = operation === 'get' || operation === 'download'
         ? 3600 * 24 * 7 // 7 days for viewing
         : 3600; // 1 hour for uploading
 

@@ -165,7 +165,7 @@ npm run dev
    - Click "Settings" in header
    - Enter AWS credentials
    - Click "View Setup Guide" for CORS setup
-   - Toggle to "S3" mode
+   - Switch to "Own S3" mode
 
 **✅ S3 configured!**
 
@@ -202,6 +202,7 @@ Your app is now running with:
 
 - **Quick Start:** `local-docs/QUICK_START.md`
 - **Detailed Setup:** `local-docs/SETUP.md`
+- **Managed Storage Setup:** `local-docs/MANAGED_STORAGE_SETUP.md`
 - **Database Options:** `local-docs/DATABASE_PLATFORMS.md`
 - **What to Get:** `local-docs/WHAT_TO_GET.md`
 

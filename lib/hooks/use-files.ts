@@ -1,9 +1,11 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getFiles as getFilesClient, getTotalSpaceUsed as getTotalSpaceUsedClient } from "@/lib/actions/file.actions.client";
+import { s3ExplorerService } from "@/lib/services/s3/s3-explorer.service";
+import { platformStorageService } from "@/lib/services/platform/platform-storage.service";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
 import { useStorageStore } from "@/lib/stores/storage-store";
-import { useAuth } from "@/lib/hooks/use-auth";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 // Get files query hook
 export function useFiles(filters?: {
@@ -12,63 +14,62 @@ export function useFiles(filters?: {
   sort?: string;
   limit?: number;
 }) {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const { mode } = useStorageStore();
 
   return useQuery({
-    queryKey: ["files", filters, mode],
+    queryKey: ["files", filters, mode, user?.$id],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
+      const uid = user.$id || user.id;
+      const accountId = user.accountId || uid;
 
       if (mode === "own-s3") {
-        return await getFilesClient({
+        const config = await s3ConfigService.getConfig(uid);
+        return await s3ExplorerService.listItems({
+          config,
           types: filters?.types || [],
           searchText: filters?.searchText || "",
           sort: filters?.sort || "$createdAt-desc",
           limit: filters?.limit,
-          ownerId: user.$id || user.id,
-          accountId: user.accountId || user.id,
+          ownerId: uid,
+          accountId,
         });
       } else {
-        // For platform-s3, always use API (requires DB)
-        const params = new URLSearchParams();
-        if (filters?.types && filters.types.length > 0) {
-          params.append("types", filters.types.join(","));
-        }
-        if (filters?.searchText) params.append("searchText", filters.searchText);
-        if (filters?.sort) params.append("sort", filters.sort);
-        if (filters?.limit) params.append("limit", filters.limit.toString());
-
-        const response = await fetch(`/api/files?${params.toString()}`);
-        if (!response.ok) throw new Error("Failed to fetch files");
-        return await response.json();
+        return await platformStorageService.getFiles({
+          userId: uid,
+          types: filters?.types || [],
+          searchText: filters?.searchText || "",
+          sort: filters?.sort || "$createdAt-desc",
+          limit: filters?.limit,
+        });
       }
     },
     enabled: !!user,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
   });
 }
 
 // Get total space used hook
 export function useTotalSpace() {
-  const { user } = useAuth();
+  const user = useAuthStore((state) => state.user);
   const { mode } = useStorageStore();
 
   return useQuery({
-    queryKey: ["totalSpace", mode],
+    queryKey: ["totalSpace", mode, user?.$id],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
+      const uid = user.$id || user.id;
 
       if (mode === "own-s3") {
-        return await getTotalSpaceUsedClient(user.$id || user.id);
+        const config = await s3ConfigService.getConfig(uid);
+        return await s3ExplorerService.getBucketStats(config, `${uid}/${user.accountId || uid}/`);
       } else {
-        const response = await fetch("/api/files/space");
-        if (!response.ok) throw new Error("Failed to fetch space");
-        return await response.json();
+        return await platformStorageService.getStorageStats(uid);
       }
     },
     enabled: !!user,
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
   });
 }
 
@@ -79,19 +80,27 @@ export function useDeleteFile() {
 
   return useMutation({
     mutationFn: async ({ fileId, bucketFileId }: { fileId: string; bucketFileId: string }) => {
+      const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+
       if (mode === "own-s3") {
-        const { deleteFile: deleteFileClient } = await import("@/lib/actions/file.actions.client");
-        const path = typeof window !== 'undefined' ? window.location.pathname : '/';
-        return await deleteFileClient({ fileId, bucketFileId, path });
+        // We need config - typically we'd get this from a store or re-fetch
+        // For brevity in mutation, we assume config is available or fetch it
+        // In a real app, user ID would be available via store
+        const user = useAuthStore.getState().user;
+        if (!user) throw new Error("User not found");
+        const config = await s3ConfigService.getConfig(user.$id || user.id);
+
+        const { s3CoreService } = await import("@/lib/services/s3/s3-core.service");
+        return await s3CoreService.delete(config, bucketFileId);
       } else {
-        const response = await fetch(`/api/files/${fileId}`, { method: "DELETE" });
-        if (!response.ok) throw new Error("Failed to delete file");
-        return await response.json();
+        return await platformStorageService.deleteFile({ fileId, path });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["files"] });
       queryClient.invalidateQueries({ queryKey: ["totalSpace"] });
+      queryClient.invalidateQueries({ queryKey: ["s3-files"] });
+      queryClient.invalidateQueries({ queryKey: ["s3-stats"] });
     },
   });
 }
@@ -115,23 +124,30 @@ export function useRenameFile() {
       bucketFileId: string;
       ownerId: string;
     }) => {
+      const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+
       if (mode === "own-s3") {
-        const { renameFile: renameFileClient } = await import("@/lib/actions/file.actions.client");
-        const path = typeof window !== 'undefined' ? window.location.pathname : '/';
-        return await renameFileClient({ fileId, name, extension, path, ownerId, bucketFileId });
+        const config = await s3ConfigService.getConfig(ownerId);
+        const { s3CoreService } = await import("@/lib/services/s3/s3-core.service");
+
+        const pathParts = bucketFileId.split('/');
+        pathParts[pathParts.length - 1] = `${name}.${extension}`;
+        const newKey = pathParts.join('/');
+
+        const metadata = await s3CoreService.head(config, bucketFileId);
+        return await s3CoreService.rename(config, bucketFileId, newKey, metadata.metadata);
       } else {
-        const response = await fetch(`/api/files/${fileId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: `${name}.${extension}` }),
+        return await platformStorageService.renameFile({
+          fileId,
+          name,
+          extension,
+          path,
         });
-        if (!response.ok) throw new Error("Failed to rename file");
-        return await response.json();
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["files"] });
+      queryClient.invalidateQueries({ queryKey: ["s3-files"] });
     },
   });
 }
-

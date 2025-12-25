@@ -2,27 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getStorageMode } from "@/lib/s3/config";
-import { getFiles as getFilesClient } from "@/lib/actions/file.actions.client";
-import { getCurrentUser } from "@/lib/actions/user.actions";
+import { s3ExplorerService } from "@/lib/services/s3/s3-explorer.service";
+import { platformStorageService } from "@/lib/services/platform/platform-storage.service";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
 import Card from "@/components/Card";
-import { FileType } from "@/types/index.d";
-import { File } from "@/types/file";
+import { File as S3File } from "@/types/file";
 import { Button } from "@/components/ui/button";
+import { useAuthStore, User } from "@/lib/stores/auth-store";
 
 interface FileListProps {
   types: FileType[];
   searchText?: string;
   sort?: string;
   initialFiles?: {
-    documents: File[];
+    documents: S3File[];
     total: number;
     continuationToken?: string;
   };
-  currentUser?: {
-    $id: string;
-    accountId: string;
-  };
+  currentUser?: User;
 }
 
 const ITEMS_PER_PAGE = 20;
@@ -31,31 +28,26 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
   const router = useRouter();
   const [files, setFiles] = useState(initialFiles || { documents: [], total: 0 });
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(currentUser);
+  const user = useAuthStore((state) => state.user);
   const [currentPage, setCurrentPage] = useState(1);
   const [continuationToken, setContinuationToken] = useState<string | undefined>(initialFiles?.continuationToken);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      if (!user) {
-        const fetchedUser = await getCurrentUser();
-        setUser(fetchedUser);
-      }
-    };
-    fetchUser();
-  }, [user]);
-
-  useEffect(() => {
     const loadFiles = async () => {
       if (!user) return;
-      
+
       setLoading(true);
-      setCurrentPage(1); // Reset to first page on filter change
-      const mode = getStorageMode();
-      
+      const mode = s3ConfigService.getMode();
+
       try {
-        if (mode === 'own-s3' || mode === 'platform-s3') {
-          const result = await getFilesClient({
+        if (mode === 'own-s3') {
+          const config = await s3ConfigService.getConfig(user.$id);
+          if (!config) {
+            router.push('/own-s3/setup');
+            return;
+          }
+          const result = await s3ExplorerService.listItems({
+            config,
             types,
             searchText,
             sort,
@@ -65,19 +57,27 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
           });
           setFiles(result);
           setContinuationToken(result.continuationToken);
-          setCurrentPage(1);
+        } else if (mode === 'managed-storage' || mode === 'platform-s3') {
+          const result = await platformStorageService.getFiles({
+            userId: user.$id,
+            types,
+            searchText,
+            sort,
+            limit: ITEMS_PER_PAGE,
+          });
+          setFiles(result);
+          // Managed Storage doesn't currently return a continuation token from the API
+          setContinuationToken(undefined);
         } else {
-          // No Appwrite - return empty
           setFiles({ documents: [], total: 0 });
         }
+        setCurrentPage(1);
       } catch (error: any) {
         console.error('Error loading files:', error);
-        // If own-s3 mode and config not found, redirect to setup
         if (mode === 'own-s3' && error?.message?.includes('S3 configuration not found')) {
           router.push('/own-s3/setup');
           return;
         }
-        // Show error message
         setFiles({ documents: [], total: 0 });
       } finally {
         setLoading(false);
@@ -87,28 +87,44 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
     loadFiles();
   }, [types, searchText, sort, user, router]);
 
-  // Listen for storage changes (when files are uploaded/deleted)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const handleStorageChange = () => {
       if (user) {
-        const mode = getStorageMode();
-        if (mode === 'own-s3' || mode === 'platform-s3') {
-          getFilesClient({
+        const mode = s3ConfigService.getMode();
+        if (mode === 'own-s3') {
+          s3ConfigService.getConfig(user.$id).then(config => {
+            if (!config) return;
+            return s3ExplorerService.listItems({
+              config,
+              types,
+              searchText,
+              sort,
+              ownerId: user.$id,
+              accountId: user.accountId,
+              limit: ITEMS_PER_PAGE,
+            });
+          }
+          ).then(result => {
+            if (result) {
+              setFiles(result);
+              setContinuationToken(result.continuationToken);
+              setCurrentPage(1);
+            }
+          }).catch(console.error);
+        } else if (mode === 'managed-storage' || mode === 'platform-s3') {
+          platformStorageService.getFiles({
+            userId: user.$id,
             types,
             searchText,
             sort,
-            ownerId: user.$id,
-            accountId: user.accountId,
             limit: ITEMS_PER_PAGE,
-          }).then((result) => {
+          }).then(result => {
             setFiles(result);
-            setContinuationToken(result.continuationToken);
+            setContinuationToken(undefined);
             setCurrentPage(1);
-          }).catch((error) => {
-            console.error('Error refreshing files:', error);
-          });
+          }).catch(console.error);
         }
       }
     };
@@ -118,14 +134,17 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
   }, [types, searchText, sort, user]);
 
   const loadMore = async () => {
-    if (!user || !continuationToken || loading) return;
-    
+    if (!user || loading) return;
+
     setLoading(true);
-    const mode = getStorageMode();
-    
+    const mode = s3ConfigService.getMode();
+
     try {
-      if (mode === 'own-s3' || mode === 'platform-s3') {
-        const result = await getFilesClient({
+      if (mode === 'own-s3') {
+        const config = await s3ConfigService.getConfig(user.$id);
+        if (!config) return;
+        const result = await s3ExplorerService.listItems({
+          config,
           types,
           searchText,
           sort,
@@ -139,6 +158,20 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
           total: result.total,
         }));
         setContinuationToken(result.continuationToken);
+        setCurrentPage(prev => prev + 1);
+      } else if (mode === 'managed-storage' || mode === 'platform-s3') {
+        const result = await platformStorageService.getFiles({
+          userId: user.$id,
+          types,
+          searchText,
+          sort,
+          limit: ITEMS_PER_PAGE,
+        });
+        setFiles(prev => ({
+          documents: [...prev.documents, ...result.documents],
+          total: result.total,
+        }));
+        setContinuationToken(undefined);
         setCurrentPage(prev => prev + 1);
       }
     } catch (error: any) {
@@ -157,7 +190,7 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
   }
 
   const hasMore = !!continuationToken;
-  const displayedFiles = files.documents.slice(0, currentPage * ITEMS_PER_PAGE);
+  const displayedFiles = files.documents;
 
   return (
     <>
@@ -182,4 +215,3 @@ const FileList = ({ types, searchText = "", sort = "$createdAt-desc", initialFil
 };
 
 export default FileList;
-

@@ -72,8 +72,10 @@ openssl rand -base64 32
 - **No environment variables needed** on server
 - Credentials stored locally in browser
 
-#### Option B: Platform S3 (Paid Feature)
-**Only needed if:** You want to offer Platform S3 to subscribed users
+#### Option B: Managed Storage (Paid Feature)
+- Users use the platform's storage tier.
+- **Actions gated**: Upload, Rename, Share, and Delete require a **Pro subscription**.
+- **Read-only**: Free users can view and download but not modify.
 
 **Environment Variables:**
 ```env
@@ -110,7 +112,7 @@ NEXT_PUBLIC_ENCRYPTION_SECRET=your-encryption-secret-here
 # Your app URL
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-# Platform S3 (Optional - only if offering Platform S3 to subscribers)
+# Managed Storage (Optional - only if offering Managed Storage to subscribers)
 # AWS_ACCESS_KEY_ID=your-aws-access-key-id
 # AWS_SECRET_ACCESS_KEY=your-aws-secret-access-key
 # AWS_REGION=us-east-1

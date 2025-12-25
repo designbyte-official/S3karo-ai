@@ -36,9 +36,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ## Optional Variables
 
-### Platform S3 (For Subscribed Users)
+### Managed Storage (For Subscribed Users)
 
-**Only add these if you want to offer Platform S3 to subscribed users.**
+**Only add these if you want to offer Managed Storage to subscribed users.**
 
 ```env
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
@@ -55,9 +55,10 @@ AWS_S3_BUCKET=platform-storage-bucket
 | `AWS_REGION` | AWS region (defaults to `us-east-1`) | No |
 
 **Note:** 
-- These are for **Platform S3** (paid feature)
+- These are for **Managed Storage** (paid feature)
 - Users with **Own S3** enter credentials in UI (no env vars needed)
-- See `local-docs/PLATFORM_S3_SETUP.md` for setup
+- Managed Storage operations (Upload, Rename, Share, Delete) require a **Pro subscription**.
+- See `local-docs/MANAGED_STORAGE_SETUP.md` for setup
 
 ---
 
@@ -148,11 +149,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 ---
 
-## Quick Reference
-
-| Feature | Env Vars Needed | User Action |
-|---------|----------------|-------------|
-| **Own S3** | None | Enter credentials in UI |
-| **Platform S3** | 4 AWS vars | Requires subscription |
+| Feature | Env Vars Needed | User Action / Gating |
+|---------|----------------|----------------------|
+| **Own S3** | None | Enter credentials in UI (No gating) |
+| **Managed Storage** | 4 AWS vars | Actions require Pro subscription |
 | **Email** | Provider-specific | Configure in `.env.local` |
 

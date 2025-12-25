@@ -5,7 +5,7 @@ import Image from "next/image";
 import { navItems } from "@/constants";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { getStorageMode, getS3Config } from "@/lib/s3/config";
+import { s3ConfigService, StorageMode } from "@/lib/services/s3/s3-config.service";
 import { useEffect, useState } from "react";
 import { useUIStore } from "@/lib/stores/ui-store";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,7 @@ interface Props {
 
 const Sidebar = ({ fullName, avatar, email }: Props) => {
   const pathname = usePathname();
-  const [storageMode, setStorageMode] = useState<'own-s3' | 'platform-s3'>('own-s3');
+  const [storageMode, setStorageMode] = useState<StorageMode>('own-s3');
   const [hasS3Config, setHasS3Config] = useState(false);
   const { setS3SettingsOpen } = useUIStore();
 
@@ -26,14 +26,14 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
     // Check storage mode on mount and when it changes
     const updateMode = async () => {
       if (typeof window === 'undefined') return;
-      
-      const mode = getStorageMode();
-      setStorageMode(mode as 'own-s3' | 'platform-s3');
-      
+
+      const mode = s3ConfigService.getMode();
+      setStorageMode(mode);
+
       // Check if S3 config exists for own-s3 mode
       if (mode === 'own-s3') {
         try {
-          const config = await getS3Config();
+          const config = await s3ConfigService.getConfig();
           setHasS3Config(!!(config && config.accessKeyId && config.secretAccessKey && config.bucket));
         } catch (error) {
           console.error('Error loading S3 config:', error);
@@ -43,29 +43,29 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
         setHasS3Config(false);
       }
     };
-    
+
     updateMode();
-    
+
     // Listen for storage changes (when switching modes)
     const handleStorageChange = () => {
       updateMode();
     };
-    
+
     // Listen to storage events (for cross-tab updates)
     window.addEventListener('storage', handleStorageChange);
-    
+
     // Also check periodically for same-tab changes
     const interval = setInterval(updateMode, 500);
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       clearInterval(interval);
     };
   }, []);
 
-  // All nav items work with S3 (Dashboard, Documents, Images, Media, Others)
-  // They all use direct S3 operations, so show all items for own-s3 mode
-  const visibleNavItems = navItems;
+  // When in own-s3 mode, only show the Own S3 Files explorer
+  // Standard items (Dashboard, Documents, etc.) are for Managed Storage
+  const visibleNavItems = storageMode === 'own-s3' ? [] : navItems;
 
   return (
     <aside className="sidebar">
@@ -112,7 +112,7 @@ const Sidebar = ({ fullName, avatar, email }: Props) => {
               </li>
             </Link>
           ))}
-          
+
           {/* Show Own S3 Files link only in own-s3 mode */}
           {storageMode === 'own-s3' && (
             <>

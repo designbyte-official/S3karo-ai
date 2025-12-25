@@ -5,20 +5,21 @@ import FormattedDateTime from "@/components/FormattedDateTime";
 import ActionDropdown from "@/components/ActionDropdown";
 import { File } from "@/types/file";
 
-const Card = ({ file }: { file: File }) => {
+const Card = ({ file, onFolderClick }: { file: File; onFolderClick?: (path: string) => void }) => {
   const isFolder = file.type === 'folder' || file.isFolder;
-  
+
   const handleClick = (e: React.MouseEvent) => {
     if (isFolder) {
       e.preventDefault();
-      // TODO: Navigate to folder or update prefix
-      console.log('Folder clicked:', file.key || file.$id);
+      if (onFolderClick) {
+        onFolderClick(file.key || file.$id);
+      }
     }
   };
 
   return (
-    <Link 
-      href={isFolder ? '#' : file.url} 
+    <Link
+      href={isFolder ? '#' : file.url}
       target={isFolder ? undefined : "_blank"}
       onClick={handleClick}
       className="file-card"

@@ -8,68 +8,82 @@ import { Chart } from "@/components/Chart";
 import { FormattedDateTime } from "@/components/FormattedDateTime";
 import { Thumbnail } from "@/components/Thumbnail";
 import { Separator } from "@/components/ui/separator";
-import { getFiles as getFilesClient, getTotalSpaceUsed as getTotalSpaceUsedClient } from "@/lib/actions/file.actions.client";
-import { getStorageMode } from "@/lib/s3/config";
-import { getCurrentUser } from "@/lib/actions/user.actions";
+import { platformStorageService } from "@/lib/services/platform/platform-storage.service";
+import { s3ExplorerService } from "@/lib/services/s3/s3-explorer.service";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
 import { convertFileSize, getUsageSummary } from "@/lib/utils";
-import { File } from "@/types/file";
+import { File as S3File, StorageStats } from "@/types/file";
+import { useRouter } from "next/navigation";
+import { useAuthStore, User } from "@/lib/stores/auth-store";
 
 interface DashboardClientProps {
   initialFiles?: {
-    documents: File[];
+    documents: S3File[];
     total: number;
   };
-  initialTotalSpace?: any;
-  currentUser?: {
-    $id: string;
-    accountId: string;
-  };
+  initialTotalSpace?: StorageStats | null;
+  currentUser?: User;
 }
 
 const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: DashboardClientProps) => {
+  const router = useRouter();
   const [files, setFiles] = useState(initialFiles || { documents: [], total: 0 });
-  const [totalSpace, setTotalSpace] = useState(initialTotalSpace);
-  const [user, setUser] = useState(currentUser);
+  const [totalSpace, setTotalSpace] = useState<StorageStats | null>(initialTotalSpace || null);
+  const user = useAuthStore((state) => state.user);
   const [loading, setLoading] = useState(false);
 
+  // No need for fetchUser effect as we use Zustand store
+
   useEffect(() => {
-    const fetchUser = async () => {
-      if (!user) {
-        const fetchedUser = await getCurrentUser();
-        setUser(fetchedUser);
-      }
-    };
-    fetchUser();
-  }, [user]);
+    // If in own-s3 mode, redirect to the own-s3 page
+    // This dashboard is only for Managed Storage
+    const mode = s3ConfigService.getMode();
+    if (mode === 'own-s3') {
+      router.push('/own-s3');
+    }
+  }, [router]);
 
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
-      
+
       setLoading(true);
-      const mode = getStorageMode();
-      
+      const mode = s3ConfigService.getMode();
+
       try {
-        if (mode === 'own-s3' || mode === 'platform-s3') {
+        if (mode === 'own-s3') {
+          const config = await s3ConfigService.getConfig(user.$id);
+          if (!config) {
+            router.push('/own-s3/setup');
+            return;
+          }
           const [filesData, spaceData] = await Promise.all([
-            getFilesClient({
-              types: [],
+            s3ExplorerService.listItems({
+              config,
               limit: 10,
               ownerId: user.$id,
               accountId: user.accountId,
             }),
-            getTotalSpaceUsedClient(user.$id),
+            s3ExplorerService.getBucketStats(config, `${user.$id}/${user.accountId}/`),
+          ]);
+          setFiles(filesData);
+          setTotalSpace(spaceData);
+        } else if (mode === 'managed-storage' || mode === 'platform-s3') {
+          const [filesData, spaceData] = await Promise.all([
+            platformStorageService.getFiles({
+              userId: user.$id,
+              limit: 10,
+            }),
+            platformStorageService.getStorageStats(user.$id),
           ]);
           setFiles(filesData);
           setTotalSpace(spaceData);
         } else {
-          // No Appwrite - return empty
           setFiles({ documents: [], total: 0 });
           setTotalSpace(null);
         }
       } catch (error) {
         console.error('Error loading dashboard data:', error);
-        // Set empty data on error
         setFiles({ documents: [], total: 0 });
       } finally {
         setLoading(false);
@@ -83,16 +97,25 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
   useEffect(() => {
     const handleStorageChange = () => {
       if (user) {
-        const mode = getStorageMode();
-        if (mode === 'own-s3' || mode === 'platform-s3') {
-          getFilesClient({
-            types: [],
+        const mode = s3ConfigService.getMode();
+        if (mode === 'own-s3') {
+          s3ConfigService.getConfig(user.$id).then(config => {
+            if (!config) return;
+            return s3ExplorerService.listItems({
+              config,
+              limit: 10,
+              ownerId: user.$id,
+              accountId: user.accountId,
+            });
+          }
+          ).then(filesData => {
+            if (filesData) setFiles(filesData);
+          }).catch(console.error);
+        } else if (mode === 'managed-storage' || mode === 'platform-s3') {
+          platformStorageService.getFiles({
+            userId: user.$id,
             limit: 10,
-            ownerId: user.$id,
-            accountId: user.accountId,
-          }).then(setFiles).catch((error) => {
-            console.error('Error refreshing dashboard files:', error);
-          });
+          }).then(setFiles).catch(console.error);
         }
       }
     };
@@ -155,37 +178,41 @@ const DashboardClient = ({ initialFiles, initialTotalSpace, currentUser }: Dashb
           <p className="empty-list">Loading...</p>
         ) : files.documents.length > 0 ? (
           <ul className="mt-5 flex flex-col gap-5">
-            {files.documents.map((file) => (
-              <Link
-                href={file.url}
-                target="_blank"
+            {files.documents.map((file: S3File) => (
+              <div
                 className="flex items-center gap-3"
                 key={file.$id}
               >
-                <Thumbnail
-                  type={file.type}
-                  extension={file.extension}
-                  url={file.url}
-                />
+                <Link
+                  href={file.url}
+                  target="_blank"
+                  className="flex items-center gap-3 flex-1"
+                >
+                  <Thumbnail
+                    type={file.type}
+                    extension={file.extension}
+                    url={file.url}
+                  />
 
-                <div className="recent-file-details">
-                  <div className="flex flex-col gap-1">
-                    <p className="recent-file-name">{file.name}</p>
-                    <FormattedDateTime
-                      date={file.$createdAt}
-                      className="caption"
-                    />
+                  <div className="recent-file-details">
+                    <div className="flex flex-col gap-1">
+                      <p className="recent-file-name">{file.name}</p>
+                      <FormattedDateTime
+                        date={file.$createdAt}
+                        className="caption"
+                      />
+                    </div>
                   </div>
-                  <ActionDropdown file={file} />
-                </div>
-              </Link>
+                </Link>
+                <ActionDropdown file={file} />
+              </div>
             ))}
           </ul>
         ) : (
           <p className="empty-list">No files uploaded</p>
         )}
       </section>
-    </div>
+    </div >
   );
 };
 

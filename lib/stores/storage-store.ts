@@ -1,9 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { S3Config } from '@/lib/s3/config';
-import { ConnectionStatus } from '@/lib/s3/validate';
-
-export type StorageMode = 'own-s3' | 'platform-s3';
+import { S3Config, ConnectionStatus, StorageMode } from '@/lib/services/s3/s3-config.service';
 
 interface StorageState {
   mode: StorageMode;
@@ -21,7 +18,7 @@ interface StorageState {
 export const useStorageStore = create<StorageState>()(
   persist(
     (set) => ({
-      mode: 'own-s3',
+      mode: 'managed-storage',
       s3Config: null,
       hasPlatformAccess: false,
       connectionStatus: 'idle' as ConnectionStatus,

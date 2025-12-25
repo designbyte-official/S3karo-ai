@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
@@ -5,6 +7,8 @@ import Search from "@/components/Search";
 import FileUploader from "@/components/FileUploader";
 import StorageModeToggle from "@/components/StorageModeToggle";
 import { signOutUser } from "@/lib/actions/user.actions";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
+import { usePathname } from "next/navigation";
 
 const Header = ({
   userId,
@@ -13,18 +17,21 @@ const Header = ({
   userId: string;
   accountId: string;
 }) => {
+  const mode = s3ConfigService.getMode();
+  const path = usePathname();
+  const isOwnS3 = mode === 'own-s3';
+
   return (
     <header className="header">
-      <Search />
+      {!isOwnS3 && <Search />}
+      {isOwnS3 && <div className="flex-1" />}
+
       <div className="header-wrapper">
         <StorageModeToggle />
-        <FileUploader ownerId={userId} accountId={accountId} />
-        <form
-          action={async () => {
-            "use server";
+        {!isOwnS3 && <FileUploader ownerId={userId} accountId={accountId} />}
 
-            await signOutUser();
-          }}
+        <form
+          action={signOutUser}
         >
           <Button type="submit" className="sign-out-button">
             <Image

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getStorageMode, getS3Config } from "@/lib/s3/config";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
 import { getCurrentUser } from "@/lib/actions/user.actions";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -16,12 +16,12 @@ const OwnS3SetupPage = () => {
 
   useEffect(() => {
     const checkMode = () => {
-      const mode = getStorageMode();
+      const mode = s3ConfigService.getMode();
       if (mode !== 'own-s3') {
         router.push('/');
       }
     };
-    
+
     checkMode();
   }, [router]);
 
@@ -29,13 +29,13 @@ const OwnS3SetupPage = () => {
     const fetchUser = async () => {
       const currentUser = await getCurrentUser();
       setUser(currentUser);
-      
+
       // Check if S3 config exists
       if (currentUser?.$id) {
-        const config = await getS3Config(currentUser.$id);
+        const config = await s3ConfigService.getConfig(currentUser.$id);
         const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
         setHasConfig(configExists);
-        
+
         // If config exists, redirect to main own-s3 page
         if (configExists) {
           router.push('/own-s3');
@@ -50,7 +50,7 @@ const OwnS3SetupPage = () => {
     if (typeof window !== 'undefined') {
       const handleStorageChange = async () => {
         if (user?.$id) {
-          const config = await getS3Config(user.$id);
+          const config = await s3ConfigService.getConfig(user.$id);
           const configExists = !!(config && config.accessKeyId && config.secretAccessKey && config.bucket);
           if (configExists) {
             router.push('/own-s3');

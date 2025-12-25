@@ -9,9 +9,11 @@ import Image from "next/image";
 import Thumbnail from "@/components/Thumbnail";
 import { MAX_FILE_SIZE } from "@/constants";
 import { useToast } from "@/hooks/use-toast";
-import { uploadFile } from "@/lib/actions/file.actions.client";
-import { getStorageMode } from "@/lib/s3/config";
-import { usePathname, useRouter } from "next/navigation";
+import { s3ExplorerService } from "@/lib/services/s3/s3-explorer.service";
+import { platformStorageService } from "@/lib/services/platform/platform-storage.service";
+import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
+import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/lib/stores/auth-store";
 
 interface Props {
   ownerId: string;
@@ -21,14 +23,14 @@ interface Props {
 
 const FileUploader = ({ ownerId, accountId, className }: Props) => {
   const path = usePathname();
-  const router = useRouter();
   const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
+  const storageMode = s3ConfigService.getMode();
+  const user = useAuthStore((state) => state.user);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       setFiles(acceptedFiles);
-      const storageMode = getStorageMode();
 
       const uploadPromises = acceptedFiles.map(async (file) => {
         if (file.size > MAX_FILE_SIZE) {
@@ -48,20 +50,51 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
         }
 
         try {
-          if (storageMode === 'own-s3' || storageMode === 'platform-s3') {
-            // Use client-side S3 upload
-            const uploadedFile = await uploadFile({ file, ownerId, accountId, path });
-            if (uploadedFile) {
-              setFiles((prevFiles) =>
-                prevFiles.filter((f) => f.name !== file.name),
-              );
-              router.refresh();
-            }
+          // PRO CHECK for Managed Storage
+          if ((storageMode === 'managed-storage' || storageMode === 'platform-s3') && !user?.isPro) {
+            return toast({
+              description: (
+                <p className="body-2 text-white">
+                  Managed Storage uploads require a <span className="font-semibold">Pro subscription</span>.
+                </p>
+              ),
+              className: "error-toast",
+            });
           }
-        } catch (error) {
-          console.error('Upload error:', error);
+
+          // OWN S3 & PLATFORM S3: Both use client-side upload
+          // OWN S3: 100% client-side (direct to S3, no server)
+          // PLATFORM S3: Client-side S3 + API call for DB
+          console.log(`📤 FileUploader: Uploading to ${storageMode} (client-side)`);
+
+          let uploadedFile;
+          if (storageMode === 'own-s3') {
+            const config = await s3ConfigService.getConfig(ownerId);
+            if (!config) {
+              toast({
+                description: "Please configure your S3 credentials first",
+                className: "error-toast",
+              });
+              setFiles([]);
+              return;
+            }
+            uploadedFile = await s3ExplorerService.uploadFile({ file, ownerId, accountId, config });
+          } else {
+            uploadedFile = await platformStorageService.uploadFile({ file, ownerId, accountId });
+          }
+
+          if (uploadedFile) {
+            setFiles((prevFiles) =>
+              prevFiles.filter((f) => f.name !== file.name),
+            );
+            toast({
+              description: `${file.name} uploaded successfully`,
+            });
+          }
+        } catch (error: any) {
+          console.error('❌ Upload error:', error);
           toast({
-            description: `Failed to upload ${file.name}`,
+            description: `Failed to upload ${file.name}: ${error?.message || 'Unknown error'}`,
             className: "error-toast",
           });
           setFiles((prevFiles) =>
@@ -72,7 +105,7 @@ const FileUploader = ({ ownerId, accountId, className }: Props) => {
 
       await Promise.all(uploadPromises);
     },
-    [ownerId, accountId, path, router, toast],
+    [ownerId, accountId, path, toast, storageMode],
   );
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop });

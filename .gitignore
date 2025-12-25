@@ -40,4 +40,4 @@ yarn-error.log*
 next-env.d.ts
 
 # local documentation (not for repo)
-/local-docs
+# /local-docs
