@@ -1,5 +1,7 @@
 "use client";
 
+import { DashboardLayout } from "@/components/common/DashboardLayout";
+
 import React, { useEffect } from "react";
 import { useOwnS3 } from "@/features/private-s3/hooks/use-own-s3";
 import Card from "@/components/common/Card";
@@ -70,17 +72,6 @@ const OwnS3Client = () => {
               Manage your private AWS S3 storage securely.
             </p>
           </div>
-
-          <div className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0">
-            <div className="text-right pr-4 border-r border-white/10">
-              <p className="caption text-light-200 uppercase tracking-wider">Used Space</p>
-              <p className="h5 text-light-100">{totalUsedFormatted}</p>
-            </div>
-            <div className="text-right pr-4 border-r border-white/10 hidden sm:block">
-              <p className="caption text-light-200 uppercase tracking-wider">Files</p>
-              <p className="h5 text-light-100">{totalFiles}</p>
-            </div>
-          </div>
         </div>
 
         {/* Breadcrumbs / Navigation */}
@@ -107,26 +98,14 @@ const OwnS3Client = () => {
         </div>
       </header>
 
-      <section className="w-full min-h-[400px]">
-        {files.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 bg-white/5 rounded-3xl border border-dashed border-white/10 w-full text-center">
-            <p className="h5 text-light-100 mb-1">No items found</p>
-            <p className="body-2 text-light-200">
-              {searchText ? "No results matching your search." : "This folder is empty. Use the upload button to add files."}
-            </p>
-          </div>
-        ) : (
-          <div className="file-list !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 xl:!grid-cols-4 2xl:!grid-cols-5 w-full gap-6">
-            {files.map((file: any) => (
-              <Card
-                key={file.$id}
-                file={file}
-                onFolderClick={navigateToFolder}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      <DashboardLayout
+        files={files}
+        totalSpace={totalSpace}
+        currentUser={user}
+        variant="blue"
+        isLoading={loading}
+        title={searchText ? "Search Results" : subPath ? `Files in ${subPath}` : "All Files"}
+      />
     </div>
   );
 };

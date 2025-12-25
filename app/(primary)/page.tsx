@@ -1,6 +1,6 @@
 import { getFiles } from "@/features/managed-storage/actions/file.actions";
 import { getCurrentUser, signOutUser } from "@/features/auth/actions/user.actions";
-import DashboardClient from "@/features/managed-storage/components/DashboardClient";
+import { DashboardLayout } from "@/components/common/DashboardLayout";
 import { S3File as MyFile } from "@/types/file";
 
 const Dashboard = async () => {
@@ -8,7 +8,23 @@ const Dashboard = async () => {
   if (!currentUser) return null;
 
   let files: { documents: MyFile[]; total: number } = { documents: [], total: 0 };
-  let totalSpace = null;
+  let totalSpace: {
+    used: number;
+    all?: number;
+    image?: { size: number; latestDate: string };
+    video?: { size: number; latestDate: string };
+    audio?: { size: number; latestDate: string };
+    document?: { size: number; latestDate: string };
+    other?: { size: number; latestDate: string };
+  } = {
+    used: 0,
+    all: 2 * 1024 * 1024 * 1024,
+    image: { size: 0, latestDate: "" },
+    video: { size: 0, latestDate: "" },
+    audio: { size: 0, latestDate: "" },
+    document: { size: 0, latestDate: "" },
+    other: { size: 0, latestDate: "" },
+  };
 
   try {
     files = await getFiles({
@@ -17,16 +33,25 @@ const Dashboard = async () => {
       sort: "$createdAt-desc",
     });
     // totalSpace fetching remains as a mock or needs to be properly implemented
-    totalSpace = await Promise.resolve({ image: { size: 0 }, used: 0, all: 2000000000 });
+    totalSpace = await Promise.resolve({
+      used: 0,
+      all: 2 * 1024 * 1024 * 1024,
+      image: { size: 0, latestDate: "" },
+      video: { size: 0, latestDate: "" },
+      audio: { size: 0, latestDate: "" },
+      document: { size: 0, latestDate: "" },
+      other: { size: 0, latestDate: "" },
+    });
   } catch (e) {
     console.error("Dashboard data fetch error:", e);
   }
 
   return (
-    <DashboardClient
+    <DashboardLayout
       files={files.documents}
       totalSpace={totalSpace}
       currentUser={currentUser}
+      variant="brand"
     />
   );
 };
