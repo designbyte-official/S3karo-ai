@@ -1,5 +1,6 @@
 import { S3File as File } from "@/types/file";
 import { S3Config, S3_CONFIG_KEY } from "./s3-config.service";
+import { getFileType } from "@/features/shared/utils";
 import {
     S3Client,
     ListObjectsV2Command,

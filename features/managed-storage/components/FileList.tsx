@@ -12,13 +12,14 @@ interface Props {
     searchText?: string;
     sort?: string;
     onFolderClick?: (path: string) => void;
+    view?: "grid" | "list";
 }
 
-const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, onFolderClick }: Props) => {
+const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, onFolderClick, view = "grid" }: Props) => {
     const displayFiles = files || initialFiles?.documents || [];
 
     return (
-        <ul className="file-list">
+        <ul className={view === "grid" ? "file-list" : "flex flex-col gap-4"}>
             {displayFiles.map((file) => (
                 <Card key={file.$id} file={file} onFolderClick={onFolderClick} />
             ))}
