@@ -39,53 +39,69 @@ const OwnS3SetupPage = () => {
 
   return (
     <div className="page-container">
-      <section className="w-full max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="h1 text-light-100">Setup Your S3 Storage</h1>
-          <p className="body-2 text-light-200 mt-2">
-            Configure your AWS S3 credentials to start using Private S3 storage. <br />These are stored locally in your browser and never sent to our servers.
+      <section className="w-full max-w-[1240px] mx-auto">
+        <div className="mb-10">
+          <h1 className="h1 text-brand">Setup Your S3 Storage</h1>
+          <p className="body-1 text-light-200 mt-2 max-w-2xl">
+            Configure your AWS S3 credentials to start using Private S3 storage. <br className="hidden md:block" />
+            These are stored locally in your browser and never sent to our servers.
           </p>
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-10">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-10">
           {/* Form Section */}
-          <div className="flex-1 space-y-8">
-            <div className="p-6 md:p-8 rounded-[30px] bg-white shadow-drop-1 border border-light-300">
+          <div className="flex-1 min-w-0">
+            <div className="p-8 rounded-[24px] bg-white shadow-drop-1 border border-light-300">
               <S3ConfigForm
                 userId={user.$id}
                 defaultValues={config}
-                onConfigSaved={() => router.push('/private/explorer')}
+                onConfigSaved={() => {
+                  // Optional: Don't auto redirect immediately if you want them to see success state
+                  // router.push('/private/explorer') 
+                }}
               />
             </div>
           </div>
 
-          {/* Info Section */}
-          <div className="w-full xl:w-[320px] shrink-0">
-            <div className="p-6 rounded-[30px] bg-brand/5 border border-brand/10">
-              <p className="body-1 text-brand font-semibold mb-4">What works with Private S3:</p>
-              <ul className="caption text-brand-100 space-y-3">
-                <li className="flex gap-2">
-                  <span className="text-brand font-bold">•</span>
-                  <span><strong className="font-semibold text-brand">Secure Uploads</strong> - Direct to bucket</span>
+          {/* Info Section - Styled using Brand Tokens and Shadow */}
+          <div className="w-full lg:w-[380px] shrink-0">
+            <div className="p-8 rounded-[30px] bg-brand-50 border border-brand-75 shadow-drop-1">
+              <h3 className="h3 text-brand mb-6">What works with Private S3:</h3>
+              <ul className="space-y-4">
+                <li className="flex items-start gap-3">
+                  <span className="text-brand font-bold text-lg">•</span>
+                  <div>
+                    <strong className="block font-semibold text-brand text-[16px]">Secure Uploads</strong>
+                    <span className="text-brand/80 text-sm">Direct to bucket</span>
+                  </div>
                 </li>
-                <li className="flex gap-2">
-                  <span className="text-brand font-bold">•</span>
-                  <span><strong className="font-semibold text-brand">Global Search</strong> - Across all folders</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-brand font-bold text-lg">•</span>
+                  <div>
+                    <strong className="block font-semibold text-brand text-[16px]">Global Search</strong>
+                    <span className="text-brand/80 text-sm">Across all folders</span>
+                  </div>
                 </li>
-                <li className="flex gap-2">
-                  <span className="text-brand font-bold">•</span>
-                  <span><strong className="font-semibold text-brand">File Management</strong> - Rename, Delete, Share</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-brand font-bold text-lg">•</span>
+                  <div>
+                    <strong className="block font-semibold text-brand text-[16px]">File Management</strong>
+                    <span className="text-brand/80 text-sm">Rename, Delete, Share</span>
+                  </div>
                 </li>
-                <li className="flex gap-2">
-                  <span className="text-brand font-bold">•</span>
-                  <span><strong className="font-semibold text-brand">Zero Data Access</strong> - Use your own infrastructure</span>
+                <li className="flex items-start gap-3">
+                  <span className="text-brand font-bold text-lg">•</span>
+                  <div>
+                    <strong className="block font-semibold text-brand text-[16px]">Zero Data Access</strong>
+                    <span className="text-brand/80 text-sm">Use your own infrastructure</span>
+                  </div>
                 </li>
               </ul>
             </div>
 
-            <div className="mt-6 text-center">
-              <Link href="/private/explorer" className="button text-light-200 hover:text-brand transition-colors">
-                ← Back to Private S3 Explorer
+            <div className="mt-8 text-center">
+              <Link href="/private/explorer" className="flex items-center justify-center gap-2 text-light-200 hover:text-brand transition-colors font-medium">
+                <span>←</span> Back to Private S3 Explorer
               </Link>
             </div>
           </div>
