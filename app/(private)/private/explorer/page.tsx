@@ -121,12 +121,31 @@ const OwnS3Client = () => {
         onUploadComplete={reload}
       />
       <header className="flex flex-col gap-6 mb-8 w-full">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex-1 min-w-0">
             <h1 className="h1 capitalize truncate">Own S3 Explorer</h1>
-            <p className="body-2 text-light-200 mt-1">
-              Manage your private AWS S3 storage securely.
-            </p>
+            {/* Breadcrumbs / Navigation - moved here */}
+            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar mt-2">
+              <Button
+                variant="ghost"
+                className="h-8 px-3 text-light-100 hover:bg-light-300 rounded-xl flex items-center gap-2 shrink-0"
+                onClick={() => setSubPath("")}
+              >
+                <span className={!subPath ? "font-bold text-brand text-sm" : "font-medium text-sm"}>Root</span>
+              </Button>
+              {subPath.split('/').filter(Boolean).map((part, i, arr) => (
+                <React.Fragment key={i}>
+                  <ChevronRight size={14} className="text-light-200 shrink-0 opacity-50" />
+                  <Button
+                    variant="ghost"
+                    className="h-8 px-3 text-light-100 hover:bg-light-300 rounded-xl shrink-0"
+                    onClick={() => setSubPath(arr.slice(0, i + 1).join('/'))}
+                  >
+                    <span className={i === arr.length - 1 ? "font-bold text-brand text-sm" : "font-medium text-sm"}>{part}</span>
+                  </Button>
+                </React.Fragment>
+              ))}
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <NewFolderDialog onCreate={createFolder} />
@@ -134,56 +153,33 @@ const OwnS3Client = () => {
           </div>
         </div>
 
-        <div className="flex flex-col xl:flex-row items-center justify-between gap-6 bg-white p-5 rounded-[20px] shadow-drop-1 border border-light-300 w-full">
-          {/* Breadcrumbs / Navigation */}
-          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0 max-w-full xl:max-w-[50%]">
-            <Button
-              variant="ghost"
-              className="h-10 px-4 text-light-100 hover:bg-light-300 rounded-xl flex items-center gap-2 shrink-0"
-              onClick={() => setSubPath("")}
-            >
-              <span className={!subPath ? "font-bold text-brand" : "font-medium"}>Root</span>
-            </Button>
-            {subPath.split('/').filter(Boolean).map((part, i, arr) => (
-              <React.Fragment key={i}>
-                <ChevronRight size={16} className="text-light-200 shrink-0 opacity-50" />
-                <Button
-                  variant="ghost"
-                  className="h-10 px-4 text-light-100 hover:bg-light-300 rounded-xl shrink-0"
-                  onClick={() => setSubPath(arr.slice(0, i + 1).join('/'))}
-                >
-                  <span className={i === arr.length - 1 ? "font-bold text-brand" : "font-medium"}>{part}</span>
-                </Button>
-              </React.Fragment>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4 w-full xl:w-auto justify-end">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-[20px] shadow-drop-1 border border-light-300 w-full">
+          <div className="flex items-center gap-3 flex-1">
             <LocalSearch files={files} onFilteredFilesChange={setFilteredFiles} />
 
             <div className="hidden sm:block">
               <Sort />
             </div>
+          </div>
 
-            {/* View Toggle */}
-            <div className="flex items-center bg-light-300 rounded-2xl p-1 shrink-0 shadow-inner">
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'grid' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
-                onClick={() => setView('grid')}
-              >
-                <LayoutGrid size={18} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'list' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
-                onClick={() => setView('list')}
-              >
-                <ListIcon size={18} />
-              </Button>
-            </div>
+          {/* View Toggle */}
+          <div className="flex items-center bg-light-300 rounded-2xl p-1 shrink-0 shadow-inner">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'grid' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
+              onClick={() => setView('grid')}
+            >
+              <LayoutGrid size={18} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'list' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
+              onClick={() => setView('list')}
+            >
+              <ListIcon size={18} />
+            </Button>
           </div>
         </div>
       </header>

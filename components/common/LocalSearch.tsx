@@ -34,7 +34,7 @@ const LocalSearch = ({ files, onFilteredFilesChange }: LocalSearchProps) => {
     };
 
     return (
-        <div className="relative flex-1 sm:flex-none sm:w-80">
+        <div className="relative w-full sm:flex-1 sm:max-w-md">
             <div className="search-input-wrapper !bg-light-300 relative">
                 <SearchIcon size={20} className="text-light-200" />
                 <Input
