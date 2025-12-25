@@ -319,14 +319,6 @@
     @apply flex items-center justify-center;
   }
 
-  .file-card {
-    @apply flex cursor-pointer flex-col gap-6 rounded-[18px] bg-white p-5 shadow-sm transition-all hover:shadow-drop-3 !important;
-  }
-
-  .file-card-details {
-    @apply flex flex-col gap-2 text-light-100 !important;
-  }
-
   .uploader-button {
     @apply primary-btn h-[52px] gap-2 px-10 shadow-drop-1 !important;
   }
@@ -484,10 +476,6 @@
 
   .empty-list {
     @apply body-1 mt-10 text-center text-light-200 !important;
-  }
-
-  .file-list {
-    @apply grid w-full gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 !important;
   }
 
   .total-size-section {

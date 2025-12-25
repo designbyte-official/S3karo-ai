@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Thumbnail from "./Thumbnail";
-import { cn, getFileIcon, convertFileSize } from "@/features/shared/utils";
+import { cn, convertFileSize } from "@/features/shared/utils";
 import FormattedDateTime from "./FormattedDateTime";
 import ActionDropdown from "./ActionDropdown";
 import { S3File } from "@/types/file";
@@ -27,7 +27,6 @@ const Card = ({
     }
   };
 
-  // Stagger Animation Delay
   const animationDelay = `${index * 0.05}s`;
 
   if (view === "list") {
@@ -36,7 +35,7 @@ const Card = ({
         href={isFolder ? '#' : file.url}
         target={isFolder ? undefined : "_blank"}
         onClick={handleClick}
-        className="group relative flex w-full items-center justify-between rounded-xl bg-white p-4 shadow-sm transition-all hover:bg-light-400/50 hover:shadow-md border border-transparent hover:border-light-300 animate-in fade-in slide-in-from-bottom-2 duration-300"
+        className="group relative flex w-full items-center justify-between rounded-xl bg-white p-4 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md border border-slate-100 hover:border-slate-200 animate-in fade-in slide-in-from-bottom-2 duration-300"
         style={{ animationDelay }}
       >
         <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -44,31 +43,31 @@ const Card = ({
             type={file.type}
             extension={file.extension}
             url={file.url}
-            className="!size-10 min-w-10"
-            imageClassName="!size-6"
+            className="!w-10 !h-10 min-w-10 !bg-brand-50"
+            imageClassName="!w-6 !h-6"
           />
-          <div className="flex flex-col min-w-0">
-            <p className="subtitle-2 truncate text-dark-100 group-hover:text-brand transition-colors">
+          <div className="flex flex-col min-w-0 flex-1">
+            <p className="text-[14px] font-semibold leading-tight truncate text-slate-800 group-hover:text-brand transition-colors">
               {file.name}
             </p>
-            <p className="caption text-light-200 sm:hidden">
+            <p className="text-[12px] text-slate-500 sm:hidden">
               {convertFileSize(file.size)}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-8 ml-4">
+        <div className="flex items-center gap-4 sm:gap-8 ml-4">
           {!isFolder && (
-            <div className="hidden sm:flex items-center gap-2 min-w-[120px]">
-              <p className="body-2 text-light-100">{convertFileSize(file.size)}</p>
+            <div className="hidden sm:flex items-center min-w-[80px] lg:min-w-[100px]">
+              <p className="text-[14px] text-slate-500 font-medium">{convertFileSize(file.size)}</p>
             </div>
           )}
 
           {!isFolder && (
-            <div className="hidden md:flex items-center gap-2 min-w-[150px]">
+            <div className="hidden md:flex items-center min-w-[140px] lg:min-w-[160px]">
               <FormattedDateTime
                 date={file.$createdAt}
-                className="body-2 text-light-100"
+                className="text-[14px] text-slate-500"
               />
             </div>
           )}
@@ -86,47 +85,47 @@ const Card = ({
       href={isFolder ? '#' : file.url}
       target={isFolder ? undefined : "_blank"}
       onClick={handleClick}
-      className="file-card group animate-in fade-in zoom-in-95 duration-300"
+      className="group relative flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 border border-slate-100 animate-in fade-in zoom-in-95 duration-300"
       style={{ animationDelay }}
     >
-      <div className="flex justify-between relative z-10">
+      <div className="flex justify-between items-start w-full">
         <Thumbnail
           type={file.type}
           extension={file.extension}
           url={file.url}
-          className="!size-20 group-hover:scale-110 transition-transform duration-300"
-          imageClassName="!size-11"
+          className="!w-16 !h-16 group-hover:scale-105 transition-transform duration-500 !bg-brand-50"
+          imageClassName="!w-10 !h-10"
         />
 
-        <div className="flex flex-col items-end justify-between">
+        <div className="flex flex-col items-end gap-2">
           {!isFolder && (
-            <div className="scale-100 transition-all duration-200">
-              <ActionDropdown file={file} />
-            </div>
+            <ActionDropdown file={file} />
           )}
-          <p className="body-1 text-light-100 font-medium">
+          <p className="text-[14px] text-slate-500 font-semibold bg-slate-50 px-2 py-0.5 rounded-lg">
             {isFolder ? 'Folder' : convertFileSize(file.size)}
           </p>
         </div>
       </div>
 
-      <div className="file-card-details">
-        <p className="subtitle-2 line-clamp-1 group-hover:text-brand transition-colors">{file.name}</p>
+      <div className="flex flex-col gap-1 w-full mt-2">
+        <p className="text-[16px] font-bold text-slate-800 truncate group-hover:text-brand transition-all duration-300">
+          {file.name}
+        </p>
         {!isFolder && (
-          <>
+          <div className="flex flex-col gap-0.5">
             <FormattedDateTime
               date={file.$createdAt}
-              className="body-2 text-light-100"
+              className="text-[12px] text-slate-400 font-medium"
             />
-            <div className="flex items-center gap-1">
-              <p className="caption line-clamp-1 text-light-200">
-                {file.owner?.fullName || 'Unknown'}
-              </p>
-            </div>
-          </>
+            <p className="text-[11px] text-slate-300 font-medium flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+              {file.owner?.fullName || 'Unknown'}
+            </p>
+          </div>
         )}
       </div>
     </Link>
   );
 };
+
 export default Card;

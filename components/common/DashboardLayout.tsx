@@ -83,7 +83,7 @@ export const DashboardLayout = ({
                 {isLoading ? (
                     <p className="body-1 mt-10 text-center text-light-200">Loading...</p>
                 ) : files.length > 0 ? (
-                    <FileList files={files} currentUser={currentUser} onFolderClick={onFolderClick} view={view} />
+                    <FileList files={files} currentUser={currentUser} onFolderClick={onFolderClick} view={"list"} />
                 ) : (
                     <p className="empty-list">No files uploaded yet</p>
                 )}
