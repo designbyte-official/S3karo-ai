@@ -17,22 +17,57 @@ const DetailRow = ({ label, value }: { label: string; value: string }) => (
 const FileDetails = ({ file }: { file: File }) => {
   // Only fix: trim URL to prevent trailing space errors
   const cleanUrl = file.url?.trimEnd() || file.url;
+  const isImage = file.type === "image" && file.extension !== "svg";
 
   return (
     <>
-      <Image
-        src={cleanUrl}
-        alt={file.name}
-        width={100}
-        height={100}
-        className="file-details-thumbnail"
-      />
-      <div className="space-y-4 px-2 pt-2">
-        <DetailRow label="Format:" value={file.extension} />
-        <DetailRow label="Size:" value={convertFileSize(file.size)} />
-        <DetailRow label="Owner:" value={file.owner?.fullName || "Unknown"} />
-        <DetailRow label="Last edit:" value={formatDateTime(file.$createdAt)} />
-      </div>
+      {isImage ? (
+        // Full-size image view for images
+        <div className="w-full flex flex-col items-center gap-6">
+          {/* Large image display */}
+          <div className="relative w-full bg-slate-900/5 rounded-xl overflow-hidden border border-slate-200">
+            <div className="flex items-center justify-center min-h-[400px] max-h-[75vh] p-4">
+              <Image
+                src={cleanUrl}
+                alt={file.name}
+                width={1600}
+                height={1600}
+                className="w-full h-auto max-w-full max-h-[75vh] object-contain rounded-lg"
+                unoptimized
+                priority
+              />
+            </div>
+          </div>
+          
+          {/* File information */}
+          <div className="w-full space-y-4 px-2 pt-2 border-t border-slate-200 pt-4">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">{file.name}</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <DetailRow label="Format:" value={file.extension.toUpperCase()} />
+              <DetailRow label="Size:" value={convertFileSize(file.size)} />
+              <DetailRow label="Owner:" value={file.owner?.fullName || "Unknown"} />
+              <DetailRow label="Last edit:" value={formatDateTime(file.$createdAt)} />
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Original layout for non-images
+        <>
+          <Image
+            src={cleanUrl}
+            alt={file.name}
+            width={100}
+            height={100}
+            className="file-details-thumbnail"
+          />
+          <div className="space-y-4 px-2 pt-2">
+            <DetailRow label="Format:" value={file.extension} />
+            <DetailRow label="Size:" value={convertFileSize(file.size)} />
+            <DetailRow label="Owner:" value={file.owner?.fullName || "Unknown"} />
+            <DetailRow label="Last edit:" value={formatDateTime(file.$createdAt)} />
+          </div>
+        </>
+      )}
     </>
   );
 };

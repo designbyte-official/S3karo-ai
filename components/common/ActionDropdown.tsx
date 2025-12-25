@@ -165,9 +165,11 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
         if (!action) return null;
 
         const { value, label } = action;
+        const isImage = file.type === "image" && file.extension !== "svg";
+        const isDetailsForImage = value === "details" && isImage;
 
         return (
-            <DialogContent className="shad-dialog button">
+            <DialogContent className={`shad-dialog button ${isDetailsForImage ? 'max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto' : ''}`}>
                 <DialogHeader className="flex flex-col gap-3">
                     <DialogTitle className="text-center text-light-100">
                         {label}

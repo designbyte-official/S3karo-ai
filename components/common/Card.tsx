@@ -11,7 +11,8 @@ const Card = ({
   view = "grid",
   index = 0,
   showThumbnails = false,
-  hideOwner = false
+  hideOwner = false,
+  onImageClick
 }: {
   file: S3File;
   onFolderClick?: (path: string) => void;
@@ -19,6 +20,7 @@ const Card = ({
   index?: number;
   showThumbnails?: boolean;
   hideOwner?: boolean; // Hide owner info (useful for private S3 where all files are owned by user)
+  onImageClick?: (file: S3File) => void; // Callback when image is clicked
 }) => {
   const isFolder = file.type === 'folder' || file.isFolder;
   const isImage = file.type === 'image' && file.extension !== 'svg';
@@ -30,6 +32,10 @@ const Card = ({
       if (onFolderClick) {
         onFolderClick(file.key || file.$id);
       }
+    } else if (shouldShowFullImage && onImageClick) {
+      // For images with thumbnails enabled, open details modal via callback
+      e.preventDefault();
+      onImageClick(file);
     }
   };
 
