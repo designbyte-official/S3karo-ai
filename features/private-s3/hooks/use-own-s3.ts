@@ -92,5 +92,15 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     navigateToFolder,
     navigateBack,
     setSubPath,
+    createFolder: async (name: string) => {
+      const config = await s3ConfigService.getConfig(user!.$id);
+      if (!config) throw new Error("No config");
+      await s3ExplorerService.createFolder({
+        config,
+        name,
+        path: subPath
+      });
+      reload();
+    }
   };
 };

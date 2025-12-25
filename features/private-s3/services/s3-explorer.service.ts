@@ -150,6 +150,29 @@ export const s3ExplorerService = {
         }
     },
 
+    async createFolder(params: {
+        config: S3Config;
+        name: string;
+        path: string;
+    }) {
+        const client = getS3Client(params.config);
+        const folderKey = params.path
+            ? `${params.path}${params.name.endsWith('/') ? params.name : params.name + '/'}`
+            : `${params.name.endsWith('/') ? params.name : params.name + '/'}`;
+
+        try {
+            const command = new PutObjectCommand({
+                Bucket: params.config.bucket,
+                Key: folderKey,
+            });
+            await client.send(command);
+            return { success: true };
+        } catch (error) {
+            console.error("S3 Create Folder Error", error);
+            throw error;
+        }
+    },
+
     async getBucketStats(config: S3Config, prefix: string) {
         // Stats are expensive in S3 (need to list all). 
         // Returning 0 used and undefined total to hide the chart in Private mode.

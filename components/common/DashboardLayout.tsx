@@ -23,6 +23,7 @@ interface DashboardLayoutProps {
     variant?: "brand" | "blue";
     title?: string;
     isLoading?: boolean;
+    onFolderClick?: (path: string) => void;
 }
 
 export const DashboardLayout = ({
@@ -31,7 +32,8 @@ export const DashboardLayout = ({
     currentUser,
     variant = "brand",
     title = "Recent files uploaded",
-    isLoading = false
+    isLoading = false,
+    onFolderClick
 }: DashboardLayoutProps) => {
     const usageSummary = totalSpace.document ? getUsageSummary(totalSpace) : [];
 
@@ -80,7 +82,7 @@ export const DashboardLayout = ({
                 {isLoading ? (
                     <p className="body-1 mt-10 text-center text-light-200">Loading...</p>
                 ) : files.length > 0 ? (
-                    <FileList files={files} currentUser={currentUser} />
+                    <FileList files={files} currentUser={currentUser} onFolderClick={onFolderClick} />
                 ) : (
                     <p className="empty-list">No files uploaded yet</p>
                 )}

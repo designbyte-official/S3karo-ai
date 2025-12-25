@@ -9,6 +9,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { convertFileSize } from "@/features/shared/utils";
 import ReactFragment = React.Fragment;
+import FileUploader from "@/components/common/FileUploader";
+import Search from "@/components/common/Search";
+import Sort from "@/components/common/Sort";
+import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const OwnS3Page = () => {
   return <OwnS3Client />;
@@ -31,7 +44,8 @@ const OwnS3Client = () => {
     error,
     reload,
     navigateToFolder,
-    setSubPath
+    setSubPath,
+    createFolder
   } = useOwnS3(searchText, sort);
 
   /* Redirect removed as per user request
@@ -95,29 +109,40 @@ const OwnS3Client = () => {
               Manage your private AWS S3 storage securely.
             </p>
           </div>
+          <div className="flex items-center gap-3">
+            <NewFolderDialog onCreate={createFolder} />
+            <FileUploader ownerId={user.$id} accountId={user.accountId} mode="private" />
+          </div>
         </div>
 
-        {/* Breadcrumbs / Navigation */}
-        <div className="flex items-center gap-2 overflow-x-auto py-2 no-scrollbar bg-white/5 px-4 rounded-xl border border-white/5">
-          <Button
-            variant="ghost"
-            className="h-8 px-2 text-light-200 hover:text-white hover:bg-white/10"
-            onClick={() => setSubPath("")}
-          >
-            Root
-          </Button>
-          {subPath.split('/').filter(Boolean).map((part, i, arr) => (
-            <ReactFragment key={i}>
-              <span className="text-light-200 opacity-50">/</span>
-              <Button
-                variant="ghost"
-                className="h-8 px-2 text-light-200 hover:text-white hover:bg-white/10"
-                onClick={() => setSubPath(arr.slice(0, i + 1).join('/'))}
-              >
-                {part}
-              </Button>
-            </ReactFragment>
-          ))}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          {/* Breadcrumbs / Navigation */}
+          <div className="flex items-center gap-2 overflow-x-auto py-2 no-scrollbar bg-white/5 px-4 rounded-xl border border-white/5 flex-1 min-w-0">
+            <Button
+              variant="ghost"
+              className="h-8 px-2 text-light-200 hover:text-white hover:bg-white/10"
+              onClick={() => setSubPath("")}
+            >
+              Root
+            </Button>
+            {subPath.split('/').filter(Boolean).map((part, i, arr) => (
+              <ReactFragment key={i}>
+                <span className="text-light-200 opacity-50">/</span>
+                <Button
+                  variant="ghost"
+                  className="h-8 px-2 text-light-200 hover:text-white hover:bg-white/10"
+                  onClick={() => setSubPath(arr.slice(0, i + 1).join('/'))}
+                >
+                  {part}
+                </Button>
+              </ReactFragment>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <Search mode="private" />
+            <Sort />
+          </div>
         </div>
       </header>
 
@@ -128,9 +153,62 @@ const OwnS3Client = () => {
         variant="brand"
         isLoading={loading}
         title={searchText ? "Search Results" : subPath ? `Files in ${subPath}` : "All Files"}
+        onFolderClick={navigateToFolder}
       />
     </div>
   );
 };
+
+// Simple New Folder Dialog Component
+const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<void> }) => {
+  const [open, setOpen] = React.useState(false);
+  const [name, setName] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name) return;
+    setLoading(true);
+    try {
+      await onCreate(name);
+      setOpen(false);
+      setName("");
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button className="shad-button-primary h-[52px] gap-2">
+          <Image src="/assets/icons/add.svg" alt="add" width={24} height={24} />
+          <span className="hidden sm:block">New Folder</span>
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="shad-dialog button">
+        <DialogHeader>
+          <DialogTitle className="capitalize">Create New Folder</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            placeholder="Folder Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="shad-input"
+          />
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button type="submit" disabled={loading} className="shad-submit-btn">
+              {loading ? "Creating..." : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default OwnS3Page;
