@@ -1,4 +1,4 @@
-export interface File {
+export interface S3File {
   $id: string;
   id?: string;
   name: string;

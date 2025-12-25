@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth/utils';
+import { s3CoreService } from "@/features/private-s3/services/s3-core.service";
+import { getCurrentUser } from "@/features/auth/actions/user.actions";
+import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+import { createPlatformS3Client, getPlatformS3Bucket } from "@/features/managed-storage/services/platform-s3.service";
 import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { createPlatformS3Client, getPlatformS3Bucket } from '@/lib/s3/client-server';
+
 
 /**
  * Generate presigned URL for S3 operations

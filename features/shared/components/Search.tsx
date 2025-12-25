@@ -1,0 +1,160 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+
+import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
+import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+import Thumbnail from "./Thumbnail";
+import FormattedDateTime from "./FormattedDateTime";
+import { useDebounce } from "use-debounce";
+import { S3File as File } from "@/types/file";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
+
+interface Props {
+  mode?: "managed" | "private";
+}
+
+const Search = ({ mode = "managed" }: Props) => {
+  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("query") || "";
+  const [results, setResults] = useState<File[]>([]);
+  const [open, setOpen] = useState(false);
+  const user = useAuthStore((state: any) => state.user);
+  const router = useRouter();
+  const path = usePathname();
+  const [debouncedQuery] = useDebounce(query, 300);
+
+  useEffect(() => {
+    const updateUrl = () => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (debouncedQuery) {
+        params.set("query", debouncedQuery);
+      } else {
+        params.delete("query");
+      }
+      router.push(`${path}?${params.toString()}`);
+    };
+
+    if (debouncedQuery !== searchQuery) {
+      updateUrl();
+    }
+  }, [debouncedQuery, path, router, searchParams, searchQuery]);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      if (debouncedQuery.length === 0) {
+        setResults([]);
+        setOpen(false);
+        return;
+      }
+
+      if (user) {
+        try {
+          if (mode === 'private') {
+            const config = await s3ConfigService.getConfig(user.$id);
+            if (!config) {
+              setResults([]);
+              return;
+            }
+            const filesData = await s3ExplorerService.listItems({
+              config,
+              searchText: debouncedQuery,
+              ownerId: user.$id,
+              accountId: user.accountId,
+            });
+            setResults(filesData.documents);
+          } else {
+            const results = await platformStorageService.getFiles({
+              types: [],
+              searchText: debouncedQuery,
+            });
+            setResults(results.documents);
+          }
+          setOpen(true);
+        } catch (error) {
+          console.error("Search error:", error);
+          setResults([]);
+        }
+      }
+    };
+
+    if (user) {
+      fetchFiles();
+    }
+  }, [debouncedQuery, user, mode]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      setQuery("");
+    }
+  }, [searchQuery]);
+
+  const handleClickItem = (file: File) => {
+    setOpen(false);
+    setResults([]);
+
+    const base = mode === 'private' ? '/private/explorer' : '';
+    router.push(
+      `${base}/${file.type === "video" || file.type === "audio" ? "media" : file.type + "s"}?query=${debouncedQuery}`,
+    );
+  };
+
+  return (
+    <div className="search">
+      <div className="search-input-wrapper">
+        <Image
+          src="/assets/icons/search.svg"
+          alt="Search"
+          width={24}
+          height={24}
+        />
+        <Input
+          value={query}
+          placeholder="Search..."
+          className="search-input"
+          onChange={(e) => setQuery(e.target.value)}
+        />
+
+        {open && (
+          <ul className="search-result">
+            {results.length > 0 ? (
+              results.map((file) => (
+                <li
+                  className="flex items-center justify-between"
+                  key={file.$id}
+                  onClick={() => handleClickItem(file)}
+                >
+                  <div className="flex cursor-pointer items-center gap-4">
+                    <Thumbnail
+                      type={file.type}
+                      extension={file.extension}
+                      url={file.url}
+                      className="size-9 min-w-9"
+                    />
+                    <p className="subtitle-2 line-clamp-1 text-light-100">
+                      {file.name}
+                    </p>
+                  </div>
+
+                  <FormattedDateTime
+                    date={file.$createdAt}
+                    className="caption line-clamp-1 text-light-200"
+                  />
+                </li>
+              ))
+            ) : (
+              <p className="empty-result">No files found</p>
+            )}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Search;
