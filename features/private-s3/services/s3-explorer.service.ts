@@ -1,5 +1,25 @@
 import { S3File as File } from "@/types/file";
 import { S3Config, S3_CONFIG_KEY } from "./s3-config.service";
+import {
+    S3Client,
+    ListObjectsV2Command,
+    PutObjectCommand,
+    DeleteObjectCommand,
+    HeadObjectCommand,
+    ListObjectsV2CommandOutput
+} from "@aws-sdk/client-s3";
+
+const getS3Client = (config: S3Config) => {
+    return new S3Client({
+        region: config.region,
+        credentials: {
+            accessKeyId: config.accessKeyId,
+            secretAccessKey: config.secretAccessKey,
+        },
+        endpoint: config.endpoint || undefined,
+        forcePathStyle: !!config.endpoint, // Needed for MinIO/Custom endpoints
+    });
+};
 
 export const s3ExplorerService = {
     async listItems(params: {
@@ -9,70 +29,130 @@ export const s3ExplorerService = {
         subPath?: string;
         searchText?: string;
         sort?: string;
-        limit?: number;
-        continuationToken?: string;
-        types?: string[];
     }): Promise<{ documents: File[]; total: number }> {
-        // This would call the API or the client-side SDK directly
-        return { documents: [], total: 0 };
+        const client = getS3Client(params.config);
+        const prefix = params.subPath ? (params.subPath.endsWith('/') ? params.subPath : `${params.subPath}/`) : "";
+
+        try {
+            const command = new ListObjectsV2Command({
+                Bucket: params.config.bucket,
+                Prefix: prefix,
+                Delimiter: "/",
+            });
+
+            const response: ListObjectsV2CommandOutput = await client.send(command);
+
+            const files: File[] = [];
+
+            // Process Folders (CommonPrefixes)
+            if (response.CommonPrefixes) {
+                response.CommonPrefixes.forEach((prefix) => {
+                    const name = prefix.Prefix!.replace(response.Prefix!, "").replace("/", "");
+                    if (!name) return;
+
+                    files.push({
+                        $id: prefix.Prefix!,
+                        bucketFileId: prefix.Prefix!,
+                        name: name,
+                        type: "folder",
+                        size: 0,
+                        extension: "folder",
+                        url: "",
+                        users: [],
+                        accountId: params.accountId,
+                        owner: {
+                            fullName: "Me",
+                            email: "",
+                            avatar: "",
+                        },
+                        $createdAt: new Date().toISOString(),
+                    });
+                });
+            }
+
+            // Process Files (Contents)
+            if (response.Contents) {
+                response.Contents.forEach((item) => {
+                    if (item.Key === response.Prefix) return; // Skip the folder object itself
+                    const name = item.Key!.replace(response.Prefix!, "");
+                    const extension = name.split('.').pop() || "file";
+
+                    files.push({
+                        $id: item.Key!,
+                        bucketFileId: item.Key!,
+                        name: name,
+                        type: extension, // Simplification
+                        size: item.Size || 0,
+                        extension: extension,
+                        url: `https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com/${item.Key}`, // Basic URL construction
+                        users: [],
+                        accountId: params.accountId,
+                        owner: {
+                            fullName: "Me",
+                            email: "",
+                            avatar: "",
+                        },
+                        $createdAt: item.LastModified?.toISOString() || new Date().toISOString(),
+                    });
+                });
+            }
+
+            // Simple client-side search/sort if needed, but S3 listing is prefix-based.
+            // For now, return direct list.
+            return { documents: files, total: files.length };
+
+        } catch (error) {
+            console.error("S3 List Error", error);
+            return { documents: [], total: 0 };
+        }
     },
 
     async uploadFile(params: {
         config: S3Config;
-        file: any;
+        file: globalThis.File; // Browser File object
         ownerId: string;
         accountId: string;
         path: string;
     }) {
-        // implementation
-    },
+        const client = getS3Client(params.config);
+        const key = params.path ? `${params.path}${params.file.name}` : params.file.name;
 
-    async saveConfig(userId: string, config: S3Config) {
-        if (typeof window === 'undefined') return;
-        localStorage.setItem(`${S3_CONFIG_KEY}${userId}`, JSON.stringify(config));
-    },
+        try {
+            const command = new PutObjectCommand({
+                Bucket: params.config.bucket,
+                Key: key,
+                Body: params.file,
+                ContentType: params.file.type,
+            });
 
-    async hasConfig(userId: string): Promise<boolean> {
-        if (typeof window === 'undefined') return false;
-        return !!localStorage.getItem(`${S3_CONFIG_KEY}${userId}`);
+            await client.send(command);
+            return { success: true };
+        } catch (error) {
+            console.error("S3 Upload Error", error);
+            throw error;
+        }
     },
 
     async deleteItem(params: {
         config: S3Config;
         key: string;
-        ownerId: string;
-        accountId: string;
     }) {
-        // implementation
-    },
-
-    async renameItem(params: {
-        config: S3Config;
-        oldKey: string;
-        newKey: string;
-        ownerId: string;
-        accountId: string;
-    }) {
-        // implementation
-    },
-
-    async getSignedUrl(config: S3Config, key: string) {
-        return "";
-    },
-
-    async head(config: S3Config, key: string) {
-        return { metadata: {} };
-    },
-
-    async rename(config: S3Config, oldKey: string, newKey: string, metadata: any) {
-        // implementation
-    },
-
-    async delete(config: S3Config, key: string) {
-        // implementation
+        const client = getS3Client(params.config);
+        try {
+            const command = new DeleteObjectCommand({
+                Bucket: params.config.bucket,
+                Key: params.key,
+            });
+            await client.send(command);
+        } catch (error) {
+            console.error("S3 Delete Error", error);
+            throw error;
+        }
     },
 
     async getBucketStats(config: S3Config, prefix: string) {
-        return { used: 0, all: 2 * 1024 * 1024 * 1024 * 1024 };
+        // Stats are expensive in S3 (need to list all). 
+        // Returning dummy for now to avoid freezing browser on huge buckets.
+        return { used: 0, all: 100 * 1024 * 1024 * 1024 };
     }
 };
