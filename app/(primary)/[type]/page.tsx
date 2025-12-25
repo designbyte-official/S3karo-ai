@@ -1,11 +1,10 @@
 import React from "react";
-import Sort from "@/features/shared/components/Sort";
-import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
-import { getFiles } from "@/features/auth/actions/user.actions";
+import Sort from "@/components/common/Sort";
+import { getCurrentUser } from "@/features/auth/actions/user.actions";
+import { getFiles } from "@/features/managed-storage/actions/file.actions";
 import { getFileTypesParams } from "@/features/shared/utils";
 import FileList from "@/features/managed-storage/components/FileList";
 import { S3File as MyFile } from "@/types/file";
-import { SearchParamProps, FileType } from "@/types";
 
 const Page = async ({ searchParams, params }: SearchParamProps) => {
   const type = ((await params)?.type as string) || "";
@@ -17,9 +16,9 @@ const Page = async ({ searchParams, params }: SearchParamProps) => {
 
   // Get initial files for Platform mode (will be overridden by client component if S3 mode)
   let files: { documents: MyFile[]; total: number } = { documents: [], total: 0 };
+
   if (currentUser) {
-    files = await platformStorageService.getFiles({
-      userId: currentUser.id,
+    files = await getFiles({
       types,
       searchText,
       sort

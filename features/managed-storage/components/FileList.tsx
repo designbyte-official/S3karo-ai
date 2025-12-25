@@ -2,7 +2,7 @@
 
 import React from "react";
 import { S3File as File } from "@/types/file";
-import Card from "@/features/shared/components/Card";
+import Card from "@/components/common/Card";
 
 interface Props {
     files?: File[];

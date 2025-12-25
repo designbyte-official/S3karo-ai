@@ -14,7 +14,7 @@ import { navItems } from "@/features/shared/constants";
 import Link from "next/link";
 import { cn } from "@/features/shared/utils";
 import { Button } from "@/components/ui/button";
-import FileUploader from "./FileUploader";
+import FileUploader from "@/components/common/FileUploader";
 import { signOutUser } from "@/features/auth/actions/user.actions";
 
 import { s3ConfigService, StorageMode } from "@/features/private-s3/services/s3-config.service";

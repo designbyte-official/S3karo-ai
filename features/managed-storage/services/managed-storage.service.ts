@@ -8,7 +8,8 @@ export const platformStorageService = {
         limit?: number;
     }): Promise<{ documents: File[]; total: number }> {
         try {
-            const response = await fetch('/api/files?' + new URLSearchParams({
+            const baseUrl = typeof window === 'undefined' ? (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000') : '';
+            const response = await fetch(`${baseUrl}/api/files?` + new URLSearchParams({
                 types: params.types?.join(',') || '',
                 searchText: params.searchText || '',
                 sort: params.sort || '',

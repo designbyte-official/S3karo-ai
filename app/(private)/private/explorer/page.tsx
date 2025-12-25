@@ -2,10 +2,10 @@
 
 import React, { useEffect } from "react";
 import { useOwnS3 } from "@/features/private-s3/hooks/use-own-s3";
-import Card from "@/features/shared/components/Card";
+import Card from "@/components/common/Card";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { convertFileSize } from "@/lib/utils";
+import { convertFileSize } from "@/features/shared/utils";
 import ReactFragment = React.Fragment;
 
 const OwnS3Page = () => {

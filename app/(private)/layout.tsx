@@ -1,13 +1,12 @@
-import React from "react";
-import Sidebar from "@/features/shared/components/Sidebar";
-import MobileNavigation from "@/features/shared/components/MobileNavigation";
-import Header from "@/features/shared/components/Header";
+import Sidebar from "@/components/layout/Sidebar";
+import MobileNavigation from "@/components/layout/MobileNavigation";
+import Header from "@/components/layout/Header";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
 import { redirect } from "next/navigation";
 import { Toaster } from "@/components/ui/toaster";
-import { SyncAuth } from "@/features/shared/components/SyncAuth";
-import Search from "@/features/shared/components/Search";
-import StorageModeToggle from "@/features/shared/components/StorageModeToggle";
+import { SyncAuth } from "@/components/wrappers/SyncAuth";
+import Search from "@/components/common/Search";
+import StorageModeToggle from "@/components/common/StorageModeToggle";
 
 export const dynamic = "force-dynamic";
 

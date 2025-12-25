@@ -1,4 +1,4 @@
-import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
+import { getFiles } from "@/features/managed-storage/actions/file.actions";
 import { getCurrentUser, signOutUser } from "@/features/auth/actions/user.actions";
 import DashboardClient from "@/features/managed-storage/components/DashboardClient";
 import { S3File as MyFile } from "@/types/file";
@@ -11,7 +11,7 @@ const Dashboard = async () => {
   let totalSpace = null;
 
   try {
-    files = await platformStorageService.getFiles({
+    files = await getFiles({
       types: [],
       searchText: "",
       sort: "$createdAt-desc",
@@ -24,8 +24,8 @@ const Dashboard = async () => {
 
   return (
     <DashboardClient
-      initialFiles={files}
-      initialTotalSpace={totalSpace}
+      files={files.documents}
+      totalSpace={totalSpace}
       currentUser={currentUser}
     />
   );
