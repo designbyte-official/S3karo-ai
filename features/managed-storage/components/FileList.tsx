@@ -54,13 +54,15 @@ const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, o
             {/* Single Dialog instance for all image details - optimized */}
             {selectedFile && (
                 <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-                    <DialogContent className="shad-dialog button max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto">
-                        <DialogHeader className="flex flex-col gap-3">
-                            <DialogTitle className="text-center text-light-100">
-                                Details
+                    <DialogContent className="shad-dialog button !max-w-[98vw] !w-[98vw] !h-[98vh] !max-h-[98vh] p-0 gap-0 overflow-hidden flex flex-col">
+                        <DialogHeader className="flex flex-row items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
+                            <DialogTitle className="text-lg font-semibold text-slate-800 truncate flex-1">
+                                {selectedFile.name}
                             </DialogTitle>
-                            <ActionsModalContent.FileDetails file={selectedFile} />
                         </DialogHeader>
+                        <div className="flex-1 overflow-y-auto p-6 min-h-0">
+                            <ActionsModalContent.FileDetails file={selectedFile} />
+                        </div>
                     </DialogContent>
                 </Dialog>
             )}

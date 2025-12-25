@@ -24,15 +24,15 @@ const FileDetails = ({ file }: { file: File }) => {
       {isImage ? (
         // Full-size image view for images
         <div className="w-full flex flex-col items-center gap-6">
-          {/* Large image display */}
-          <div className="relative w-full bg-slate-900/5 rounded-xl overflow-hidden border border-slate-200">
-            <div className="flex items-center justify-center min-h-[400px] max-h-[75vh] p-4">
+          {/* Large image display - full width, no height restrictions */}
+          <div className="relative w-full bg-slate-50 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200">
+            <div className="flex items-center justify-center w-full p-4 sm:p-6">
               <Image
                 src={cleanUrl}
                 alt={file.name}
-                width={1600}
-                height={1600}
-                className="w-full h-auto max-w-full max-h-[75vh] object-contain rounded-lg"
+                width={2400}
+                height={2400}
+                className="w-full h-auto max-w-full object-contain rounded-lg"
                 unoptimized
                 priority
               />
@@ -40,9 +40,8 @@ const FileDetails = ({ file }: { file: File }) => {
           </div>
           
           {/* File information */}
-          <div className="w-full space-y-4 px-2 pt-2 border-t border-slate-200 pt-4">
-            <h3 className="text-lg font-semibold text-slate-800 mb-4">{file.name}</h3>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="w-full space-y-4 px-2 pt-4 border-t border-slate-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <DetailRow label="Format:" value={file.extension.toUpperCase()} />
               <DetailRow label="Size:" value={convertFileSize(file.size)} />
               <DetailRow label="Owner:" value={file.owner?.fullName || "Unknown"} />
