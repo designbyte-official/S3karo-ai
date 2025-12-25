@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { convertFileSize } from "@/features/shared/utils";
 import ReactFragment = React.Fragment;
 import FileUploader from "@/components/common/FileUploader";
-import Search from "@/components/common/Search";
+import LocalSearch from "@/components/common/LocalSearch";
 import Sort from "@/components/common/Sort";
 import Image from "next/image";
 import {
@@ -37,6 +37,7 @@ const OwnS3Client = () => {
   const searchText = searchParams.get("query") || "";
   const sort = searchParams.get("sort") || "$createdAt-desc";
   const [view, setView] = React.useState<"grid" | "list">("grid");
+  const [filteredFiles, setFilteredFiles] = React.useState<any[]>([]);
 
   const {
     files,
@@ -52,6 +53,11 @@ const OwnS3Client = () => {
     setSubPath,
     createFolder
   } = useOwnS3(searchText, sort);
+
+  // Sync filteredFiles with files when files change
+  React.useEffect(() => {
+    setFilteredFiles(files);
+  }, [files]);
 
   // ... (auth checks are unchanged)
 
@@ -140,9 +146,7 @@ const OwnS3Client = () => {
           </div>
 
           <div className="flex items-center gap-4 w-full xl:w-auto justify-end">
-            <div className="flex-1 sm:flex-none sm:w-80">
-              <Search mode="private" />
-            </div>
+            <LocalSearch files={files} onFilteredFilesChange={setFilteredFiles} />
 
             <div className="hidden sm:block">
               <Sort />
@@ -172,7 +176,7 @@ const OwnS3Client = () => {
       </header>
 
       <DashboardLayout
-        files={files}
+        files={filteredFiles}
         totalSpace={totalSpace}
         currentUser={user}
         variant="brand"
