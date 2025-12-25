@@ -99,13 +99,15 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
     const onSubmit = async (values: z.infer<typeof formSchema>) => {
         setIsLoading(true);
         try {
-            // Get current config to preserve any fields not in the form
+            // Get current config to preserve any fields not in the form (like cdnUrl)
             const existingConfig = await s3ConfigService.getConfig(userId) || {};
             
             await s3ConfigService.saveConfig(userId, {
                 ...existingConfig,
                 ...values,
                 bucketName: values.bucket, // Ensure backward compatibility if needed
+                // Preserve cdnUrl - it's managed separately and not in the form
+                cdnUrl: existingConfig.cdnUrl,
             });
 
             // Update local state
@@ -164,16 +166,28 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
     };
 
     // Separate CDN URL handling - always allow editing
-    const [cdnUrl, setCdnUrl] = useState(currentConfig?.endpoint || "");
+    // Use cdnUrl if available, otherwise fall back to endpoint for backward compatibility
+    const getInitialCdnUrl = () => {
+        if (currentConfig?.cdnUrl !== undefined) return currentConfig.cdnUrl || "";
+        // Backward compatibility: if endpoint exists and looks like a CloudFront URL, use it
+        if (currentConfig?.endpoint && currentConfig.endpoint.startsWith('https://')) {
+            return currentConfig.endpoint;
+        }
+        return "";
+    };
+    const [cdnUrl, setCdnUrl] = useState(getInitialCdnUrl());
     const [isSavingCdn, setIsSavingCdn] = useState(false);
     const [cdnError, setCdnError] = useState<string>("");
 
     // Sync CDN URL state when currentConfig changes
     useEffect(() => {
-        if (currentConfig?.endpoint !== undefined) {
-            setCdnUrl(currentConfig.endpoint || "");
-        }
-    }, [currentConfig?.endpoint]);
+        const newCdnUrl = currentConfig?.cdnUrl !== undefined 
+            ? (currentConfig.cdnUrl || "")
+            : (currentConfig?.endpoint && currentConfig.endpoint.startsWith('https://') 
+                ? currentConfig.endpoint 
+                : "");
+        setCdnUrl(newCdnUrl);
+    }, [currentConfig?.cdnUrl, currentConfig?.endpoint]);
 
     // Validate CDN URL format
     const validateCdnUrl = (url: string): boolean => {
@@ -225,10 +239,12 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 throw new Error("No existing configuration found");
             }
 
-            // Update ONLY the endpoint field, preserve all other current values exactly as they are
+            // Update ONLY the cdnUrl field, preserve all other current values exactly as they are
+            // IMPORTANT: cdnUrl is for viewing files only, NOT for S3 API operations
             const updatedConfig = {
                 ...latestConfig,
-                endpoint: cdnUrl.trim() || undefined, // Store empty string as undefined for consistency
+                cdnUrl: cdnUrl.trim() || undefined, // Store empty string as undefined for consistency
+                // Keep endpoint separate - it's for S3 API operations (e.g., MinIO), not for viewing
             };
 
             await s3ConfigService.saveConfig(userId, updatedConfig);
@@ -259,8 +275,9 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         }
     };
 
-    // Get current endpoint value for comparison
-    const currentEndpoint = currentConfig?.endpoint || "";
+    // Get current cdnUrl value for comparison
+    const currentCdnUrl = currentConfig?.cdnUrl || 
+        (currentConfig?.endpoint && currentConfig.endpoint.startsWith('https://') ? currentConfig.endpoint : "") || "";
 
     if (!isEditMode && currentConfig?.bucket) {
         return (
@@ -367,14 +384,14 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         </div>
                         <Button
                             onClick={handleCdnUpdate}
-                            disabled={isSavingCdn || cdnUrl === currentEndpoint || !!cdnError}
+                            disabled={isSavingCdn || cdnUrl === currentCdnUrl || !!cdnError}
                             className="shad-submit-btn"
                         >
                             {isSavingCdn ? "Saving..." : "Update"}
                         </Button>
                     </div>
                     <p className="text-xs text-light-200 mt-1">
-                        Update only affects the CDN URL. Other settings remain unchanged.
+                        CDN URL is only used for viewing files. S3 operations (upload, delete, etc.) continue using your S3 credentials.
                     </p>
                 </div>
             </div>
@@ -421,8 +438,9 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 <FormTextInput
                     control={form.control}
                     name="endpoint"
-                    label="Custom Endpoint / CDN / CloudFront (Optional)"
-                    placeholder="https://start-with-cdn-or-cloud-front..."
+                    label="S3 Custom Endpoint (Optional - for MinIO, etc.)"
+                    placeholder="http://localhost:9000"
+                    description="Only for S3 API operations. Leave empty for standard AWS S3."
                 />
 
                 <div className="flex justify-end gap-4">

@@ -12,13 +12,15 @@ import {
 } from "@aws-sdk/client-s3";
 
 const getS3Client = (config: S3Config) => {
+    // IMPORTANT: Only use 'endpoint' for S3 API operations (e.g., MinIO)
+    // NEVER use 'cdnUrl' here - it's only for viewing files, not API operations
     return new S3Client({
         region: config.region,
         credentials: {
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
         },
-        endpoint: config.endpoint || undefined,
+        endpoint: config.endpoint || undefined, // Only S3 API endpoint, NOT cdnUrl
         forcePathStyle: !!config.endpoint, // Needed for MinIO/Custom endpoints
     });
 };
@@ -84,9 +86,19 @@ export const s3ExplorerService = {
 
                     const { type, extension } = getFileType(name);
 
-                    const baseUrl = params.config.endpoint
-                        ? params.config.endpoint.endsWith('/') ? params.config.endpoint : `${params.config.endpoint}/`
-                        : `https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com/`;
+                    // Use cdnUrl for viewing files if available, otherwise use endpoint or default S3 URL
+                    // cdnUrl is for CloudFront/CDN (viewing only), endpoint is for S3 API operations
+                    let baseUrl: string;
+                    if (params.config.cdnUrl) {
+                        // CloudFront/CDN URL for viewing files
+                        baseUrl = params.config.cdnUrl.endsWith('/') ? params.config.cdnUrl : `${params.config.cdnUrl}/`;
+                    } else if (params.config.endpoint) {
+                        // Custom S3 endpoint (e.g., MinIO) for viewing
+                        baseUrl = params.config.endpoint.endsWith('/') ? params.config.endpoint : `${params.config.endpoint}/`;
+                    } else {
+                        // Default AWS S3 URL
+                        baseUrl = `https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com/`;
+                    }
 
                     const url = `${baseUrl}${item.Key}`;
 
