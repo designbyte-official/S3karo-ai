@@ -36,48 +36,46 @@ export const DashboardLayout = ({
     const usageSummary = totalSpace.document ? getUsageSummary(totalSpace) : [];
 
     return (
-        <div className="dashboard-container">
-            <section>
-                {totalSpace?.all !== undefined ? (
+        <div className={totalSpace?.all !== undefined ? "dashboard-container" : "page-container !items-start"}>
+            {totalSpace?.all !== undefined && (
+                <section>
                     <StorageChart used={totalSpace.used} total={totalSpace.all} variant={variant} />
-                ) : (
-                    <div className="hidden lg:block w-full h-[50px]"></div> // Spacer for layout
-                )}
 
-                {/* Summary */}
-                {usageSummary.length > 0 && (
-                    <ul className="dashboard-summary-list">
-                        {usageSummary.map((summary) => (
-                            <li key={summary.title} className="dashboard-summary-card">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between gap-3">
-                                        <Image
-                                            src={summary.icon}
-                                            width={100}
-                                            height={100}
-                                            alt="uploaded image"
-                                            className="summary-type-icon"
-                                        />
-                                        <h4 className="summary-type-size">
-                                            {convertFileSize(summary.size) || "0 Bytes"}
-                                        </h4>
+                    {/* Summary */}
+                    {usageSummary.length > 0 && (
+                        <ul className="dashboard-summary-list">
+                            {usageSummary.map((summary) => (
+                                <li key={summary.title} className="dashboard-summary-card">
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between gap-3">
+                                            <Image
+                                                src={summary.icon}
+                                                width={100}
+                                                height={100}
+                                                alt="uploaded image"
+                                                className="summary-type-icon"
+                                            />
+                                            <h4 className="summary-type-size">
+                                                {convertFileSize(summary.size) || "0 Bytes"}
+                                            </h4>
+                                        </div>
+
+                                        <h5 className="summary-type-title">{summary.title}</h5>
+                                        <div className="separator" />
+                                        <p className="caption text-center text-light-200">
+                                            {summary.latestDate
+                                                ? new Date(summary.latestDate).toLocaleString()
+                                                : "No files"}
+                                        </p>
                                     </div>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+            )}
 
-                                    <h5 className="summary-type-title">{summary.title}</h5>
-                                    <div className="separator" />
-                                    <p className="caption text-center text-light-200">
-                                        {summary.latestDate
-                                            ? new Date(summary.latestDate).toLocaleString()
-                                            : "No files"}
-                                    </p>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </section>
-
-            <section className="dashboard-recent-files">
+            <section className={totalSpace?.all !== undefined ? "dashboard-recent-files" : "w-full"}>
                 <h2 className="h2 text-light-100">{title}</h2>
                 {isLoading ? (
                     <p className="body-1 mt-10 text-center text-light-200">Loading...</p>

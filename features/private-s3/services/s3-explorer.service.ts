@@ -152,7 +152,7 @@ export const s3ExplorerService = {
 
     async getBucketStats(config: S3Config, prefix: string) {
         // Stats are expensive in S3 (need to list all). 
-        // Returning dummy for now to avoid freezing browser on huge buckets.
-        return { used: 0, all: 100 * 1024 * 1024 * 1024 };
+        // Returning 0 used and undefined total to hide the chart in Private mode.
+        return { used: 0, all: undefined };
     }
 };

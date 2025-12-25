@@ -82,7 +82,7 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
   return {
     files: filesData?.documents || [],
     totalFiles: filesData?.documents?.length || 0,
-    totalSpace: statsData || { used: 0, all: 2 * 1024 * 1024 * 1024 * 1024 },
+    totalSpace: statsData || { used: 0, all: undefined },
     user,
     subPath,
     loading: authLoading || loadingFiles || loadingStats || loadingConfig,
