@@ -9,12 +9,14 @@ const Card = ({
   file,
   onFolderClick,
   view = "grid",
-  index = 0
+  index = 0,
+  showThumbnails = false
 }: {
   file: S3File;
   onFolderClick?: (path: string) => void;
   view?: "grid" | "list";
   index?: number;
+  showThumbnails?: boolean;
 }) => {
   const isFolder = file.type === 'folder' || file.isFolder;
 
@@ -45,6 +47,7 @@ const Card = ({
             url={file.url}
             className="!w-10 !h-10 min-w-10 !bg-brand-50"
             imageClassName="!w-6 !h-6"
+            showThumbnail={showThumbnails}
           />
           <div className="flex flex-col min-w-0 flex-1">
             <p className="text-[14px] font-semibold leading-tight truncate text-slate-800 group-hover:text-brand transition-colors">
@@ -95,6 +98,7 @@ const Card = ({
           url={file.url}
           className="!w-16 !h-16 group-hover:scale-105 transition-transform duration-500 !bg-brand-50"
           imageClassName="!w-10 !h-10"
+          showThumbnail={showThumbnails}
         />
 
         <div className="flex flex-col items-end gap-2">

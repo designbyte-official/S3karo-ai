@@ -189,18 +189,39 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         setCdnUrl(newCdnUrl);
     }, [currentConfig?.cdnUrl, currentConfig?.endpoint]);
 
-    // Validate CDN URL format
+    // Validate CDN URL format with better edge case handling
     const validateCdnUrl = (url: string): boolean => {
-        if (!url || url.trim() === "") {
+        if (!url || typeof url !== 'string' || url.trim() === "") {
             setCdnError("");
             return true; // Empty is valid (optional field)
         }
         
+        const trimmed = url.trim();
+        
+        // Basic format check: must start with http:// or https://
+        if (!trimmed.match(/^https?:\/\//i)) {
+            setCdnError("URL must start with http:// or https://");
+            return false;
+        }
+        
         try {
-            new URL(url);
+            const urlObj = new URL(trimmed);
+            
+            // Validate protocol
+            if (!['http:', 'https:'].includes(urlObj.protocol)) {
+                setCdnError("URL must use http:// or https:// protocol");
+                return false;
+            }
+            
+            // Validate hostname exists
+            if (!urlObj.hostname || urlObj.hostname.trim() === '') {
+                setCdnError("URL must have a valid hostname");
+                return false;
+            }
+            
             setCdnError("");
             return true;
-        } catch {
+        } catch (e) {
             setCdnError("Must be a valid URL (e.g., https://example.com)");
             return false;
         }
@@ -213,6 +234,15 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         } else {
             setCdnError("");
         }
+    };
+
+    // Normalize URL: ensure it doesn't have trailing slash (we'll add it when constructing file URLs)
+    const normalizeCdnUrl = (url: string): string => {
+        if (!url || typeof url !== 'string') return '';
+        let normalized = url.trim();
+        // Remove trailing slashes - we'll add them when constructing file URLs
+        normalized = normalized.replace(/\/+$/, '');
+        return normalized;
     };
 
     const handleCdnUpdate = async () => {
@@ -239,11 +269,13 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 throw new Error("No existing configuration found");
             }
 
-            // Update ONLY the cdnUrl field, preserve all other current values exactly as they are
+            // Normalize and update ONLY the cdnUrl field, preserve all other current values exactly as they are
             // IMPORTANT: cdnUrl is for viewing files only, NOT for S3 API operations
+            const normalizedUrl = cdnUrl.trim() ? normalizeCdnUrl(cdnUrl) : undefined;
+            
             const updatedConfig = {
                 ...latestConfig,
-                cdnUrl: cdnUrl.trim() || undefined, // Store empty string as undefined for consistency
+                cdnUrl: normalizedUrl, // Store normalized URL (without trailing slash)
                 // Keep endpoint separate - it's for S3 API operations (e.g., MinIO), not for viewing
             };
 

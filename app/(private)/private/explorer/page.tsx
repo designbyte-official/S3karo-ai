@@ -28,7 +28,7 @@ const OwnS3Page = () => {
   return <OwnS3Client />;
 };
 
-import { LayoutGrid, List as ListIcon, Plus, FolderPlus, Search as SearchIcon, ChevronRight } from "lucide-react";
+import { LayoutGrid, List as ListIcon, Plus, FolderPlus, Search as SearchIcon, ChevronRight, Image as ImageIcon } from "lucide-react";
 
 // ... (OwnS3Client component definition)
 
@@ -38,6 +38,7 @@ const OwnS3Client = () => {
   const searchText = searchParams.get("query") || "";
   const sort = searchParams.get("sort") || "$createdAt-desc";
   const [view, setView] = React.useState<"grid" | "list">("grid");
+  const [showThumbnails, setShowThumbnails] = React.useState(false); // Default: show icons only
 
   const {
     files,
@@ -184,24 +185,39 @@ const OwnS3Client = () => {
             </div>
           </div>
 
-          {/* View Toggle */}
-          <div className="flex items-center bg-light-300 rounded-2xl p-1 shrink-0 shadow-inner">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'grid' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
-              onClick={() => setView('grid')}
-            >
-              <LayoutGrid size={18} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'list' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
-              onClick={() => setView('list')}
-            >
-              <ListIcon size={18} />
-            </Button>
+          {/* View Toggle and Thumbnail Toggle */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Thumbnail Toggle */}
+            <div className="flex items-center bg-light-300 rounded-2xl p-1 shadow-inner">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-9 w-9 rounded-xl transition-all duration-300 ${showThumbnails ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
+                onClick={() => setShowThumbnails(!showThumbnails)}
+                title={showThumbnails ? "Hide thumbnails" : "Show thumbnails"}
+              >
+                <ImageIcon size={18} />
+              </Button>
+            </div>
+            {/* View Toggle */}
+            <div className="flex items-center bg-light-300 rounded-2xl p-1 shadow-inner">
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'grid' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
+                onClick={() => setView('grid')}
+              >
+                <LayoutGrid size={18} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'list' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
+                onClick={() => setView('list')}
+              >
+                <ListIcon size={18} />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -215,6 +231,7 @@ const OwnS3Client = () => {
         title={searchText ? "Search Results" : subPath ? `Files in ${subPath}` : "All Files"}
         onFolderClick={navigateToFolder}
         view={view}
+        showThumbnails={showThumbnails}
       />
     </div>
   );

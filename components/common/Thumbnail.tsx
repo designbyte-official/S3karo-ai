@@ -10,6 +10,7 @@ interface Props {
   url?: string;
   imageClassName?: string;
   className?: string;
+  showThumbnail?: boolean; // If false, always show icon instead of image thumbnail
 }
 
 export const Thumbnail = ({
@@ -18,6 +19,7 @@ export const Thumbnail = ({
   url = "",
   imageClassName,
   className,
+  showThumbnail = false, // Default: show icons only
 }: Props) => {
   const isImage = type === "image" && extension !== "svg";
   const isFolder = type === "folder";
@@ -25,9 +27,12 @@ export const Thumbnail = ({
   const [imageError, setImageError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
 
-  // Use Intersection Observer to lazy load images only when visible
+  // Only load image thumbnails if showThumbnail is true AND it's an image
+  const shouldShowThumbnail = showThumbnail && isImage;
+
+  // Use Intersection Observer to lazy load images only when visible and enabled
   useEffect(() => {
-    if (!isImage || !url || shouldLoadImage) return;
+    if (!shouldShowThumbnail || !url || shouldLoadImage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -46,7 +51,7 @@ export const Thumbnail = ({
     }
 
     return () => observer.disconnect();
-  }, [isImage, url, shouldLoadImage]);
+  }, [shouldShowThumbnail, url, shouldLoadImage]);
 
   return (
     <figure className={cn("thumbnail", className)} ref={imgRef}>
@@ -58,8 +63,8 @@ export const Thumbnail = ({
           height={100}
           className={cn("size-8 object-contain", imageClassName)}
         />
-      ) : isImage && !shouldLoadImage ? (
-        // Show placeholder icon while image loads
+      ) : shouldShowThumbnail && !shouldLoadImage ? (
+        // Show placeholder icon while image loads (only when thumbnails enabled)
         <Image
           src={getFileIcon(extension, type)}
           alt="thumbnail-placeholder"
@@ -69,16 +74,16 @@ export const Thumbnail = ({
         />
       ) : (
         <Image
-          src={isImage && shouldLoadImage && !imageError ? url : getFileIcon(extension, type)}
+          src={shouldShowThumbnail && shouldLoadImage && !imageError ? url : getFileIcon(extension, type)}
           alt="thumbnail"
           width={100}
           height={100}
-          loading={isImage ? "lazy" : "eager"}
+          loading={shouldShowThumbnail ? "lazy" : "eager"}
           onError={() => setImageError(true)}
           className={cn(
             "size-8 object-contain",
             imageClassName,
-            isImage && "thumbnail-image",
+            shouldShowThumbnail && "thumbnail-image",
           )}
         />
       )}
