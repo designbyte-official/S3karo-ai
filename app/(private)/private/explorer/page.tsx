@@ -232,6 +232,7 @@ const OwnS3Client = () => {
         onFolderClick={navigateToFolder}
         view={view}
         showThumbnails={showThumbnails}
+        hideOwner={true}
       />
     </div>
   );

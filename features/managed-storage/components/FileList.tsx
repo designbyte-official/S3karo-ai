@@ -14,9 +14,10 @@ interface Props {
     onFolderClick?: (path: string) => void;
     view?: "grid" | "list";
     showThumbnails?: boolean;
+    hideOwner?: boolean;
 }
 
-const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, onFolderClick, view = "grid", showThumbnails = false }: Props) => {
+const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, onFolderClick, view = "grid", showThumbnails = false, hideOwner = false }: Props) => {
     const displayFiles = files || initialFiles?.documents || [];
 
     return (
@@ -29,6 +30,7 @@ const FileList = ({ files, initialFiles, currentUser, types, searchText, sort, o
                     view={view}
                     index={index}
                     showThumbnails={showThumbnails}
+                    hideOwner={hideOwner}
                 />
             ))}
         </ul>

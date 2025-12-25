@@ -10,13 +10,15 @@ const Card = ({
   onFolderClick,
   view = "grid",
   index = 0,
-  showThumbnails = false
+  showThumbnails = false,
+  hideOwner = false
 }: {
   file: S3File;
   onFolderClick?: (path: string) => void;
   view?: "grid" | "list";
   index?: number;
   showThumbnails?: boolean;
+  hideOwner?: boolean; // Hide owner info (useful for private S3 where all files are owned by user)
 }) => {
   const isFolder = file.type === 'folder' || file.isFolder;
 
@@ -121,10 +123,12 @@ const Card = ({
               date={file.$createdAt}
               className="text-[12px] text-slate-400 font-medium"
             />
-            <p className="text-[11px] text-slate-300 font-medium flex items-center gap-1">
-              <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-              {file.owner?.fullName || 'Unknown'}
-            </p>
+            {!hideOwner && (
+              <p className="text-[11px] text-slate-300 font-medium flex items-center gap-1">
+                <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                {file.owner?.fullName || 'Unknown'}
+              </p>
+            )}
           </div>
         )}
       </div>
