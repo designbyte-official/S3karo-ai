@@ -125,7 +125,29 @@ const OwnS3Client = () => {
           <div className="flex-1 min-w-0">
             <h1 className="h1 capitalize truncate">Own S3 Explorer</h1>
             {/* Breadcrumbs / Navigation - moved here */}
-            <div className="flex items-center gap-1 overflow-x-auto no-scrollbar mt-2">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar mt-2">
+              {/* Navigation Arrows */}
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-lg hover:bg-light-300 disabled:opacity-30"
+                  onClick={() => {
+                    const parts = subPath.split('/').filter(Boolean);
+                    if (parts.length > 0) {
+                      parts.pop();
+                      setSubPath(parts.join('/'));
+                    }
+                  }}
+                  disabled={!subPath}
+                  title="Go back"
+                >
+                  <ChevronRight size={16} className="rotate-180" />
+                </Button>
+                <div className="w-px h-5 bg-light-300" />
+              </div>
+
+              {/* Breadcrumbs */}
               <Button
                 variant="ghost"
                 className="h-8 px-3 text-light-100 hover:bg-light-300 rounded-xl flex items-center gap-2 shrink-0"

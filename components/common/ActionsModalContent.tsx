@@ -15,10 +15,13 @@ const DetailRow = ({ label, value }: { label: string; value: string }) => (
 );
 
 const FileDetails = ({ file }: { file: File }) => {
+  // Only fix: trim URL to prevent trailing space errors
+  const cleanUrl = file.url?.trimEnd() || file.url;
+
   return (
     <>
       <Image
-        src={file.url}
+        src={cleanUrl}
         alt={file.name}
         width={100}
         height={100}

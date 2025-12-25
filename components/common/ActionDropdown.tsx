@@ -25,8 +25,7 @@ import { platformStorageService } from "@/features/managed-storage/services/mana
 import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import { S3File } from "@/types/file";
-import { getCurrentUser, signOutUser } from "@/features/auth/actions/user.actions";
-import DashboardClient from "@/features/managed-storage/components/DashboardClient";
+import { getCurrentUser } from "@/features/auth/actions/user.actions";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { useToast } from "@/hooks/use-toast";
 import { constructDownloadUrl } from "@/features/shared/utils";
@@ -258,37 +257,36 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                                 }}
                             >
                                 {actionItem.value === "download" ? (
-                                    <Link
-                                        href={downloadUrl || (file.bucketFileId ? constructDownloadUrl(file.bucketFileId) : "#")}
-                                        download={file.name}
-                                        className="flex items-center gap-2"
+                                    <div
+                                        className="flex items-center gap-2 cursor-pointer"
                                         onClick={async (e) => {
                                             const isPrivateS3 = path.includes('/private/explorer');
-                                            if (!downloadUrl) {
-                                                e.preventDefault();
-                                                try {
-                                                    const ownerId = file.owner?.$id || file.accountId || '';
-                                                    let url;
-                                                    if (isPrivateS3) {
-                                                        const config = await s3ConfigService.getConfig(user.$id);
-                                                        if (!config) {
-                                                            toast({
-                                                                description: "Please configure your S3 credentials first",
-                                                                className: "error-toast",
-                                                            });
-                                                            return;
-                                                        }
-                                                        url = await s3ExplorerService.getSignedUrl(config, file.bucketFileId || file.$id);
-                                                    } else {
-                                                        url = await platformStorageService.getDownloadUrl(file.bucketFileId || file.$id || file.key || '');
+                                            try {
+                                                const ownerId = file.owner?.$id || file.accountId || '';
+                                                let url;
+                                                if (isPrivateS3) {
+                                                    const config = await s3ConfigService.getConfig(user.$id);
+                                                    if (!config) {
+                                                        toast({
+                                                            description: "Please configure your S3 credentials first",
+                                                            className: "error-toast",
+                                                        });
+                                                        return;
                                                     }
-                                                    setDownloadUrl(url);
-                                                    if (typeof window !== 'undefined') {
-                                                        window.location.href = url;
-                                                    }
-                                                } catch (error) {
-                                                    console.error('Download error:', error);
+                                                    url = await s3ExplorerService.getSignedUrl(config, file.bucketFileId || file.$id);
+                                                } else {
+                                                    url = await platformStorageService.getDownloadUrl(file.bucketFileId || file.$id || file.key || '');
                                                 }
+                                                // Open in new window
+                                                if (typeof window !== 'undefined') {
+                                                    window.open(url, '_blank');
+                                                }
+                                            } catch (error) {
+                                                console.error('Download error:', error);
+                                                toast({
+                                                    description: "Failed to download file",
+                                                    variant: "destructive",
+                                                });
                                             }
                                         }}
                                     >
@@ -299,7 +297,7 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                                             height={30}
                                         />
                                         {actionItem.label}
-                                    </Link>
+                                    </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
                                         <Image

@@ -163,10 +163,14 @@ export const s3ExplorerService = {
         const key = `${path}${params.file.name}`;
 
         try {
+            // Convert File to ArrayBuffer for AWS SDK
+            const arrayBuffer = await params.file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
             const command = new PutObjectCommand({
                 Bucket: params.config.bucket,
                 Key: key,
-                Body: params.file,
+                Body: buffer,
                 ContentType: params.file.type,
             });
 
