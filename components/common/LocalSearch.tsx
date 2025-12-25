@@ -39,7 +39,7 @@ const LocalSearch = ({ files, onFilteredFilesChange }: LocalSearchProps) => {
                 <SearchIcon size={20} className="text-light-200" />
                 <Input
                     value={query}
-                    placeholder="Filter files..."
+                    placeholder="Search in current folder..."
                     className="search-input pr-8"
                     onChange={(e) => handleSearch(e.target.value)}
                 />

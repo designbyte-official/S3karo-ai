@@ -11,6 +11,7 @@ import { convertFileSize } from "@/features/shared/utils";
 import ReactFragment = React.Fragment;
 import FileUploader from "@/components/common/FileUploader";
 import LocalSearch from "@/components/common/LocalSearch";
+import DragDropUploadZone from "@/components/common/DragDropUploadZone";
 import Sort from "@/components/common/Sort";
 import Image from "next/image";
 import {
@@ -107,6 +108,12 @@ const OwnS3Client = () => {
 
   return (
     <div className="page-container !items-start !max-w-full lg:px-10">
+      <DragDropUploadZone
+        ownerId={user.$id}
+        accountId={user.accountId}
+        subPath={subPath}
+        onUploadComplete={reload}
+      />
       <header className="flex flex-col gap-6 mb-8 w-full">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex-1 min-w-0">
