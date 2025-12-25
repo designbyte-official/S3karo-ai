@@ -76,23 +76,25 @@ export const s3ExplorerService = {
                 response.Contents.forEach((item) => {
                     if (item.Key === response.Prefix) return; // Skip the folder object itself
                     const name = item.Key!.replace(response.Prefix!, "");
-                    const extension = name.split('.').pop() || "file";
+
+                    // Correctly determine type and extension
+                    const { type, extension } = getFileType(name);
 
                     files.push({
                         $id: item.Key!,
                         bucketFileId: item.Key!,
                         name: name,
-                        type: extension, // Simplification
+                        type: type, // This is key! 'image', 'video', 'document' etc.
                         size: item.Size || 0,
                         extension: extension,
-                        url: `https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com/${item.Key}`, // Basic URL construction
+                        url: `https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com/${item.Key}`,
                         users: [],
                         accountId: params.accountId,
                         owner: {
                             $id: "user-me",
                             fullName: "Me",
                         },
-                        $createdAt: new Date().toISOString(),
+                        $createdAt: item.LastModified?.toISOString() || new Date().toISOString(),
                         $updatedAt: new Date().toISOString(),
                     });
                 });

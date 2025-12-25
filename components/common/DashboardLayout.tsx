@@ -80,7 +80,6 @@ export const DashboardLayout = ({
             )}
 
             <section className={totalSpace?.all !== undefined ? "dashboard-recent-files" : "w-full"}>
-                <h2 className="h2 text-light-100">{title}</h2>
                 {isLoading ? (
                     <p className="body-1 mt-10 text-center text-light-200">Loading...</p>
                 ) : files.length > 0 ? (
