@@ -21,6 +21,8 @@ const Card = ({
   hideOwner?: boolean; // Hide owner info (useful for private S3 where all files are owned by user)
 }) => {
   const isFolder = file.type === 'folder' || file.isFolder;
+  const isImage = file.type === 'image' && file.extension !== 'svg';
+  const shouldShowFullImage = showThumbnails && isImage && !isFolder;
 
   const handleClick = (e: React.MouseEvent) => {
     if (isFolder) {
@@ -90,48 +92,98 @@ const Card = ({
       href={isFolder ? '#' : file.url}
       target={isFolder ? undefined : "_blank"}
       onClick={handleClick}
-      className="group relative flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 border border-slate-100 animate-in fade-in zoom-in-95 duration-300"
+      className="group relative flex flex-col rounded-3xl bg-white shadow-sm transition-all hover:shadow-xl hover:-translate-y-1 border border-slate-100 animate-in fade-in zoom-in-95 duration-300 overflow-hidden"
       style={{ animationDelay }}
     >
-      <div className="flex justify-between items-start w-full">
-        <Thumbnail
-          type={file.type}
-          extension={file.extension}
-          url={file.url}
-          className="!w-16 !h-16 group-hover:scale-105 transition-transform duration-500 !bg-brand-50"
-          imageClassName="!w-10 !h-10"
-          showThumbnail={showThumbnails}
-        />
-
-        <div className="flex flex-col items-end gap-2">
-          {!isFolder && (
-            <ActionDropdown file={file} />
-          )}
-          <p className="text-[14px] text-slate-500 font-semibold bg-slate-50 px-2 py-0.5 rounded-lg">
-            {isFolder ? 'Folder' : convertFileSize(file.size)}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1 w-full mt-2">
-        <p className="text-[16px] font-bold text-slate-800 truncate group-hover:text-brand transition-all duration-300">
-          {file.name}
-        </p>
-        {!isFolder && (
-          <div className="flex flex-col gap-0.5">
-            <FormattedDateTime
-              date={file.$createdAt}
-              className="text-[12px] text-slate-400 font-medium"
+      {/* Full-width image thumbnail when enabled */}
+      {shouldShowFullImage ? (
+        <>
+          <div className="relative w-full aspect-square bg-slate-100 overflow-hidden">
+            <Thumbnail
+              type={file.type}
+              extension={file.extension}
+              url={file.url}
+              className="!w-full !h-full !rounded-none"
+              imageClassName="!w-full !h-full object-cover"
+              showThumbnail={showThumbnails}
             />
-            {!hideOwner && (
-              <p className="text-[11px] text-slate-300 font-medium flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-slate-200"></span>
-                {file.owner?.fullName || 'Unknown'}
-              </p>
-            )}
+            {/* Overlay with actions on hover */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="absolute top-3 right-3">
+                <ActionDropdown file={file} />
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+          {/* File info below image */}
+          <div className="flex flex-col gap-2 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[16px] font-bold text-slate-800 truncate group-hover:text-brand transition-all duration-300 flex-1">
+                {file.name}
+              </p>
+              <p className="text-[12px] text-slate-500 font-semibold bg-slate-50 px-2 py-1 rounded-lg shrink-0">
+                {convertFileSize(file.size)}
+              </p>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <FormattedDateTime
+                date={file.$createdAt}
+                className="text-[12px] text-slate-400 font-medium"
+              />
+              {!hideOwner && (
+                <p className="text-[11px] text-slate-300 font-medium flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                  {file.owner?.fullName || 'Unknown'}
+                </p>
+              )}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Original layout for non-image files or when thumbnails disabled */}
+          <div className="flex flex-col gap-4 p-5">
+            <div className="flex justify-between items-start w-full">
+              <Thumbnail
+                type={file.type}
+                extension={file.extension}
+                url={file.url}
+                className="!w-16 !h-16 group-hover:scale-105 transition-transform duration-500 !bg-brand-50"
+                imageClassName="!w-10 !h-10"
+                showThumbnail={showThumbnails}
+              />
+
+              <div className="flex flex-col items-end gap-2">
+                {!isFolder && (
+                  <ActionDropdown file={file} />
+                )}
+                <p className="text-[14px] text-slate-500 font-semibold bg-slate-50 px-2 py-0.5 rounded-lg">
+                  {isFolder ? 'Folder' : convertFileSize(file.size)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1 w-full mt-2">
+              <p className="text-[16px] font-bold text-slate-800 truncate group-hover:text-brand transition-all duration-300">
+                {file.name}
+              </p>
+              {!isFolder && (
+                <div className="flex flex-col gap-0.5">
+                  <FormattedDateTime
+                    date={file.$createdAt}
+                    className="text-[12px] text-slate-400 font-medium"
+                  />
+                  {!hideOwner && (
+                    <p className="text-[11px] text-slate-300 font-medium flex items-center gap-1">
+                      <span className="w-1 h-1 rounded-full bg-slate-200"></span>
+                      {file.owner?.fullName || 'Unknown'}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </Link>
   );
 };

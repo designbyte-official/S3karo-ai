@@ -82,13 +82,16 @@ export const Thumbnail = ({
   const imageSource = getImageSource();
   const isActualImage = shouldShowThumbnail && shouldLoadImage && !imageError && url && imageSource === url;
 
+  // Check if this is a full-width thumbnail (when className includes full width styles)
+  const isFullWidth = className?.includes('!w-full') || className?.includes('w-full');
+  
   return (
     <figure className={cn("thumbnail", className)} ref={imgRef}>
       <Image
         src={imageSource}
         alt={isFolder ? "folder" : isActualImage ? "thumbnail" : "file-icon"}
-        width={100}
-        height={100}
+        width={isFullWidth ? 800 : 100}
+        height={isFullWidth ? 800 : 100}
         loading={isActualImage ? "lazy" : "eager"}
         onError={() => {
           if (shouldShowThumbnail) {
@@ -96,9 +99,10 @@ export const Thumbnail = ({
           }
         }}
         className={cn(
-          "size-8 object-contain",
+          !isFullWidth && "size-8 object-contain",
           imageClassName,
           isActualImage && "thumbnail-image",
+          isFullWidth && "w-full h-full",
         )}
       />
     </figure>
