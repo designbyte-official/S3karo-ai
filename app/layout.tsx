@@ -2,8 +2,19 @@ import type { Metadata } from "next";
 import { Poppins } from 'next/font/google';
 import { Providers } from "./providers";
 import NextTopLoader from 'nextjs-toploader';
+import { validateProductionEnv } from '@/lib/utils/production-check';
 
 import "./globals.css";
+
+// Validate production environment on startup
+if (process.env.NODE_ENV === 'production') {
+  try {
+    validateProductionEnv();
+  } catch (error) {
+    console.error('❌ Production validation failed:', error);
+    throw error;
+  }
+}
 
 const poppins = Poppins({
   subsets: ['latin'],

@@ -13,7 +13,6 @@ export default function Error({
   useEffect(() => {
     // Log error to monitoring service in production
     if (process.env.NODE_ENV === "production") {
-      // TODO: Integrate with error monitoring service (e.g., Sentry, LogRocket)
       console.error("Application error:", error);
     }
   }, [error]);

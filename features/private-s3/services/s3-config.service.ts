@@ -28,13 +28,11 @@ const getEncryptionSecret = (): string => {
   }
   
   if (process.env.NODE_ENV === 'production') {
-    console.error(
+    throw new Error(
       '❌ SECURITY ERROR: NEXT_PUBLIC_ENCRYPTION_SECRET is required in production!\n' +
       'Please set NEXT_PUBLIC_ENCRYPTION_SECRET in your environment variables.\n' +
       'Generate: openssl rand -base64 32'
     );
-    // In production, still use fallback to prevent app breakage, but log error
-    return FALLBACK_SECRET;
   }
   
   console.warn('⚠️ NEXT_PUBLIC_ENCRYPTION_SECRET not set. Using development fallback (NOT SECURE for production!)');
