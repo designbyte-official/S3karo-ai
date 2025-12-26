@@ -4,6 +4,7 @@ import { getTotalSpaceUsed } from '@/lib/database/queries';
 import { getActiveSubscription } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
+import { getCache, setCache } from '@/lib/redis/cache';
 
 /**
  * GET /api/storage/stats
@@ -16,6 +17,12 @@ export async function GET(request: NextRequest) {
     
     if (!user) {
       return apiErrors.unauthorized('Authentication required');
+    }
+
+    const cacheKey = `storage-stats:${user.id}`;
+    const cached = await getCache<any>(cacheKey);
+    if (cached) {
+      return createSuccessResponse(cached);
     }
 
     // Get file type breakdown
@@ -40,7 +47,7 @@ export async function GET(request: NextRequest) {
       ? Number(subscription.bandwidthUsed || 0)
       : 0;
 
-    return createSuccessResponse({
+    const response = {
       files: {
         image: totalSpace.image,
         document: totalSpace.document,
@@ -65,7 +72,11 @@ export async function GET(request: NextRequest) {
           percentage: (bandwidthUsed / bandwidthLimit) * 100,
         },
       },
-    });
+    };
+
+    await setCache(cacheKey, response, 60);
+
+    return createSuccessResponse(response);
   } catch (error: any) {
     logger.error('Get storage stats error', error);
     return apiErrors.internalServerError('Failed to get storage stats', error.message);

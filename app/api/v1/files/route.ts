@@ -36,6 +36,15 @@ export async function POST(request: NextRequest) {
     const rateLimitCheck = await checkRateLimit(apiKeyRecord.id);
     if (!rateLimitCheck.allowed) {
       const rateLimit = apiKeyRecord.rateLimit ?? 1000;
+      const headers: Record<string, string> = {
+        'X-RateLimit-Limit': rateLimit.toString(),
+        'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
+      };
+      
+      if (rateLimitCheck.reset) {
+        headers['X-RateLimit-Reset'] = new Date(rateLimitCheck.reset).toISOString();
+      }
+
       return NextResponse.json(
         { 
           error: 'Too Many Requests', 
@@ -43,10 +52,7 @@ export async function POST(request: NextRequest) {
         },
         { 
           status: 429,
-          headers: {
-            'X-RateLimit-Limit': rateLimit.toString(),
-            'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
-          }
+          headers,
         }
       );
     }
@@ -121,6 +127,15 @@ export async function POST(request: NextRequest) {
     await incrementStorageUsage(userId, file.size);
 
     const rateLimit = apiKeyRecord.rateLimit ?? 1000;
+    const headers: Record<string, string> = {
+      'X-RateLimit-Limit': rateLimit.toString(),
+      'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
+    };
+    
+    if (rateLimitCheck.reset) {
+      headers['X-RateLimit-Reset'] = new Date(rateLimitCheck.reset).toISOString();
+    }
+
     return createSuccessResponse({
       id: dbFile.id,
       name: dbFile.name,
@@ -129,10 +144,7 @@ export async function POST(request: NextRequest) {
       type: dbFile.type,
       extension: dbFile.extension,
       createdAt: dbFile.createdAt.toISOString(),
-    }, 201, undefined, {
-      'X-RateLimit-Limit': rateLimit.toString(),
-      'X-RateLimit-Remaining': (rateLimitCheck.remaining - 1).toString(),
-    });
+    }, 201, undefined, headers);
 
   } catch (error: any) {
     logger.error('API upload error', error);

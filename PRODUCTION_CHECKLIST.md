@@ -110,11 +110,12 @@ FROM_NAME=...
 
 ### Known Limitations
 
-1. **Rate Limiting**: Currently basic implementation - consider Redis for production scale
+1. **Rate Limiting**: ✅ **FIXED** - Now uses Upstash Redis with sliding window algorithm (middleware-free)
 2. **Email Service**: Requires external email provider configuration
 3. **Monitoring**: No built-in monitoring - integrate external service
 4. **Backups**: Database backups should be configured separately
 5. **CDN**: AWS_CDN_URL should be configured for optimal performance
+6. **Redis**: Optional but recommended for production (rate limiting + caching)
 
 ## 🎯 Production Ready Status
 

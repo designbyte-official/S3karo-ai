@@ -2,6 +2,7 @@ import { db, isDatabaseConfigured } from './db';
 import { subscriptions } from './schema';
 import { eq, and, gte } from 'drizzle-orm';
 import type { Subscription, NewSubscription } from './schema';
+import { deleteCache } from '@/lib/redis/cache';
 
 /**
  * Get active subscription for a user
@@ -264,6 +265,9 @@ export async function decrementStorageUsage(userId: string, fileSize: number): P
       })
       .where(eq(subscriptions.id, subscription.id));
 
+    await deleteCache(`storage-stats:${userId}`);
+    await deleteCache(`subscription:${userId}`);
+
     return true;
   } catch (error) {
     console.error('Decrement storage usage error:', error);
@@ -292,6 +296,9 @@ export async function incrementBandwidthUsage(userId: string, transferSize: numb
         updatedAt: new Date(),
       })
       .where(eq(subscriptions.id, subscription.id));
+
+    await deleteCache(`storage-stats:${userId}`);
+    await deleteCache(`subscription:${userId}`);
 
     return true;
   } catch (error) {

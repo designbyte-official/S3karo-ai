@@ -473,11 +473,10 @@ export async function revokeApiKey(apiKeyId: string, userId: string): Promise<bo
 /**
  * Check rate limit for an API key
  */
-// Check rate limit for API key
-export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boolean; remaining: number }> {
+// Check rate limit for API key (uses Redis if available, no middleware required)
+export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boolean; remaining: number; reset?: number }> {
   const database = requireDatabase();
   
-  // Get API key with rate limit
   const result = await database
     .select({ rateLimit: apiKeys.rateLimit })
     .from(apiKeys)
@@ -490,5 +489,6 @@ export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boole
   
   const rateLimit = result[0].rateLimit || 1000;
   
-  return { allowed: true, remaining: rateLimit };
+  const { checkRateLimit: checkRedisRateLimit } = await import('@/lib/redis/rate-limit');
+  return await checkRedisRateLimit(`api-key:${apiKeyId}`, rateLimit);
 }
