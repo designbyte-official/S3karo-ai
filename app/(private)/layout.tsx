@@ -18,7 +18,7 @@ const PrivateLayout = async ({ children }: { children: React.ReactNode }) => {
     const privateNavItems = [
         { name: "S3 Explorer", url: "/private/explorer", icon: "/assets/icons/dashboard.svg" },
         { name: "S3 Settings", url: "/private/settings", icon: "/assets/icons/others.svg" },
-        { name: "Profile", url: "/profile", icon: "/assets/icons/others.svg" },
+        { name: "Profile", url: "/dashboard/profile", icon: "/assets/icons/others.svg" },
     ];
 
     return (

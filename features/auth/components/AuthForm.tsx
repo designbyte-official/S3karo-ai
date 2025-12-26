@@ -85,7 +85,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
       // Redirect to dashboard on success (only for sign-in, or if email is already verified)
       if (type === "sign-in" || data.user?.emailVerified === "true") {
-        router.push("/");
+        router.push("/dashboard");
         router.refresh();
       } else if (type === "sign-up") {
         // For signup, redirect to sign-in with message

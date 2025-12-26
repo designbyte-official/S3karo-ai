@@ -1,22 +1,20 @@
 "use client";
 
-import { UserInfo, ApiKeysSection } from "@/features/profile/components";
+import { UserInfo } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function ApiKeysPage() {
+export default function ProfilePage() {
   const isManagedStorage = true;
-  const { keys, loading, refetchKeys } = useProfile(isManagedStorage);
+  const { loading } = useProfile(isManagedStorage);
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to profile if not in managed storage mode
-    if (!isManagedStorage) {
-      router.push("/profile");
-    }
-  }, [isManagedStorage, router]);
+    // Redirect to API Keys page by default
+    router.push("/dashboard/profile/api-keys");
+  }, [router]);
 
   if (loading) {
     return <ProfileSkeleton />;
@@ -26,7 +24,6 @@ export default function ApiKeysPage() {
     <div className="page-container">
       <div className="w-full max-w-4xl mx-auto space-y-8">
         <UserInfo />
-        <ApiKeysSection keys={keys} onRefresh={refetchKeys} />
       </div>
     </div>
   );

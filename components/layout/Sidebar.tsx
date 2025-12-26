@@ -22,13 +22,13 @@ const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNa
 
     // Profile navigation items (API Keys and Subscription)
     const profileNavItems = [
-        { name: "API Keys", url: "/profile/api-keys", icon: "/assets/icons/others.svg" },
-        { name: "Subscription", url: "/profile/subscription", icon: "/assets/icons/others.svg" },
+        { name: "API Keys", url: "/dashboard/profile/api-keys", icon: "/assets/icons/others.svg" },
+        { name: "Subscription", url: "/dashboard/profile/subscription", icon: "/assets/icons/others.svg" },
     ];
 
     // If on profile page or sub-routes, show profile nav items instead
     let displayNavItems;
-    if (pathname === "/profile" || pathname.startsWith("/profile/")) {
+    if (pathname === "/dashboard/profile" || pathname.startsWith("/dashboard/profile/")) {
         displayNavItems = profileNavItems;
     } else {
         // Use custom nav items if provided, otherwise default to context-aware items
@@ -49,7 +49,7 @@ const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNa
             <nav className="sidebar-nav">
                 <ul className="flex flex-1 flex-col gap-6">
                     {displayNavItems.map(({ url, name, icon }) => {
-                        const isActive = pathname === url || (url === "/profile/api-keys" && pathname.startsWith("/profile/api-keys")) || (url === "/profile/subscription" && pathname.startsWith("/profile/subscription"));
+                        const isActive = pathname === url || (url === "/dashboard/profile/api-keys" && pathname.startsWith("/dashboard/profile/api-keys")) || (url === "/dashboard/profile/subscription" && pathname.startsWith("/dashboard/profile/subscription"));
                         return (
                             <Link key={name} href={url} className="lg:w-full">
                                 <li

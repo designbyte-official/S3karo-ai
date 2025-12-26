@@ -34,7 +34,7 @@ const Header = ({
         {actionsSlot}
 
         <Button 
-          onClick={() => router.push("/profile")}
+          onClick={() => router.push("/dashboard/profile")}
           className="sign-out-button"
         >
           <Image

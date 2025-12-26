@@ -17,7 +17,7 @@ export default function ProfilePage() {
   }
 
   const handleNavigateToManaged = (section: "api-keys" | "subscription") => {
-    router.push(`/profile`);
+    router.push(`/dashboard/profile`);
     // Scroll to section after navigation would happen - but since we're switching modes, just navigate
   };
 
@@ -36,14 +36,14 @@ export default function ProfilePage() {
 
           <div className="flex flex-col sm:flex-row gap-4">
             <Button
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/dashboard/profile")}
               className="flex items-center gap-2 bg-brand hover:bg-brand/90 text-white"
             >
               <Key className="w-4 h-4" />
               View API Keys
             </Button>
             <Button
-              onClick={() => router.push("/profile")}
+              onClick={() => router.push("/dashboard/profile")}
               className="flex items-center gap-2 bg-brand hover:bg-brand/90 text-white"
             >
               <CreditCard className="w-4 h-4" />

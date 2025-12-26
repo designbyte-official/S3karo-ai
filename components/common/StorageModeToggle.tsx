@@ -24,7 +24,7 @@ const StorageModeToggle = () => {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
-                            href="/"
+                            href="/dashboard"
                             className={cn(
                                 "flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300",
                                 mode === "managed"
