@@ -35,6 +35,9 @@ export async function runMigrations() {
     `);
 
     // Create files table
+    // NOTE: This table is ONLY for Managed Storage files (platform-managed S3)
+    // Private S3 files are NOT stored here - they're managed client-side only
+    // bucket_name is NOT stored - always use getPlatformS3Bucket() from env
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS files (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -44,10 +47,25 @@ export async function runMigrations() {
         extension TEXT NOT NULL,
         size BIGINT NOT NULL,
         url TEXT NOT NULL,
-        storage_type TEXT NOT NULL DEFAULT 'own-s3',
         storage_key TEXT NOT NULL,
-        bucket_name TEXT,
         shared_with JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    // Create API keys table - for external API access
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS api_keys (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        name TEXT NOT NULL,
+        key_hash TEXT NOT NULL UNIQUE,
+        prefix TEXT NOT NULL,
+        last_used_at TIMESTAMP WITH TIME ZONE,
+        expires_at TIMESTAMP WITH TIME ZONE,
+        is_active BOOLEAN DEFAULT true,
+        rate_limit BIGINT DEFAULT 1000,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       )
@@ -104,6 +122,24 @@ export async function runMigrations() {
       CREATE TRIGGER update_subscriptions_updated_at 
       BEFORE UPDATE ON subscriptions
       FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+    `);
+
+    await db.execute(sql`
+      DROP TRIGGER IF EXISTS update_api_keys_updated_at ON api_keys;
+      CREATE TRIGGER update_api_keys_updated_at 
+      BEFORE UPDATE ON api_keys
+      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()
+    `);
+
+    // Create indexes for API keys
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON api_keys(user_id)
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON api_keys(key_hash)
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_api_keys_is_active ON api_keys(is_active)
     `);
 
     console.log("✅ Database migrations completed successfully");

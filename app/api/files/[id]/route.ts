@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { deleteFile, updateFile } from '@/lib/database/queries';
 import { getCurrentUser } from '@/lib/auth/utils';
+import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
-// DELETE - Delete file
+// DELETE - Delete file (Managed Storage only)
+// NOTE: Private S3 files are NOT in the database - they're deleted client-side
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,7 +21,7 @@ export async function DELETE(
       );
     }
 
-    // Delete file using Drizzle
+    // Get file first to get storageKey (needed to delete from S3)
     const deletedFile = await deleteFile(id, user.id);
 
     if (!deletedFile) {
@@ -26,6 +29,21 @@ export async function DELETE(
         { error: 'File not found' },
         { status: 404 }
       );
+    }
+
+    // Delete from S3 using storageKey (REQUIRED - this is why we store it!)
+    try {
+      const client = createPlatformS3Client();
+      const bucket = getPlatformS3Bucket();
+      
+      await client.send(new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: deletedFile.storageKey,
+      }));
+      console.log(`Deleted file from S3: ${deletedFile.storageKey}`);
+    } catch (s3Error: any) {
+      console.error('Failed to delete from S3 (file already deleted from DB):', s3Error);
+      // Continue even if S3 delete fails - file is already removed from DB
     }
 
     return NextResponse.json({ status: 'success' });

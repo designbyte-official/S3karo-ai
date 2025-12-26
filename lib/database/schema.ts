@@ -31,6 +31,8 @@ export const subscriptions = pgTable("subscriptions", {
 });
 
 // Files table
+// NOTE: This table is ONLY for Managed Storage files (platform-managed S3)
+// Private S3 files are NOT stored here - they're managed client-side only
 export const files = pgTable("files", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -39,10 +41,26 @@ export const files = pgTable("files", {
   extension: text("extension").notNull(),
   size: bigint("size", { mode: "number" }).notNull(),
   url: text("url").notNull(),
-  storageType: text("storage_type").notNull().default("own-s3"), // 'own-s3', 'platform-s3'
-  storageKey: text("storage_key").notNull(), // S3 key or local file path
-  bucketName: text("bucket_name"),
+  // storageKey: The S3 key where the file is stored (e.g., "managed/{userId}/{path}/{filename}")
+  // REQUIRED: Needed to delete, access, and manage the file in S3
+  // Format: "managed/{userId}/{path}/{timestamp}-{filename}"
+  storageKey: text("storage_key").notNull(),
   sharedWith: jsonb("shared_with").$type<string[]>().default([]),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// API Keys table - for external API access to managed storage
+export const apiKeys = pgTable("api_keys", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(), // User-friendly name for the API key
+  keyHash: text("key_hash").notNull().unique(), // Hashed API key (never store plain text)
+  prefix: text("prefix").notNull(), // First 8 chars of key for display (e.g., "sk_live_ab")
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"), // Optional expiration
+  isActive: boolean("is_active").default(true),
+  rateLimit: bigint("rate_limit", { mode: "number" }).default(1000), // Requests per hour
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -54,4 +72,6 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
 export type File = typeof files.$inferSelect;
 export type NewFile = typeof files.$inferInsert;
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
 

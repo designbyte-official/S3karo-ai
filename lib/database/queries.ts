@@ -1,6 +1,7 @@
 import { eq, and, ilike, inArray, desc, asc, sql } from "drizzle-orm";
 import { db, isDatabaseConfigured } from "./db";
-import { users, files, type User, type NewUser, type File, type NewFile } from "./schema";
+import { users, files, apiKeys, type User, type NewUser, type File, type NewFile, type ApiKey, type NewApiKey } from "./schema";
+import crypto from "crypto";
 
 // Helper to check database before queries
 const requireDatabase = () => {
@@ -31,11 +32,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   }
   try {
     const database = requireDatabase();
-    const result = await database
-      .select()
-      .from(users)
-      .where(eq(users.email, email.toLowerCase()))
-      .limit(1);
+    const result = await database.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0] || null;
   } catch (error) {
     console.warn("Database query failed:", error);
@@ -47,78 +44,27 @@ export async function createUser(data: {
   email: string;
   fullName: string;
   passwordHash: string;
-  avatar?: string;
-  verificationToken?: string;
-  verificationTokenExpiry?: Date;
 }): Promise<User> {
   const database = requireDatabase();
   const result = await database
     .insert(users)
     .values({
-      email: data.email.toLowerCase(),
+      email: data.email,
       fullName: data.fullName,
       passwordHash: data.passwordHash,
-      avatar: data.avatar || "https://ui-avatars.com/api/?name=User&background=random",
-      emailVerified: "false",
-      verificationToken: data.verificationToken || null,
-      verificationTokenExpiry: data.verificationTokenExpiry || null,
     })
     .returning();
   return result[0];
 }
 
-// Verify user email
-export async function verifyUserEmail(token: string): Promise<User | null> {
-  if (!isDatabaseConfigured()) {
-    return null;
-  }
-  try {
-    const database = requireDatabase();
-    const result = await database
-    .select()
-    .from(users)
-    .where(eq(users.verificationToken, token))
-    .limit(1);
-  
-  const user = result[0];
-  if (!user) return null;
-  
-  // Check if token is expired
-  if (user.verificationTokenExpiry && new Date() > new Date(user.verificationTokenExpiry)) {
-    return null; // Token expired
-  }
-  
-  // Update user to verified
-    const updated = await database
-      .update(users)
-      .set({
-        emailVerified: "true",
-        verificationToken: null,
-        verificationTokenExpiry: null,
-      })
-      .where(eq(users.id, user.id))
-      .returning();
-    
-    return updated[0] || null;
-  } catch (error) {
-    console.warn("Database query failed:", error);
-    return null;
-  }
-}
-
-// Update verification token
-export async function updateVerificationToken(
-  userId: string,
-  token: string,
-  expiry: Date
-): Promise<void> {
-  await db
+export async function updateUser(userId: string, data: Partial<NewUser>): Promise<User | null> {
+  const database = requireDatabase();
+  const result = await database
     .update(users)
-    .set({
-      verificationToken: token,
-      verificationTokenExpiry: expiry,
-    })
-    .where(eq(users.id, userId));
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(users.id, userId))
+    .returning();
+  return result[0] || null;
 }
 
 // File queries
@@ -134,9 +80,9 @@ export async function getFilesForUser(
   if (!isDatabaseConfigured()) {
     return [];
   }
+
   try {
     const database = requireDatabase();
-    // Build conditions array
     const conditions = [eq(files.userId, userId)];
 
     if (filters?.types && filters.types.length > 0) {
@@ -147,45 +93,40 @@ export async function getFilesForUser(
       conditions.push(ilike(files.name, `%${filters.searchText}%`));
     }
 
-    // Build base query
     let query = database.select().from(files).where(and(...conditions));
 
-  // Apply sorting
-  if (filters?.sort) {
-    const [sortBy, orderBy] = filters.sort.split("-");
-    const sortColumn =
-      sortBy === "$createdAt"
-        ? files.createdAt
-        : sortBy === "$updatedAt"
-        ? files.updatedAt
-        : sortBy === "name"
-        ? files.name
-        : sortBy === "size"
-        ? files.size
-        : files.createdAt;
-
-    if (orderBy === "asc") {
-      query = query.orderBy(asc(sortColumn));
+    // Apply sorting
+    if (filters?.sort) {
+      const [field, direction] = filters.sort.split("-");
+      if (field === "$createdAt" || field === "createdAt") {
+        query = query.orderBy(direction === "asc" ? asc(files.createdAt) : desc(files.createdAt));
+      } else if (field === "$updatedAt" || field === "updatedAt") {
+        query = query.orderBy(direction === "asc" ? asc(files.updatedAt) : desc(files.updatedAt));
+      } else if (field === "name") {
+        query = query.orderBy(direction === "asc" ? asc(files.name) : desc(files.name));
+      } else if (field === "size") {
+        query = query.orderBy(direction === "asc" ? asc(files.size) : desc(files.size));
+      }
     } else {
-      query = query.orderBy(desc(sortColumn));
+      // Default sort by created date descending
+      query = query.orderBy(desc(files.createdAt));
     }
-  } else {
-    query = query.orderBy(desc(files.createdAt));
-  }
 
-  // Apply limit
-  if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
+    // Apply limit
+    if (filters?.limit) {
+      query = query.limit(filters.limit);
+    }
 
-  const result = await query;
-  return result;
+    return await query;
   } catch (error) {
     console.warn("Database query failed:", error);
     return [];
   }
 }
 
+// Create file record (ONLY for Managed Storage - Private S3 files are NOT stored in DB)
+// storageKey format: "managed/{userId}/{path}/{timestamp}-{filename}"
+// This is REQUIRED - we need it to delete/access files from S3
 export async function createFile(data: {
   userId: string;
   name: string;
@@ -193,9 +134,7 @@ export async function createFile(data: {
   extension: string;
   size: number;
   url: string;
-  storageType?: string;
-  storageKey: string;
-  bucketName?: string;
+  storageKey: string; // REQUIRED: S3 key for file operations (bucket is always from env)
 }): Promise<File> {
   const result = await db
     .insert(files)
@@ -206,21 +145,34 @@ export async function createFile(data: {
       extension: data.extension,
       size: data.size,
       url: data.url,
-      storageType: data.storageType || "s3",
-      storageKey: data.storageKey,
-      bucketName: data.bucketName || null,
+      storageKey: data.storageKey, // REQUIRED: S3 key for file operations
       sharedWith: [],
     })
     .returning();
   return result[0];
 }
 
+// Delete file from database (returns file data before deletion so we can delete from S3)
+// NOTE: This is ONLY for Managed Storage - Private S3 files are NOT in the database
 export async function deleteFile(fileId: string, userId: string): Promise<File | null> {
-  const result = await db
-    .delete(files)
+  // Get file first to retrieve storageKey before deleting
+  const fileToDelete = await db
+    .select()
+    .from(files)
     .where(and(eq(files.id, fileId), eq(files.userId, userId)))
-    .returning();
-  return result[0] || null;
+    .limit(1);
+  
+  if (fileToDelete.length === 0) {
+    return null;
+  }
+
+  // Delete from database
+  await db
+    .delete(files)
+    .where(and(eq(files.id, fileId), eq(files.userId, userId)));
+
+  // Return the file data (including storageKey) so caller can delete from S3
+  return fileToDelete[0];
 }
 
 export async function updateFile(
@@ -288,3 +240,141 @@ export async function getTotalSpaceUsed(userId: string): Promise<{
   return totalSpace;
 }
 
+// API Key queries
+/**
+ * Generate a new API key
+ * Returns: { key: "sk_live_...", prefix: "sk_live_ab", apiKey: ApiKey }
+ */
+export async function createApiKey(data: {
+  userId: string;
+  name: string;
+  expiresAt?: Date;
+  rateLimit?: number;
+}): Promise<{ key: string; prefix: string; apiKey: ApiKey }> {
+  const database = requireDatabase();
+  
+  // Generate secure API key
+  const keyPrefix = "sk_live_";
+  const randomBytes = crypto.randomBytes(32).toString("hex");
+  const fullKey = `${keyPrefix}${randomBytes}`;
+  
+  // Hash the key (never store plain text)
+  const keyHash = crypto.createHash("sha256").update(fullKey).digest("hex");
+  const prefix = `${keyPrefix}${randomBytes.substring(0, 2)}`;
+  
+  const result = await database
+    .insert(apiKeys)
+    .values({
+      userId: data.userId,
+      name: data.name,
+      keyHash: keyHash,
+      prefix: prefix,
+      expiresAt: data.expiresAt || null,
+      rateLimit: data.rateLimit || 1000,
+      isActive: true,
+    })
+    .returning();
+  
+  return {
+    key: fullKey, // Only returned once - user must save it
+    prefix: prefix,
+    apiKey: result[0],
+  };
+}
+
+/**
+ * Verify API key and return associated user
+ */
+export async function verifyApiKey(apiKey: string): Promise<{ userId: string; apiKey: ApiKey } | null> {
+  const database = requireDatabase();
+  
+  // Hash the provided key
+  const keyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
+  
+  // Find matching API key
+  const result = await database
+    .select()
+    .from(apiKeys)
+    .where(and(
+      eq(apiKeys.keyHash, keyHash),
+      eq(apiKeys.isActive, true)
+    ))
+    .limit(1);
+  
+  if (result.length === 0) {
+    return null;
+  }
+  
+  const apiKeyRecord = result[0];
+  
+  // Check expiration
+  if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
+    return null;
+  }
+  
+  // Update last used timestamp
+  await database
+    .update(apiKeys)
+    .set({ lastUsedAt: new Date(), updatedAt: new Date() })
+    .where(eq(apiKeys.id, apiKeyRecord.id));
+  
+  return {
+    userId: apiKeyRecord.userId,
+    apiKey: apiKeyRecord,
+  };
+}
+
+/**
+ * Get all API keys for a user
+ */
+export async function getApiKeysForUser(userId: string): Promise<ApiKey[]> {
+  const database = requireDatabase();
+  return await database
+    .select()
+    .from(apiKeys)
+    .where(eq(apiKeys.userId, userId))
+    .orderBy(desc(apiKeys.createdAt));
+}
+
+/**
+ * Revoke (deactivate) an API key
+ */
+export async function revokeApiKey(apiKeyId: string, userId: string): Promise<boolean> {
+  const database = requireDatabase();
+  const result = await database
+    .update(apiKeys)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(and(
+      eq(apiKeys.id, apiKeyId),
+      eq(apiKeys.userId, userId)
+    ))
+    .returning();
+  
+  return result.length > 0;
+}
+
+/**
+ * Check rate limit for an API key
+ */
+export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boolean; remaining: number }> {
+  const database = requireDatabase();
+  
+  // Get API key with rate limit
+  const result = await database
+    .select({ rateLimit: apiKeys.rateLimit })
+    .from(apiKeys)
+    .where(eq(apiKeys.id, apiKeyId))
+    .limit(1);
+  
+  if (result.length === 0) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  const rateLimit = result[0].rateLimit || 1000;
+  
+  // TODO: Implement actual rate limiting with Redis or in-memory cache
+  // For now, we'll use a simple approach - in production, use Redis
+  // This is a placeholder - you should implement proper rate limiting
+  
+  return { allowed: true, remaining: rateLimit };
+}

@@ -142,7 +142,9 @@ export async function POST(request: NextRequest) {
     const url = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${storageKey}`;
     const { type, extension } = getFileType(file.name);
 
-    // Create file using Drizzle
+    // Create file record in database (Managed Storage only)
+    // storageKey is REQUIRED - we need it to delete/access the file from S3
+    // bucketName is NOT stored - always use getPlatformS3Bucket() from env
     const dbFile = await createFile({
       userId: user.id,
       name: file.name,
@@ -150,9 +152,7 @@ export async function POST(request: NextRequest) {
       extension: extension,
       size: file.size,
       url: url,
-      storageType: 's3',
-      storageKey: storageKey,
-      bucketName: bucket,
+      storageKey: storageKey, // S3 key: needed for deletion, signed URLs, etc.
     });
 
     // Transform to match existing format

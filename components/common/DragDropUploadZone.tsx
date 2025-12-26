@@ -7,7 +7,7 @@ import { Upload, X, File, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
-import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
+import { useUpload } from "@/features/managed-storage/hooks/use-upload";
 import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
 import { Button } from "@/components/ui/button";
 import { convertFileSize } from "@/features/shared/utils";
@@ -37,6 +37,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
     const [filesToUpload, setFilesToUpload] = useState<FileWithStatus[]>([]);
     const { toast } = useToast();
     const isPro = useAuthStore((state: any) => state.isPro);
+    const { upload: uploadFile } = useUpload(); // For managed storage direct uploads
 
     // Helper function to create a unique key for a file
     const getFileKey = React.useCallback((file: File): string => {
@@ -284,43 +285,23 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                         },
                     });
                 } else {
-                    // Managed storage upload
-                    const formData = new FormData();
-                    formData.append("file", fileWithStatus.file);
-                    formData.append("ownerId", ownerId);
-                    formData.append("accountId", accountId);
-                    formData.append("path", subPath);
-
-                    // Track upload progress for managed storage
-                    const xhr = new XMLHttpRequest();
-                    
-                    result = await new Promise((resolve, reject) => {
-                        xhr.upload.addEventListener('progress', (e) => {
-                            if (e.lengthComputable) {
-                                const progress = Math.round((e.loaded / e.total) * 100);
-                                setFilesToUpload(prev => {
-                                    const updated = [...prev];
-                                    updated[index] = { ...updated[index], progress };
-                                    return updated;
-                                });
-                            }
-                        });
-
-                        xhr.addEventListener('load', () => {
-                            if (xhr.status >= 200 && xhr.status < 300) {
-                                resolve({ success: true });
-                            } else {
-                                const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-                                reject(new Error(errorData.details || errorData.error || "Upload failed"));
-                            }
-                        });
-
-                        xhr.addEventListener('error', () => {
-                            reject(new Error('Network error during upload'));
-                        });
-
-                        xhr.open('POST', '/api/files');
-                        xhr.send(formData);
+                    // Managed storage upload - use direct S3 upload with presigned URLs
+                    result = await uploadFile(fileWithStatus.file, {
+                        path: subPath,
+                        onUploadProgress: (progress) => {
+                            setFilesToUpload(prev => {
+                                const updated = [...prev];
+                                updated[index] = { ...updated[index], progress };
+                                return updated;
+                            });
+                        },
+                        onSuccess: (fileData) => {
+                            // File uploaded and saved to database
+                            console.log('Managed storage upload success:', fileData);
+                        },
+                        onError: (error) => {
+                            throw error;
+                        },
                     });
                 }
 

@@ -93,6 +93,8 @@ export async function getFilesForUser(userId: string, filters?: {
 }
 
 // Create file record
+// Create file record (ONLY for Managed Storage - Private S3 files are NOT stored in DB)
+// bucket_name is NOT stored - always use getPlatformS3Bucket() from env
 export async function createFile(data: {
   user_id: string;
   name: string;
@@ -100,13 +102,11 @@ export async function createFile(data: {
   extension: string;
   size: number;
   url: string;
-  storage_type: string;
-  storage_key: string;
-  bucket_name?: string;
+  storage_key: string; // S3 key - REQUIRED for deletion/access
 }) {
   const result = await sql`
-    INSERT INTO files (user_id, name, type, extension, size, url, storage_type, storage_key, bucket_name)
-    VALUES (${data.user_id}, ${data.name}, ${data.type}, ${data.extension}, ${data.size}, ${data.url}, ${data.storage_type}, ${data.storage_key}, ${data.bucket_name || ''})
+    INSERT INTO files (user_id, name, type, extension, size, url, storage_key)
+    VALUES (${data.user_id}, ${data.name}, ${data.type}, ${data.extension}, ${data.size}, ${data.url}, ${data.storage_key})
     RETURNING *
   `;
   return result[0];
