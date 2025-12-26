@@ -86,31 +86,21 @@ export async function DELETE(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Authentication required');
     }
 
     const { id } = await params;
     const success = await revokeApiKey(id, user.id);
 
     if (!success) {
-      return NextResponse.json(
-        { error: 'Not found', message: 'API key not found' },
-        { status: 404 }
-      );
+      return apiErrors.notFound('API key not found');
     }
 
-    return NextResponse.json({
-      message: 'API key revoked successfully',
-    });
+    return createSuccessResponse({ message: 'API key revoked successfully' });
 
   } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    logger.error('Revoke API key error', error);
+    return apiErrors.internalServerError('Failed to revoke API key', error.message);
   }
 }
 

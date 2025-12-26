@@ -3,6 +3,7 @@ import { subscriptions } from './schema';
 import { eq, and, gte } from 'drizzle-orm';
 import type { Subscription, NewSubscription } from './schema';
 import { deleteCache } from '@/lib/redis/cache';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Get active subscription for a user
@@ -40,7 +41,7 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
 
     return subscription;
   } catch (error) {
-    console.error('Get active subscription error:', error);
+    logger.error('Get active subscription error', error);
     return null;
   }
 }
@@ -97,7 +98,7 @@ export async function upsertSubscription(data: NewSubscription): Promise<Subscri
       return created[0];
     }
   } catch (error) {
-    console.error('Upsert subscription error:', error);
+    logger.error('Upsert subscription error', error);
     throw error;
   }
 }
@@ -122,7 +123,7 @@ export async function cancelSubscription(userId: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    console.error('Cancel subscription error:', error);
+    logger.error('Cancel subscription error', error);
     return false;
   }
 }
@@ -140,7 +141,7 @@ export async function getSubscriptionByUserId(userId: string): Promise<Subscript
 
     return result.length > 0 ? result[0] : null;
   } catch (error) {
-    console.error('Get subscription by user ID error:', error);
+    logger.error('Get subscription by user ID error:', error);
     return null;
   }
 }
@@ -238,7 +239,7 @@ export async function incrementStorageUsage(userId: string, fileSize: number): P
 
     return true;
   } catch (error) {
-    console.error('Increment storage usage error:', error);
+    logger.error('Increment storage usage error:', error);
     return false;
   }
 }
@@ -270,7 +271,7 @@ export async function decrementStorageUsage(userId: string, fileSize: number): P
 
     return true;
   } catch (error) {
-    console.error('Decrement storage usage error:', error);
+    logger.error('Decrement storage usage error:', error);
     return false;
   }
 }
@@ -302,7 +303,7 @@ export async function incrementBandwidthUsage(userId: string, transferSize: numb
 
     return true;
   } catch (error) {
-    console.error('Increment bandwidth usage error:', error);
+    logger.error('Increment bandwidth usage error:', error);
     return false;
   }
 }

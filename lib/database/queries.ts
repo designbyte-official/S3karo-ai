@@ -3,6 +3,7 @@ import { db, isDatabaseConfigured } from "./db";
 import { users, files, apiKeys, type User, type NewUser, type File, type NewFile, type ApiKey, type NewApiKey } from "./schema";
 import crypto from "crypto";
 import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
+import { logger } from '@/lib/utils/logger';
 
 const requireDatabase = () => {
   if (!db || !isDatabaseConfigured()) {
@@ -21,7 +22,7 @@ export async function getUserById(userId: string): Promise<User | null> {
     const result = await database.select().from(users).where(eq(users.id, userId)).limit(1);
     return result[0] || null;
   } catch (error) {
-    console.warn("Database query failed:", error);
+    logger.warn("Database query failed:", error);
     return null;
   }
 }
@@ -36,7 +37,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     const result = await database.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0] || null;
   } catch (error) {
-    console.warn("Database query failed:", error);
+    logger.warn("Database query failed:", error);
     return null;
   }
 }
@@ -193,7 +194,7 @@ export async function getFilesForUser(
     }
     return await defaultSortedQuery;
   } catch (error) {
-    console.warn("Database query failed:", error);
+    logger.warn("Database query failed:", error);
     return [];
   }
 }
@@ -299,14 +300,14 @@ export async function migrateFileUrlsToCdn(): Promise<{ updated: number; errors:
           .where(eq(files.id, file.id));
         updated++;
       } catch (error) {
-        console.error(`Error updating file ${file.id}:`, error);
+        logger.error(`Error updating file ${file.id}:`, error);
         errors++;
       }
     }
 
     return { updated, errors };
   } catch (error) {
-    console.error('Migration error:', error);
+    logger.error('Migration error:', error);
     throw error;
   }
 }

@@ -1,11 +1,12 @@
 import { neon } from '@neondatabase/serverless';
+import { logger } from '@/lib/utils/logger';
 
 // Neon Database Configuration
 // Get your connection string from: https://console.neon.tech
 const connectionString = process.env.DATABASE_URL || '';
 
 if (!connectionString) {
-  console.warn('DATABASE_URL not found. Please set your Neon database connection string.');
+  logger.warn('DATABASE_URL not found. Please set your Neon database connection string.');
 }
 
 export const sql = neon(connectionString);
@@ -16,7 +17,7 @@ export async function query(text: string, params?: any[]) {
     const result = await sql(text, params);
     return result;
   } catch (error) {
-    console.error('Database query error:', error);
+    logger.error('Database query error', error);
     throw error;
   }
 }

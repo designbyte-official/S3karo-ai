@@ -6,6 +6,7 @@ import { createFile } from '@/lib/database/queries';
 import { incrementStorageUsage, checkStorageLimit } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
+import { deleteCache } from '@/lib/redis/cache';
 
 import { getFileType } from '@/features/shared/utils';
 import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
@@ -54,6 +55,8 @@ export async function POST(request: NextRequest) {
     });
 
     await incrementStorageUsage(user.id, fileSize);
+
+    await deleteCache(`storage-stats:${user.id}`);
 
     return createSuccessResponse({
       id: dbFile.id,

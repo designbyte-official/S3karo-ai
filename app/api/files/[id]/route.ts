@@ -7,6 +7,7 @@ import { deleteFile, updateFile } from '@/lib/database/queries';
 import { decrementStorageUsage } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
+import { deleteCache } from '@/lib/redis/cache';
 
 import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
 
@@ -41,6 +42,8 @@ export async function DELETE(
     }
 
     await decrementStorageUsage(user.id, Number(deletedFile.size));
+
+    await deleteCache(`storage-stats:${user.id}`);
 
     return createSuccessResponse({ status: 'success' });
   } catch (error: any) {
@@ -89,6 +92,8 @@ export async function PATCH(
       $createdAt: updatedFile.createdAt.toISOString(),
       $updatedAt: updatedFile.updatedAt.toISOString(),
     };
+
+    await deleteCache(`storage-stats:${user.id}`);
 
     return createSuccessResponse(transformedFile);
   } catch (error: any) {

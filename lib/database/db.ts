@@ -17,7 +17,7 @@ if (connectionString) {
     const sql = neon(connectionString);
     dbInstance = drizzle(sql, { schema });
   } catch (error) {
-    console.error("Failed to initialize database:", error);
+    logger.error("Failed to initialize database", error);
     dbInstance = null;
   }
 }
