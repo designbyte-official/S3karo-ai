@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 import { verifyApiKey, deleteFile } from '@/lib/database/queries';
+import { decrementStorageUsage } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
@@ -54,6 +55,9 @@ export async function DELETE(
       logger.error('Failed to delete from S3', s3Error);
       // Continue even if S3 delete fails - file is already removed from DB
     }
+
+    // Decrement storage usage
+    await decrementStorageUsage(userId, Number(deletedFile.size));
 
     return createSuccessResponse({
       message: 'File deleted successfully',

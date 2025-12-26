@@ -4,6 +4,7 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 import { getCurrentUser } from '@/lib/auth/utils';
 import { deleteFile, updateFile } from '@/lib/database/queries';
+import { decrementStorageUsage } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
@@ -44,6 +45,9 @@ export async function DELETE(
       logger.error('Failed to delete from S3 (file already deleted from DB)', s3Error);
       // Continue even if S3 delete fails - file is already removed from DB
     }
+
+    // Decrement storage usage
+    await decrementStorageUsage(user.id, Number(deletedFile.size));
 
     return createSuccessResponse({ status: 'success' });
   } catch (error: any) {

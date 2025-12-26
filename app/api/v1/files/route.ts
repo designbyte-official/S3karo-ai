@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
 import { isDatabaseConfigured } from '@/lib/database/db';
-import { verifyApiKey, checkRateLimit, createFile } from '@/lib/database/queries';
+import { verifyApiKey, checkRateLimit, createFile, getFilesForUser } from '@/lib/database/queries';
+import { checkStorageLimit, incrementStorageUsage } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
@@ -104,6 +105,14 @@ export async function POST(request: NextRequest) {
     const client = createPlatformS3Client();
     const bucket = getPlatformS3Bucket();
 
+    // Check storage limit before upload
+    const storageCheck = await checkStorageLimit(userId, file.size);
+    if (!storageCheck.allowed) {
+      return apiErrors.badRequest(
+        `Storage limit exceeded. Available: ${(storageCheck.remaining / 1024 / 1024).toFixed(2)}MB, Required: ${(file.size / 1024 / 1024).toFixed(2)}MB`
+      );
+    }
+
     // Generate storage key using utility
     const storageKey = generateStorageKey(userId, file.name, path || undefined);
 
@@ -137,6 +146,9 @@ export async function POST(request: NextRequest) {
       url: url,
       storageKey: storageKey,
     });
+
+    // Update storage usage
+    await incrementStorageUsage(userId, file.size);
 
     // Return response
     const rateLimit = apiKeyRecord.rateLimit ?? 1000;
@@ -180,10 +192,32 @@ export async function GET(request: NextRequest) {
       return apiErrors.unauthorized('Invalid or expired API key');
     }
 
-    // TODO: Implement file listing for API users
+    // Get files for the authenticated user
+    const { searchParams } = new URL(request.url);
+    const types = searchParams.get('types')?.split(',') || undefined;
+    const searchText = searchParams.get('search') || undefined;
+    const sort = searchParams.get('sort') || '$createdAt-desc';
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+
+    const files = await getFilesForUser(authResult.userId, {
+      types,
+      searchText,
+      sort,
+      limit,
+    });
+
     return createSuccessResponse({
-      message: 'File listing not yet implemented',
-      files: [],
+      files: files.map(file => ({
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        extension: file.extension,
+        size: Number(file.size),
+        url: file.url,
+        createdAt: file.createdAt.toISOString(),
+        updatedAt: file.updatedAt.toISOString(),
+      })),
+      total: files.length,
     });
 
   } catch (error: any) {

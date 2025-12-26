@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { createFile } from '@/lib/database/queries';
+import { incrementStorageUsage, checkStorageLimit } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
@@ -55,6 +56,14 @@ export async function POST(request: NextRequest) {
       return apiErrors.forbidden('Invalid storage key');
     }
 
+    // Check storage limit before saving
+    const storageCheck = await checkStorageLimit(user.id, fileSize);
+    if (!storageCheck.allowed) {
+      return apiErrors.badRequest(
+        `Storage limit exceeded. Available: ${(storageCheck.remaining / 1024 / 1024).toFixed(2)}MB, Required: ${(fileSize / 1024 / 1024).toFixed(2)}MB`
+      );
+    }
+
     // Generate file URL using CDN
     const url = getFileUrl(key);
     const { type, extension } = getFileType(fileName);
@@ -69,6 +78,9 @@ export async function POST(request: NextRequest) {
       url: url,
       storageKey: key,
     });
+
+    // Update storage usage
+    await incrementStorageUsage(user.id, fileSize);
 
     return createSuccessResponse({
       id: dbFile.id,

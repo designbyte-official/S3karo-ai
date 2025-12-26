@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserByEmail, createUser } from '@/lib/database/queries';
+import { createFreeTierSubscription } from '@/lib/database/queries-subscriptions';
 import { sendVerificationEmail } from '@/lib/email/sender';
 import { generateVerificationToken, getVerificationTokenExpiry } from '@/lib/utils/tokens';
 import bcrypt from 'bcryptjs';
@@ -54,6 +55,14 @@ export async function POST(request: NextRequest) {
       verificationToken,
       verificationTokenExpiry,
     });
+
+    // Create default free tier subscription (1GB storage, 10GB bandwidth)
+    try {
+      await createFreeTierSubscription(user.id);
+    } catch (subscriptionError) {
+      console.error("Failed to create free tier subscription:", subscriptionError);
+      // Don't fail signup if subscription creation fails - can be created later
+    }
 
     // Send verification email
     try {

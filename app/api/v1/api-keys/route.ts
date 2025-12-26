@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { createApiKey, getApiKeysForUser, revokeApiKey } from '@/lib/database/queries';
 import { isDatabaseConfigured } from '@/lib/database/db';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * GET /api/v1/api-keys
@@ -11,23 +13,17 @@ export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Authentication required');
     }
 
     if (!isDatabaseConfigured()) {
-      return NextResponse.json(
-        { error: 'Service unavailable' },
-        { status: 503 }
-      );
+      return apiErrors.serviceUnavailable('Database not configured');
     }
 
     const keys = await getApiKeysForUser(user.id);
 
     // Return keys without sensitive data
-    return NextResponse.json({
+    return createSuccessResponse({
       keys: keys.map(k => ({
         id: k.id,
         name: k.name,
@@ -41,10 +37,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    logger.error('Get API keys error', error);
+    return apiErrors.internalServerError('Failed to get API keys', error.message);
   }
 }
 
@@ -57,27 +51,18 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Authentication required');
     }
 
     if (!isDatabaseConfigured()) {
-      return NextResponse.json(
-        { error: 'Service unavailable' },
-        { status: 503 }
-      );
+      return apiErrors.serviceUnavailable('Database not configured');
     }
 
     const body = await request.json();
     const { name, expiresAt, rateLimit } = body;
 
     if (!name || typeof name !== 'string') {
-      return NextResponse.json(
-        { error: 'Bad request', message: 'Name is required' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Name is required and must be a string');
     }
 
     const result = await createApiKey({
@@ -88,7 +73,7 @@ export async function POST(request: NextRequest) {
     });
 
     // IMPORTANT: Return the full key only once
-    return NextResponse.json({
+    return createSuccessResponse({
       key: result.key, // User must save this - it won't be shown again
       prefix: result.prefix,
       id: result.apiKey.id,
@@ -97,13 +82,11 @@ export async function POST(request: NextRequest) {
       rateLimit: Number(result.apiKey.rateLimit),
       createdAt: result.apiKey.createdAt.toISOString(),
       warning: 'Save this API key now. It will not be shown again.',
-    }, { status: 201 });
+    }, 201, 'API key created successfully');
 
   } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    logger.error('Create API key error', error);
+    return apiErrors.internalServerError('Failed to create API key', error.message);
   }
 }
 

@@ -5,6 +5,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { getFilesForUser, createFile } from '@/lib/database/queries';
+import { checkStorageLimit, incrementStorageUsage } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
@@ -107,6 +108,14 @@ export async function POST(request: NextRequest) {
       return apiErrors.badRequest(error.message);
     }
 
+    // Check storage limit before upload
+    const storageCheck = await checkStorageLimit(user.id, file.size);
+    if (!storageCheck.allowed) {
+      return apiErrors.badRequest(
+        `Storage limit exceeded. Available: ${(storageCheck.remaining / 1024 / 1024).toFixed(2)}MB, Required: ${(file.size / 1024 / 1024).toFixed(2)}MB`
+      );
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
     const client = createPlatformS3Client();
     const bucket = getPlatformS3Bucket();
@@ -148,6 +157,9 @@ export async function POST(request: NextRequest) {
       url: url,
       storageKey: storageKey, // S3 key: needed for deletion, signed URLs, etc.
     });
+
+    // Update storage usage
+    await incrementStorageUsage(user.id, file.size);
 
     // Transform to match existing format
     const transformedFile = {

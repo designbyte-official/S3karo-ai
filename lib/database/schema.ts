@@ -21,6 +21,13 @@ export const subscriptions = pgTable("subscriptions", {
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   plan: text("plan").notNull(), // 'free', 'basic', 'pro', 'enterprise'
   status: text("status").notNull().default("active"), // 'active', 'cancelled', 'expired', 'trial'
+  // Storage limits (in bytes)
+  storageLimit: bigint("storage_limit", { mode: "number" }).default(1073741824), // 1GB default for free tier
+  storageUsed: bigint("storage_used", { mode: "number" }).default(0), // Track usage
+  // Bandwidth limits (in bytes)
+  bandwidthLimit: bigint("bandwidth_limit", { mode: "number" }).default(10737418240), // 10GB default for free tier
+  bandwidthUsed: bigint("bandwidth_used", { mode: "number" }).default(0), // Track usage
+  // Stripe integration
   stripeSubscriptionId: text("stripe_subscription_id"), // For Stripe integration
   stripeCustomerId: text("stripe_customer_id"), // For Stripe integration
   currentPeriodStart: timestamp("current_period_start"),
