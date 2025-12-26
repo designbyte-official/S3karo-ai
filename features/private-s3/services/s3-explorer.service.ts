@@ -367,12 +367,12 @@ export const s3ExplorerService = {
         onProgress?: (progress: number) => void;
         onChunkProgress?: (chunkNumber: number, totalChunks: number) => void;
         resume?: boolean;
-        getFileId: (file: File) => string;
+        getFileId: (file: globalThis.File) => string;
         getUploadState: (fileId: string) => any;
         saveUploadState: (state: any) => void;
         removeUploadState: (fileId: string) => void;
         calculatePartCount: (fileSize: number) => number;
-        readChunk: (file: File, start: number, end: number) => Promise<Uint8Array>;
+        readChunk: (file: globalThis.File, start: number, end: number) => Promise<Uint8Array>;
         initiateMultipartUpload: (client: S3Client, bucket: string, key: string, contentType: string, metadata: Record<string, string>) => Promise<string>;
         uploadPart: (client: S3Client, bucket: string, key: string, uploadId: string, partNumber: number, chunk: Uint8Array) => Promise<string>;
         completeMultipartUpload: (client: S3Client, bucket: string, key: string, uploadId: string, parts: Array<{ partNumber: number; etag: string }>) => Promise<void>;

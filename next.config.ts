@@ -1,13 +1,24 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Production optimizations
+  compress: true,
+  poweredByHeader: false,
+  reactStrictMode: true,
+  
   typescript: {
-    ignoreBuildErrors: true,
+    // Only ignore build errors in development
+    ignoreBuildErrors: process.env.NODE_ENV === "development",
+  },
+  eslint: {
+    // Only ignore ESLint errors in development
+    ignoreDuringBuilds: process.env.NODE_ENV === "development",
   },
   experimental: {
     serverActions: {
       bodySizeLimit: "100MB",
     },
+    optimizePackageImports: ["@radix-ui/react-icons", "lucide-react"],
   },
   images: {
     unoptimized: true,

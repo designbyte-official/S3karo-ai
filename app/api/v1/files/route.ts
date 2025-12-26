@@ -1,13 +1,16 @@
-import { NextRequest } from 'next/server';
-import { verifyApiKey, checkRateLimit, createFile } from '@/lib/database/queries';
-import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
+import { NextRequest, NextResponse } from 'next/server';
+
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getFileType } from '@/features/shared/utils';
+
 import { isDatabaseConfigured } from '@/lib/database/db';
-import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
-import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
+import { verifyApiKey, checkRateLimit, createFile } from '@/lib/database/queries';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
+
+import { getFileType } from '@/features/shared/utils';
+import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
+import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
 
 /**
  * Public API Endpoint for File Uploads
@@ -57,15 +60,16 @@ export async function POST(request: NextRequest) {
     // Check rate limit
     const rateLimitCheck = await checkRateLimit(apiKeyRecord.id);
     if (!rateLimitCheck.allowed) {
+      const rateLimit = apiKeyRecord.rateLimit ?? 1000;
       return NextResponse.json(
         { 
           error: 'Too Many Requests', 
-          message: `Rate limit exceeded. Limit: ${apiKeyRecord.rateLimit} requests/hour` 
+          message: `Rate limit exceeded. Limit: ${rateLimit} requests/hour` 
         },
         { 
           status: 429,
           headers: {
-            'X-RateLimit-Limit': apiKeyRecord.rateLimit.toString(),
+            'X-RateLimit-Limit': rateLimit.toString(),
             'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
           }
         }
@@ -135,6 +139,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Return response
+    const rateLimit = apiKeyRecord.rateLimit ?? 1000;
     return createSuccessResponse({
       id: dbFile.id,
       name: dbFile.name,
@@ -144,7 +149,7 @@ export async function POST(request: NextRequest) {
       extension: dbFile.extension,
       createdAt: dbFile.createdAt.toISOString(),
     }, 201, undefined, {
-      'X-RateLimit-Limit': apiKeyRecord.rateLimit.toString(),
+      'X-RateLimit-Limit': rateLimit.toString(),
       'X-RateLimit-Remaining': (rateLimitCheck.remaining - 1).toString(),
     });
 
@@ -165,33 +170,25 @@ export async function GET(request: NextRequest) {
     // Authenticate
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Missing or invalid API key' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Missing or invalid API key');
     }
 
     const apiKey = authHeader.substring(7);
     const authResult = await verifyApiKey(apiKey);
     
     if (!authResult) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Invalid or expired API key' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Invalid or expired API key');
     }
 
     // TODO: Implement file listing for API users
-    return NextResponse.json({
+    return createSuccessResponse({
       message: 'File listing not yet implemented',
       files: [],
     });
 
   } catch (error: any) {
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    logger.error('API list files error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { createFile } from '@/lib/database/queries';
-import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
+
 import { getFileType } from '@/features/shared/utils';
+import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 import { validateStorageKeyOwnership } from '@/features/managed-storage/utils/storage-key';
 
 /**

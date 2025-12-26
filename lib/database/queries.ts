@@ -45,6 +45,8 @@ export async function createUser(data: {
   email: string;
   fullName: string;
   passwordHash: string;
+  verificationToken?: string;
+  verificationTokenExpiry?: Date;
 }): Promise<User> {
   const database = requireDatabase();
   const result = await database
@@ -53,9 +55,71 @@ export async function createUser(data: {
       email: data.email,
       fullName: data.fullName,
       passwordHash: data.passwordHash,
+      verificationToken: data.verificationToken || null,
+      verificationTokenExpiry: data.verificationTokenExpiry || null,
     })
     .returning();
   return result[0];
+}
+
+/**
+ * Update verification token for a user
+ */
+export async function updateVerificationToken(
+  userId: string,
+  verificationToken: string,
+  verificationTokenExpiry: Date
+): Promise<User | null> {
+  const database = requireDatabase();
+  const result = await database
+    .update(users)
+    .set({
+      verificationToken,
+      verificationTokenExpiry,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId))
+    .returning();
+  return result[0] || null;
+}
+
+/**
+ * Verify user email using verification token
+ */
+export async function verifyUserEmail(token: string): Promise<User | null> {
+  const database = requireDatabase();
+  
+  // Find user with matching token
+  const result = await database
+    .select()
+    .from(users)
+    .where(
+      and(
+        eq(users.verificationToken, token),
+        sql`${users.verificationTokenExpiry} > NOW()`
+      )
+    )
+    .limit(1);
+  
+  if (result.length === 0) {
+    return null;
+  }
+  
+  const user = result[0];
+  
+  // Update user to mark email as verified
+  const updated = await database
+    .update(users)
+    .set({
+      emailVerified: 'true',
+      verificationToken: null,
+      verificationTokenExpiry: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, user.id))
+    .returning();
+  
+  return updated[0] || null;
 }
 
 export async function updateUser(userId: string, data: Partial<NewUser>): Promise<User | null> {

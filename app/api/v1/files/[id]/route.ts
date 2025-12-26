@@ -1,7 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifyApiKey, deleteFile } from '@/lib/database/queries';
-import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
+import { NextRequest } from 'next/server';
+
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+
+import { verifyApiKey, deleteFile } from '@/lib/database/queries';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
+
+import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
 
 /**
  * DELETE /api/v1/files/:id

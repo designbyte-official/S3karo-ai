@@ -1,5 +1,5 @@
 {
-  "name": "store_it",
+  "name": "s3-karo",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -80,6 +80,7 @@
     "eslint-config-next": "15.0.2",
     "eslint-config-prettier": "^9.1.0",
     "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-tailwindcss": "^3.17.5",
     "postcss": "^8",
     "postcss-import": "^16.1.1",

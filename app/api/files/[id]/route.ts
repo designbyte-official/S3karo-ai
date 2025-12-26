@@ -1,10 +1,13 @@
 import { NextRequest } from 'next/server';
-import { deleteFile, updateFile } from '@/lib/database/queries';
-import { getCurrentUser } from '@/lib/auth/utils';
-import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
+
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+
+import { getCurrentUser } from '@/lib/auth/utils';
+import { deleteFile, updateFile } from '@/lib/database/queries';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
+
+import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
 
 // DELETE - Delete file (Managed Storage only)
 // NOTE: Private S3 files are NOT in the database - they're deleted client-side

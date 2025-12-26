@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useAuthStore } from '@/lib/stores/auth-store';
-import { getCurrentUser } from '@/lib/actions/user.actions';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { getCurrentUser } from '@/features/auth/actions/user.actions';
 
 /**
  * Hook to sync auth state with server
@@ -16,7 +16,18 @@ export function useAuthSync() {
       setLoading(true);
       try {
         const user = await getCurrentUser();
-        setUser(user);
+        if (user) {
+            setUser({
+                $id: user.$id,
+                id: user.id,
+                email: user.email,
+                fullName: user.fullName,
+                avatar: user.avatar || '',
+                accountId: user.accountId,
+            });
+        } else {
+            setUser(null);
+        }
       } catch (error) {
         console.error('Failed to fetch user:', error);
         setUser(null);

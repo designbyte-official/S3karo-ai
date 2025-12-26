@@ -1,11 +1,5 @@
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-export const parseStringify = (value: unknown) =>
-  JSON.parse(JSON.stringify(value));
+// Re-export core utilities from lib/utils to maintain backward compatibility
+export { cn, parseStringify } from "@/lib/utils";
 
 export const convertFileToUrl = (file: File) => URL.createObjectURL(file);
 

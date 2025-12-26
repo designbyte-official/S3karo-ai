@@ -1,14 +1,17 @@
-import { NextRequest } from 'next/server';
-import { getFilesForUser, createFile } from '@/lib/database/queries';
+import { NextRequest, NextResponse } from 'next/server';
+
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
-import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getFileType } from '@/features/shared/utils';
-import { validateFileName } from '@/features/private-s3/utils/validation';
-import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { getFilesForUser, createFile } from '@/lib/database/queries';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
+
+import { getFileType } from '@/features/shared/utils';
+import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
+import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { validateFileName } from '@/features/private-s3/utils/validation';
 
 // GET - List files
 export async function GET(request: NextRequest) {
@@ -16,10 +19,7 @@ export async function GET(request: NextRequest) {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized();
     }
 
     const { searchParams } = new URL(request.url);
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       $updatedAt: file.updatedAt.toISOString(),
     }));
 
-    return NextResponse.json({
+    return createSuccessResponse({
       documents: transformedFiles,
       total: transformedFiles.length,
     });

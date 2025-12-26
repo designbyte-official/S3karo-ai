@@ -7,10 +7,12 @@ import { Form } from "@/components/ui/form";
 import { FormTextInput, FormPasswordInput } from "@/components/form-inputs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
-import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+
+import { useToast } from "@/hooks/use-toast";
+
+import { s3ConfigService, type S3Config } from "@/features/private-s3/services/s3-config.service";
 
 // URL validation helper
 const urlOrEmpty = z.union([
@@ -38,7 +40,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isEditMode, setIsEditMode] = useState(!defaultValues?.bucket);
-    const [currentConfig, setCurrentConfig] = useState<any>(defaultValues);
+    const [currentConfig, setCurrentConfig] = useState<S3Config | null>(defaultValues as S3Config | null);
     const configSyncRef = useRef(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -100,14 +102,14 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         setIsLoading(true);
         try {
             // Get current config to preserve any fields not in the form (like cdnUrl)
-            const existingConfig = await s3ConfigService.getConfig(userId) || {};
+            const existingConfig = await s3ConfigService.getConfig(userId);
             
             await s3ConfigService.saveConfig(userId, {
-                ...existingConfig,
+                ...(existingConfig || {}),
                 ...values,
                 bucketName: values.bucket, // Ensure backward compatibility if needed
                 // Preserve cdnUrl - it's managed separately and not in the form
-                cdnUrl: existingConfig.cdnUrl,
+                cdnUrl: existingConfig?.cdnUrl,
             });
 
             // Update local state

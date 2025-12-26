@@ -12,8 +12,8 @@ const poppins = Poppins({
 })
 
 export const metadata: Metadata = {
-  title: "StoreIt",
-  description: "StoreIt - The only storage solution you need.",
+  title: "S3-Karo | Private Storage and File Sharing",
+  description: "S3-Karo - A powerful, privacy-first file management platform. Use our Managed Storage tier or bring your Own S3 bucket.",
 };
 
 export default function RootLayout({

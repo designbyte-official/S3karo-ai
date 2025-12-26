@@ -4,8 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
-import { useStorageStore } from "@/lib/stores/storage-store";
-import { useAuthStore } from "@/lib/stores/auth-store";
+import { useStorageStore } from "@/features/shared/stores/storage-store";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 // Get files query hook
 export function useFiles(filters?: {
@@ -14,7 +14,7 @@ export function useFiles(filters?: {
   sort?: string;
   limit?: number;
 }) {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((state: any) => state.user);
   const { mode } = useStorageStore();
 
   return useQuery({
@@ -26,15 +26,26 @@ export function useFiles(filters?: {
 
       if (mode === "own-s3") {
         const config = await s3ConfigService.getConfig(uid);
-        return await s3ExplorerService.listItems({
+        if (!config) {
+          throw new Error("S3 configuration not found");
+        }
+        const items = await s3ExplorerService.listItems({
           config,
-          types: filters?.types || [],
           searchText: filters?.searchText || "",
           sort: filters?.sort || "$createdAt-desc",
           limit: filters?.limit,
           ownerId: uid,
           accountId,
         });
+        
+        // Filter by types if provided
+        if (filters?.types && filters.types.length > 0) {
+          items.documents = items.documents.filter(file => 
+            filters.types!.includes(file.type)
+          );
+        }
+        
+        return items;
       } else {
         return await platformStorageService.getFiles({
           types: filters?.types || [],
@@ -51,7 +62,7 @@ export function useFiles(filters?: {
 
 // Get total space used hook
 export function useTotalSpace() {
-  const user = useAuthStore((state) => state.user);
+  const user = useAuthStore((state: any) => state.user);
   const { mode } = useStorageStore();
 
   return useQuery({
@@ -62,6 +73,9 @@ export function useTotalSpace() {
 
       if (mode === "own-s3") {
         const config = await s3ConfigService.getConfig(uid);
+        if (!config) {
+          throw new Error("S3 configuration not found");
+        }
         return await s3ExplorerService.getBucketStats(config, `${uid}/${user.accountId || uid}/`);
       } else {
         return await platformStorageService.getStorageStats(uid);
@@ -88,9 +102,10 @@ export function useDeleteFile() {
         const user = useAuthStore.getState().user;
         if (!user) throw new Error("User not found");
         const config = await s3ConfigService.getConfig(user.$id || user.id);
-
-        const { s3CoreService } = await import("@/features/private-s3/services/s3-core.service");
-        return await s3CoreService.delete(config, bucketFileId);
+        if (!config) {
+          throw new Error("S3 configuration not found");
+        }
+        return await s3ExplorerService.deleteItem({ config, key: bucketFileId });
       } else {
         return await platformStorageService.deleteFile({ fileId, path });
       }
@@ -127,14 +142,15 @@ export function useRenameFile() {
 
       if (mode === "own-s3") {
         const config = await s3ConfigService.getConfig(ownerId);
-        const { s3CoreService } = await import("@/features/private-s3/services/s3-core.service");
+        if (!config) {
+          throw new Error("S3 configuration not found");
+        }
 
         const pathParts = bucketFileId.split('/');
         pathParts[pathParts.length - 1] = `${name}.${extension}`;
         const newKey = pathParts.join('/');
 
-        const metadata = await s3CoreService.head(config, bucketFileId);
-        return await s3CoreService.rename(config, bucketFileId, newKey, metadata.metadata);
+        return await s3ExplorerService.rename(config, bucketFileId, newKey);
       } else {
         return await platformStorageService.renameFile({
           fileId,

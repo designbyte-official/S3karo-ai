@@ -77,19 +77,27 @@ export async function getFilesForUser(userId: string, filters?: {
     `;
   }
 
-  // Add sorting
+  // Add sorting - build query dynamically but safely
   const sortBy = filters?.sort?.split('-')[0] || 'created_at';
   const orderBy = filters?.sort?.split('-')[1] || 'desc';
   const sortColumn = sortBy === '$createdAt' ? 'created_at' : sortBy === '$updatedAt' ? 'updated_at' : sortBy;
+  const sortDirection = orderBy === 'asc' ? 'ASC' : 'DESC';
   
-  query = sql`
+  // Validate sort column to prevent SQL injection
+  const validColumns = ['created_at', 'updated_at', 'name', 'size', 'type'];
+  const safeSortColumn = validColumns.includes(sortColumn) ? sortColumn : 'created_at';
+  const safeSortDirection = sortDirection === 'ASC' ? 'ASC' : 'DESC';
+  
+  // Build query with proper SQL - use the query helper function for dynamic SQL
+  const limitClause = filters?.limit ? `LIMIT ${filters.limit}` : '';
+  const queryText = `
     SELECT * FROM files 
-    WHERE user_id = ${userId}
-    ORDER BY ${sql(sortColumn)} ${sql(orderBy === 'asc' ? 'ASC' : 'DESC')}
-    ${filters?.limit ? sql`LIMIT ${filters.limit}` : sql``}
-  `;
-
-  return await query;
+    WHERE user_id = $1
+    ORDER BY ${safeSortColumn} ${safeSortDirection}
+    ${limitClause}
+  `.trim();
+  
+  return await query(queryText, [userId]);
 }
 
 // Create file record
