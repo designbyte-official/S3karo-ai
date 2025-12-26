@@ -2,35 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserByEmail, updateVerificationToken } from '@/lib/database/queries';
 import { sendVerificationEmail } from '@/lib/email/sender';
 import { generateVerificationToken, getVerificationTokenExpiry } from '@/lib/utils/tokens';
+import { logger } from '@/lib/utils/logger';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
 
     if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Email is required');
     }
 
-    // Get user
     const user = await getUserByEmail(email);
 
     if (!user) {
-      // Don't reveal if user exists
-      return NextResponse.json({
-        success: true,
+      return createSuccessResponse({
         message: 'If an account exists with this email, a verification link has been sent.',
       });
     }
 
-    // Check if already verified
     if (user.emailVerified === 'true') {
-      return NextResponse.json(
-        { error: 'Email is already verified' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Email is already verified');
     }
 
     // Generate new token
@@ -40,27 +32,19 @@ export async function POST(request: NextRequest) {
     // Update user with new token
     await updateVerificationToken(user.id, verificationToken, verificationTokenExpiry);
 
-    // Send verification email
     try {
       await sendVerificationEmail(email, verificationToken, user.fullName);
     } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-      return NextResponse.json(
-        { error: 'Failed to send verification email' },
-        { status: 500 }
-      );
+      logger.error('Failed to send verification email', emailError);
+      return apiErrors.internalServerError('Failed to send verification email');
     }
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       message: 'Verification email sent successfully',
     });
   } catch (error: any) {
-    console.error('Resend verification error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Resend verification error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

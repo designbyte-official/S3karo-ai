@@ -107,8 +107,6 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             await s3ConfigService.saveConfig(userId, {
                 ...(existingConfig || {}),
                 ...values,
-                bucketName: values.bucket, // Ensure backward compatibility if needed
-                // Preserve cdnUrl - it's managed separately and not in the form
                 cdnUrl: existingConfig?.cdnUrl,
             });
 

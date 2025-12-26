@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserByEmail } from '@/lib/database/queries';
+import { logger } from '@/lib/utils/logger';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
@@ -21,33 +23,21 @@ export async function POST(request: NextRequest) {
     const { email, password } = await request.json();
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Email and password are required');
     }
 
-    // Find user
     const user = await getUserByEmail(email);
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Invalid email or password');
     }
 
-    // Verify password
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
 
     if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Invalid email or password');
     }
 
-    // Check if email is verified
     if (user.emailVerified !== 'true') {
       return NextResponse.json(
         { 
@@ -76,8 +66,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       user: {
         id: user.id,
         email: user.email,
@@ -87,11 +76,8 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('Signin error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Signin error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

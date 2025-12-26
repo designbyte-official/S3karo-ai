@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyUserEmail } from '@/lib/database/queries';
-import { redirect } from 'next/navigation';
+import { logger } from '@/lib/utils/logger';
+import { apiErrors } from '@/lib/utils/api-response';
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,32 +9,21 @@ export async function GET(request: NextRequest) {
     const token = searchParams.get('token');
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'Verification token is required' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Verification token is required');
     }
 
-    // Verify email
     const user = await verifyUserEmail(token);
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid or expired verification token' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Invalid or expired verification token');
     }
 
-    // Redirect to sign-in with success message
     return NextResponse.redirect(
       new URL('/sign-in?verified=true', request.url)
     );
   } catch (error: any) {
-    console.error('Verify email error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Verify email error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

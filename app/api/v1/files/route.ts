@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     const storageKey = generateStorageKey(userId, file.name, path || undefined);
+    const client = createPlatformS3Client();
 
     try {
       await client.send(new PutObjectCommand({

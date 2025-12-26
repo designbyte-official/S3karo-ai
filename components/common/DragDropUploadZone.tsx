@@ -56,7 +56,6 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         const handleDragEnter = (e: DragEvent) => {
             if (e.dataTransfer?.types.includes('Files')) {
                 e.preventDefault();
-                console.log('DragDrop: Drag enter on document');
                 setIsDragActive(true);
             }
         };
@@ -69,9 +68,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         };
 
         const handleDragLeave = (e: DragEvent) => {
-            // Only hide if leaving the window
             if (!e.relatedTarget || (e.relatedTarget as HTMLElement) === document.body) {
-                console.log('DragDrop: Drag leave from document');
                 setIsDragActive(false);
             }
         };
@@ -79,12 +76,10 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         const handleDrop = (e: DragEvent) => {
             e.preventDefault();
             e.stopPropagation();
-            console.log('DragDrop: Drop on document');
             setIsDragActive(false);
             
             const files = Array.from(e.dataTransfer?.files || []);
             if (files.length > 0) {
-                console.log('DragDrop: Files dropped', files.length);
                 
                 // Filter out duplicates
                 setFilesToUpload(prev => {
@@ -139,8 +134,6 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
     }, [getFileKey, toast]);
 
     const onDrop = useCallback((acceptedFiles: File[], fileRejections: any[]) => {
-        console.log('DragDrop: onDrop called', { acceptedFiles: acceptedFiles.length, rejections: fileRejections.length });
-        
         if (fileRejections.length > 0) {
             fileRejections.forEach(({ file, errors }) => {
                 toast({
@@ -151,8 +144,6 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         }
 
         if (acceptedFiles.length > 0) {
-            console.log('DragDrop: Processing files', acceptedFiles.length);
-            
             // Filter out duplicates
             setFilesToUpload(prev => {
                 const uniqueFiles: FileWithStatus[] = [];
@@ -177,9 +168,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                     });
                 }
 
-                // Only add unique files
                 if (uniqueFiles.length > 0) {
-                    console.log('DragDrop: Adding unique files to queue', uniqueFiles.length);
                     setIsDialogOpen(true);
                     setIsDragActive(false); // Hide drag overlay
                     return [...prev, ...uniqueFiles];
@@ -243,14 +232,6 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         for (const { file: fileWithStatus, index } of filesToProcess) {
 
             try {
-                console.log('DragDrop: Starting upload:', { 
-                    fileName: fileWithStatus.file.name, 
-                    size: fileWithStatus.file.size, 
-                    path: subPath,
-                    mode,
-                    resume: fileWithStatus.status === 'paused'
-                });
-                
                 let result;
                 
                 if (mode === 'private') {
@@ -296,16 +277,12 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                             });
                         },
                         onSuccess: (fileData) => {
-                            // File uploaded and saved to database
-                            console.log('Managed storage upload success:', fileData);
                         },
                         onError: (error) => {
                             throw error;
                         },
                     });
                 }
-
-                console.log('DragDrop: Upload successful:', result);
 
                 // Update to success
                 setFilesToUpload(prev => {
@@ -365,8 +342,6 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
 
         setIsUploading(false);
         
-        // Call onUploadComplete callback to refresh the file list
-        console.log('DragDrop: All uploads complete, calling onUploadComplete');
         onUploadComplete?.();
     }, [filesToUpload, ownerId, accountId, subPath, toast, onUploadComplete, mode, isPro]);
 
@@ -396,7 +371,6 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         maxSize: 50 * 1024 * 1024,
         noClick: true, // Don't open file dialog on click - we'll handle it manually
         onDragEnter: (e) => {
-            console.log('DragDrop: Drag enter');
             setIsDragActive(true);
         },
         onDragOver: (e) => {

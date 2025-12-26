@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { s3CoreService } from "@/features/private-s3/services/s3-core.service";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
-import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import { createPlatformS3Client, getPlatformS3Bucket } from "@/features/managed-storage/services/platform-s3.service";
 import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
+import { logger } from '@/lib/utils/logger';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 
@@ -17,30 +17,21 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Not authenticated');
     }
 
     const body = await request.json();
     const { operation, key, contentType, storageMode } = body;
 
     if (!operation || !key) {
-      return NextResponse.json(
-        { error: 'Missing required fields: operation, key' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Missing required fields: operation, key');
     }
 
     // Check if Managed Storage requires subscription
     if (storageMode === 'managed-storage' || storageMode === 'platform-s3') {
       const access = await hasPlatformAccess(user.id);
       if (!access) {
-        return NextResponse.json(
-          { error: 'Managed Storage requires an active subscription' },
-          { status: 403 }
-        );
+        return apiErrors.forbidden('Managed Storage requires an active subscription');
       }
     }
 
@@ -63,32 +54,25 @@ export async function POST(request: NextRequest) {
           ContentType: contentType,
         });
       } else {
-        return NextResponse.json(
-          { error: 'Invalid operation. Use "get", "download", "put", or "upload"' },
-          { status: 400 }
-        );
+        return apiErrors.badRequest('Invalid operation. Use "get", "download", "put", or "upload"');
       }
 
       const expiresIn = operation === 'get' || operation === 'download'
-        ? 3600 * 24 * 7 // 7 days for viewing
-        : 3600; // 1 hour for uploading
+        ? 3600 * 24 * 7
+        : 3600;
 
       const url = await getSignedUrl(client, command, { expiresIn });
 
-      return NextResponse.json({ url, expiresIn });
+      return createSuccessResponse({ url, expiresIn });
     }
 
-    // For OWN S3, return instructions to use client-side
-    return NextResponse.json({
+    return createSuccessResponse({
       message: 'Use client-side S3 operations for OWN S3 mode',
       note: 'Presigned URLs are generated client-side using your AWS credentials',
     });
   } catch (error: any) {
-    console.error('Presigned URL error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Presigned URL error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserById } from '@/lib/database/queries';
+import { logger } from '@/lib/utils/logger';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
@@ -20,48 +22,33 @@ export async function GET(request: NextRequest) {
     const token = (await cookies()).get('auth-token')?.value;
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Not authenticated');
     }
 
-    // Verify token
-    // JWT_SECRET is validated at module load, so it's guaranteed to be a string here
     let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET as string);
     } catch (error) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Invalid token');
     }
 
-    // Get user
     const user = await getUserById(decoded.userId);
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return apiErrors.notFound('User not found');
     }
 
-    return NextResponse.json({
+    return createSuccessResponse({
       id: user.id,
       email: user.email,
       fullName: user.fullName,
       avatar: user.avatar,
-      accountId: user.id, // For compatibility
-      $id: user.id, // For compatibility with existing code
+      accountId: user.id,
+      $id: user.id,
     });
   } catch (error: any) {
-    console.error('Get user error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Get user error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

@@ -3,6 +3,8 @@ import { getUserByEmail, createUser } from '@/lib/database/queries';
 import { createFreeTierSubscription } from '@/lib/database/queries-subscriptions';
 import { sendVerificationEmail } from '@/lib/email/sender';
 import { generateVerificationToken, getVerificationTokenExpiry } from '@/lib/utils/tokens';
+import { logger } from '@/lib/utils/logger';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
@@ -24,20 +26,13 @@ export async function POST(request: NextRequest) {
     const { email, password, fullName } = await request.json();
 
     if (!email || !password || !fullName) {
-      return NextResponse.json(
-        { error: 'Email, password, and full name are required' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('Email, password, and full name are required');
     }
 
-    // Check if user already exists
     const existingUser = await getUserByEmail(email);
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User with this email already exists' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('User with this email already exists');
     }
 
     // Hash password
@@ -56,20 +51,16 @@ export async function POST(request: NextRequest) {
       verificationTokenExpiry,
     });
 
-    // Create default free tier subscription (1GB storage, 10GB bandwidth)
     try {
       await createFreeTierSubscription(user.id);
     } catch (subscriptionError) {
-      console.error("Failed to create free tier subscription:", subscriptionError);
-      // Don't fail signup if subscription creation fails - can be created later
+      logger.error('Failed to create free tier subscription', subscriptionError);
     }
 
-    // Send verification email
     try {
       await sendVerificationEmail(email, verificationToken, fullName);
     } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-      // Don't fail signup if email fails - user can request resend later
+      logger.error('Failed to send verification email', emailError);
     }
 
     // Generate JWT token
@@ -89,8 +80,7 @@ export async function POST(request: NextRequest) {
       path: '/',
     });
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       user: {
         id: user.id,
         email: user.email,
@@ -98,14 +88,10 @@ export async function POST(request: NextRequest) {
         avatar: user.avatar,
         emailVerified: user.emailVerified,
       },
-      message: "Account created successfully. Please check your email to verify your account.",
-    });
+    }, 201, "Account created successfully. Please check your email to verify your account.");
   } catch (error: any) {
-    console.error('Signup error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Signup error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 
