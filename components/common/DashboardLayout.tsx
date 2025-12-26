@@ -28,6 +28,7 @@ interface DashboardLayoutProps {
     view?: "grid" | "list";
     showThumbnails?: boolean;
     hideOwner?: boolean;
+    emptyMessage?: string;
 }
 
 export const DashboardLayout = ({
@@ -40,7 +41,8 @@ export const DashboardLayout = ({
     onFolderClick,
     view = "grid",
     showThumbnails = false,
-    hideOwner = false
+    hideOwner = false,
+    emptyMessage = "No files uploaded yet"
 }: DashboardLayoutProps) => {
     const usageSummary = totalSpace.document ? getUsageSummary(totalSpace) : [];
 
@@ -103,7 +105,15 @@ export const DashboardLayout = ({
                 ) : files.length > 0 ? (
                     <FileList files={files} currentUser={currentUser} onFolderClick={onFolderClick} view={view} showThumbnails={showThumbnails} hideOwner={hideOwner} />
                 ) : (
-                    <p className="empty-list">No files uploaded yet</p>
+                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                        <div className="mb-4 p-4 bg-light-300 rounded-full">
+                            <svg className="w-12 h-12 text-light-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <p className="body-1 text-light-200 mb-2">{emptyMessage}</p>
+                        <p className="caption text-light-200/70">Drag and drop files here or use the upload button</p>
+                    </div>
                 )}
             </section>
         </div>

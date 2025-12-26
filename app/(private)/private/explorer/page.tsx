@@ -28,8 +28,9 @@ const OwnS3Page = () => {
   return <OwnS3Client />;
 };
 
-import { LayoutGrid, List as ListIcon, Plus, FolderPlus, Search as SearchIcon, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { LayoutGrid, List as ListIcon, Plus, FolderPlus, Search as SearchIcon, ChevronRight, Image as ImageIcon, AlertCircle } from "lucide-react";
 import { ExplorerSkeleton } from "@/components/common/SkeletonLoader";
+import { useToast } from "@/hooks/use-toast";
 
 // ... (OwnS3Client component definition)
 
@@ -40,6 +41,7 @@ const OwnS3Client = () => {
   const sort = searchParams.get("sort") || "$createdAt-desc";
   const [view, setView] = React.useState<"grid" | "list">("grid");
   const [showThumbnails, setShowThumbnails] = React.useState(false); // Default: show icons only
+  const { toast } = useToast();
 
   const {
     files,
@@ -56,18 +58,35 @@ const OwnS3Client = () => {
     createFolder
   } = useOwnS3(searchText, sort);
 
+  // Show error toast when error occurs
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error Loading Files",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
   // LocalSearch manages filteredFiles - we just provide the setter
   const [filteredFiles, setFilteredFiles] = React.useState<any[]>([]);
   
   // Update filteredFiles when files actually change (using file IDs for comparison)
+  // Memoize the file IDs to prevent unnecessary updates
   const filesIdsRef = React.useRef<string>('');
-  React.useEffect(() => {
+  const memoizedFiles = React.useMemo(() => {
     const currentIds = files.map(f => f.$id || f.bucketFileId).join(',');
     if (currentIds !== filesIdsRef.current) {
-      setFilteredFiles(files);
       filesIdsRef.current = currentIds;
+      return files;
     }
+    return files;
   }, [files]);
+
+  React.useEffect(() => {
+    setFilteredFiles(memoizedFiles);
+  }, [memoizedFiles]);
 
   if (loading) {
     return <ExplorerSkeleton view={view} />;
@@ -117,7 +136,6 @@ const OwnS3Client = () => {
         subPath={subPath}
         mode="private"
         onUploadComplete={() => {
-          console.log('Upload complete, reloading files...');
           reload();
         }}
       />
@@ -142,8 +160,9 @@ const OwnS3Client = () => {
                   }}
                   disabled={!subPath}
                   title="Go back"
+                  aria-label="Navigate to parent folder"
                 >
-                  <ChevronRight size={16} className="rotate-180" />
+                  <ChevronRight size={16} className="rotate-180" aria-hidden="true" />
                 </Button>
                 <div className="w-px h-5 bg-light-300" />
               </div>
@@ -195,8 +214,10 @@ const OwnS3Client = () => {
                 className={`h-9 w-9 rounded-xl transition-all duration-300 ${showThumbnails ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
                 onClick={() => setShowThumbnails(!showThumbnails)}
                 title={showThumbnails ? "Hide thumbnails" : "Show thumbnails"}
+                aria-label={showThumbnails ? "Hide thumbnails" : "Show thumbnails"}
+                aria-pressed={showThumbnails}
               >
-                <ImageIcon size={18} />
+                <ImageIcon size={18} aria-hidden="true" />
               </Button>
             </div>
             {/* View Toggle */}
@@ -206,21 +227,46 @@ const OwnS3Client = () => {
                 size="icon"
                 className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'grid' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
                 onClick={() => setView('grid')}
+                aria-label="Switch to grid view"
+                aria-pressed={view === 'grid'}
+                title="Grid view"
               >
-                <LayoutGrid size={18} />
+                <LayoutGrid size={18} aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className={`h-9 w-9 rounded-xl transition-all duration-300 ${view === 'list' ? 'bg-white text-brand shadow-sm scale-105' : 'text-light-200 hover:text-light-100'}`}
                 onClick={() => setView('list')}
+                aria-label="Switch to list view"
+                aria-pressed={view === 'list'}
+                title="List view"
               >
-                <ListIcon size={18} />
+                <ListIcon size={18} aria-hidden="true" />
               </Button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Error Display */}
+      {error && (
+        <div className="mb-6 p-4 rounded-lg border border-red/30 bg-red/10 shadow-drop-1 w-full flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="body-2 text-red font-medium mb-1">Error Loading Files</p>
+            <p className="text-sm text-red/80">{error}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 text-red hover:text-red hover:bg-red/10"
+              onClick={() => reload()}
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
 
       <DashboardLayout
         files={filteredFiles}
@@ -233,6 +279,13 @@ const OwnS3Client = () => {
         view={view}
         showThumbnails={showThumbnails}
         hideOwner={true}
+        emptyMessage={
+          searchText 
+            ? `No files found matching "${searchText}"` 
+            : subPath 
+            ? `This folder is empty. Upload files or create subfolders to get started.`
+            : "No files yet. Upload your first file to get started!"
+        }
       />
     </div>
   );
@@ -243,7 +296,9 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string>("");
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   // Focus input when dialog opens
   React.useEffect(() => {
@@ -261,20 +316,48 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
     if (!open) {
       setName("");
       setLoading(false);
+      setError("");
     }
   }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = name.trim();
-    if (!trimmedName) return;
+    if (!trimmedName) {
+      setError("Folder name is required");
+      return;
+    }
+    
+    // Validate folder name
+    if (trimmedName.includes('/') || trimmedName.includes('\\')) {
+      setError("Folder name cannot contain slashes");
+      return;
+    }
+    
+    if (trimmedName.length > 255) {
+      setError("Folder name is too long (max 255 characters)");
+      return;
+    }
+
+    setError("");
     setLoading(true);
     try {
       await onCreate(trimmedName);
+      toast({
+        title: "Folder Created",
+        description: `"${trimmedName}" has been created successfully.`,
+        className: "success-toast",
+      });
       setOpen(false);
       setName("");
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      const errorMessage = error?.message || "Failed to create folder. Please try again.";
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -298,21 +381,34 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
           <DialogTitle className="capitalize">Create New Folder</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            ref={inputRef}
-            type="text"
-            placeholder="Folder Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                handleClose();
-              }
-            }}
-            className="shad-input w-full"
-            autoFocus
-            disabled={loading}
-          />
+          <div className="space-y-2">
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Folder Name"
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (error) setError("");
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  handleClose();
+                }
+              }}
+              className={`shad-input w-full ${error ? "border-red-500" : ""}`}
+              autoFocus
+              disabled={loading}
+              aria-invalid={!!error}
+              aria-describedby={error ? "folder-name-error" : undefined}
+            />
+            {error && (
+              <p id="folder-name-error" className="text-sm text-red-500 flex items-center gap-1">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </p>
+            )}
+          </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={handleClose} disabled={loading}>Cancel</Button>
             <Button type="submit" disabled={loading || !name.trim()} className="shad-submit-btn">
