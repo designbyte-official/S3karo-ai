@@ -56,15 +56,24 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
             try {
                 if (mode === 'private') {
                     const config = await s3ConfigService.getConfig(ownerId);
-                    if (!config) throw new Error("S3 not configured. Please configure your bucket first.");
+                    if (!config) {
+                        throw new Error("S3 not configured. Please configure your bucket first.");
+                    }
 
-                    await s3ExplorerService.uploadFile({
+                    console.log('Starting upload:', { fileName: file.name, size: file.size, path: uploadPath });
+                    
+                    const result = await s3ExplorerService.uploadFile({
                         config,
                         file,
                         ownerId,
                         accountId,
                         path: uploadPath,
+                        onProgress: (progress) => {
+                            console.log(`Upload progress for ${file.name}: ${progress}%`);
+                        },
                     });
+
+                    console.log('Upload successful:', result);
                 } else {
                     // Need to implement uploadFile in platformStorageService or use an action
                     const formData = new FormData();
@@ -90,8 +99,18 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
                 });
             } catch (error) {
                 console.error("Upload error:", error);
+                
+                // Extract user-friendly error message
+                let errorMessage = 'Unknown error occurred';
+                if (error instanceof Error) {
+                    errorMessage = error.message;
+                } else if (typeof error === 'object' && error !== null && 'message' in error) {
+                    errorMessage = String((error as any).message);
+                }
+                
                 toast({
-                    description: `Failed to upload ${file.name}: ${(error as Error).message}`,
+                    title: "Upload Failed",
+                    description: `Failed to upload ${file.name}: ${errorMessage}`,
                     variant: "destructive",
                 });
             }
@@ -100,7 +119,16 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
         await Promise.all(uploadPromises);
         setIsUploading(false);
         setFiles([]);
-        router.refresh();
+        
+        // Force refresh the page to show new files
+        // Use setTimeout to ensure upload completes before refresh
+        setTimeout(() => {
+            router.refresh();
+            // Also trigger a window reload if router.refresh doesn't work
+            if (mode === 'private') {
+                window.location.reload();
+            }
+        }, 500);
     }, [ownerId, accountId, path, router, toast, mode, user, isPro]);
 
     const { getRootProps, getInputProps } = useDropzone({

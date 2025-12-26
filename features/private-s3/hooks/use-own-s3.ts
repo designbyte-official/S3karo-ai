@@ -36,7 +36,8 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     queryFn: async () => {
       const config = await s3ConfigService.getConfig(user!.$id);
       if (!config) throw new Error("No S3 config");
-      return s3ExplorerService.listItems({
+      console.log('useOwnS3: Fetching files...', { subPath, searchText, sort });
+      const result = await s3ExplorerService.listItems({
         config,
         ownerId: user!.$id,
         accountId: user!.accountId,
@@ -44,8 +45,12 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
         searchText,
         sort
       });
+      console.log('useOwnS3: Files fetched:', result.documents.length, 'files');
+      return result;
     },
     enabled: !!(user && hasConfig),
+    staleTime: 0, // Always consider data stale to allow fresh fetches
+    refetchOnWindowFocus: true, // Refetch when window regains focus
   });
 
   const {
@@ -64,6 +69,7 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
   });
 
   const reload = () => {
+    console.log('useOwnS3: Reloading files and stats...');
     refetchFiles();
     refetchStats();
   };

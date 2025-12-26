@@ -119,7 +119,10 @@ const OwnS3Client = () => {
         ownerId={user.$id}
         accountId={user.accountId}
         subPath={subPath}
-        onUploadComplete={reload}
+        onUploadComplete={() => {
+          console.log('Upload complete, reloading files...');
+          reload();
+        }}
       />
       <header className="flex flex-col gap-6 mb-8 w-full">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -243,13 +246,34 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
   const [open, setOpen] = React.useState(false);
   const [name, setName] = React.useState("");
   const [loading, setLoading] = React.useState(false);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Focus input when dialog opens
+  React.useEffect(() => {
+    if (open && inputRef.current) {
+      // Small delay to ensure dialog is fully rendered
+      setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 100);
+    }
+  }, [open]);
+
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setName("");
+      setLoading(false);
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    const trimmedName = name.trim();
+    if (!trimmedName) return;
     setLoading(true);
     try {
-      await onCreate(name);
+      await onCreate(trimmedName);
       setOpen(false);
       setName("");
     } catch (error) {
@@ -257,6 +281,11 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
     } finally {
       setLoading(false);
     }
+  }
+
+  const handleClose = () => {
+    setOpen(false);
+    setName("");
   }
 
   return (
@@ -267,20 +296,29 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
           <span className="hidden sm:block font-medium">New Folder</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="shad-dialog button">
+      <DialogContent className="shad-dialog button" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="capitalize">Create New Folder</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
+            ref={inputRef}
+            type="text"
             placeholder="Folder Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="shad-input"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                handleClose();
+              }
+            }}
+            className="shad-input w-full"
+            autoFocus
+            disabled={loading}
           />
           <DialogFooter>
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" disabled={loading} className="shad-submit-btn">
+            <Button type="button" variant="ghost" onClick={handleClose} disabled={loading}>Cancel</Button>
+            <Button type="submit" disabled={loading || !name.trim()} className="shad-submit-btn">
               {loading ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
