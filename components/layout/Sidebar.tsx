@@ -19,8 +19,20 @@ interface Props {
 const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNavItems }: Props) => {
     const pathname = usePathname();
 
-    // Use custom nav items if provided, otherwise default to context-aware items
-    const displayNavItems = customNavItems || navItems;
+    // Profile navigation items (API Keys and Subscription)
+    const profileNavItems = [
+        { name: "API Keys", url: "/profile/api-keys", icon: "/assets/icons/others.svg" },
+        { name: "Subscription", url: "/profile/subscription", icon: "/assets/icons/others.svg" },
+    ];
+
+    // If on profile page or sub-routes, show profile nav items instead
+    let displayNavItems;
+    if (pathname === "/profile" || pathname.startsWith("/profile/")) {
+        displayNavItems = profileNavItems;
+    } else {
+        // Use custom nav items if provided, otherwise default to context-aware items
+        displayNavItems = customNavItems || navItems;
+    }
 
     return (
         <aside className="sidebar">
@@ -44,28 +56,34 @@ const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNa
 
             <nav className="sidebar-nav">
                 <ul className="flex flex-1 flex-col gap-6">
-                    {displayNavItems.map(({ url, name, icon }) => (
-                        <Link key={name} href={url} className="lg:w-full">
-                            <li
-                                className={cn(
-                                    "sidebar-nav-item",
-                                    pathname === url && "shad-active",
-                                )}
-                            >
-                                <Image
-                                    src={icon}
-                                    alt={name}
-                                    width={24}
-                                    height={24}
+                    {displayNavItems.map(({ url, name, icon }) => {
+                        const isActive = pathname === url || (url === "/profile/api-keys" && pathname.startsWith("/profile/api-keys")) || (url === "/profile/subscription" && pathname.startsWith("/profile/subscription"));
+                        return (
+                            <Link key={name} href={url} className="lg:w-full">
+                                <li
                                     className={cn(
-                                        "nav-icon",
-                                        pathname === url && "nav-icon-active",
+                                        "sidebar-nav-item",
+                                        isActive && "shad-active",
                                     )}
-                                />
-                                <p className="hidden lg:block">{name}</p>
-                            </li>
-                        </Link>
-                    ))}
+                                >
+                                    <Image
+                                        src={icon}
+                                        alt={name}
+                                        width={24}
+                                        height={24}
+                                        className={cn(
+                                            "nav-icon",
+                                            isActive && "nav-icon-active",
+                                        )}
+                                    />
+                                    <p className={cn(
+                                        "hidden lg:block",
+                                        isActive && "text-white"
+                                    )}>{name}</p>
+                                </li>
+                            </Link>
+                        );
+                    })}
                 </ul>
             </nav>
 

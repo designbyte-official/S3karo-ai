@@ -37,6 +37,7 @@ const ManagedLayout = async ({ children }: { children: React.ReactNode }) => {
                 <Header
                     userId={currentUser.$id || currentUser.id}
                     accountId={currentUser.accountId || currentUser.id}
+                    avatar={currentUser.avatar || ''}
                     searchSlot={<Search mode="managed" />}
                     toggleSlot={<StorageModeToggle />}
                     actionsSlot={<FileUploader ownerId={currentUser.$id || currentUser.id} accountId={currentUser.accountId || currentUser.id} />}

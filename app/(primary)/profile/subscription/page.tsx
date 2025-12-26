@@ -1,20 +1,22 @@
 "use client";
 
-import { UserInfo } from "@/features/profile/components";
+import { UserInfo, SubscriptionSection } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function ProfilePage() {
+export default function SubscriptionPage() {
   const isManagedStorage = true;
-  const { loading } = useProfile(isManagedStorage);
+  const { subscription, loading } = useProfile(isManagedStorage);
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect to API Keys page by default
-    router.push("/profile/api-keys");
-  }, [router]);
+    // Redirect to profile if not in managed storage mode
+    if (!isManagedStorage) {
+      router.push("/profile");
+    }
+  }, [isManagedStorage, router]);
 
   if (loading) {
     return <ProfileSkeleton />;
@@ -24,6 +26,7 @@ export default function ProfilePage() {
     <div className="page-container">
       <div className="w-full max-w-4xl mx-auto space-y-8">
         <UserInfo />
+        {subscription && <SubscriptionSection subscription={subscription} />}
       </div>
     </div>
   );

@@ -18,7 +18,7 @@ const PrivateLayout = async ({ children }: { children: React.ReactNode }) => {
     const privateNavItems = [
         { name: "S3 Explorer", url: "/private/explorer", icon: "/assets/icons/dashboard.svg" },
         { name: "S3 Settings", url: "/private/settings", icon: "/assets/icons/others.svg" },
-        { name: "Profile", url: "/private/profile", icon: "/assets/icons/others.svg" },
+        { name: "Profile", url: "/profile", icon: "/assets/icons/others.svg" },
     ];
 
     return (
@@ -43,6 +43,7 @@ const PrivateLayout = async ({ children }: { children: React.ReactNode }) => {
                 <Header
                     userId={currentUser.$id || currentUser.id}
                     accountId={currentUser.accountId || currentUser.id}
+                    avatar={currentUser.avatar || ''}
                     searchSlot={<Search mode="private" />}
                     toggleSlot={<StorageModeToggle />}
                 />

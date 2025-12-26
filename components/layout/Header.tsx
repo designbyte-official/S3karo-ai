@@ -3,11 +3,12 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { signOutUser } from "@/features/auth/actions/user.actions";
+import { useRouter } from "next/navigation";
 
 interface Props {
   userId: string;
   accountId: string;
+  avatar?: string;
   searchSlot?: React.ReactNode;
   toggleSlot?: React.ReactNode;
   actionsSlot?: React.ReactNode;
@@ -16,10 +17,14 @@ interface Props {
 const Header = ({
   userId,
   accountId,
+  avatar,
   searchSlot,
   toggleSlot,
   actionsSlot,
 }: Props) => {
+  const router = useRouter();
+  const defaultAvatar = "https://ui-avatars.com/api/?name=User&background=random";
+
   return (
     <header className="header">
       {searchSlot || <div className="flex-1" />}
@@ -28,17 +33,18 @@ const Header = ({
         {toggleSlot}
         {actionsSlot}
 
-        <form action={signOutUser}>
-          <Button type="submit" className="sign-out-button">
-            <Image
-              src="/assets/icons/logout.svg"
-              alt="logo"
-              width={24}
-              height={24}
-              className="w-6"
-            />
-          </Button>
-        </form>
+        <Button 
+          onClick={() => router.push("/profile")}
+          className="sign-out-button"
+        >
+          <Image
+            src={avatar || defaultAvatar}
+            alt="Profile"
+            width={24}
+            height={24}
+            className="w-6 h-6 rounded-full object-cover"
+          />
+        </Button>
       </div>
     </header>
   );
