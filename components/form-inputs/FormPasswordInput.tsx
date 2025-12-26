@@ -68,15 +68,16 @@ export function FormPasswordInput<
                                 <Button
                                     type="button"
                                     variant="ghost"
-                                    size="sm"
-                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    size="icon"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-brand/10 text-light-200 hover:text-brand"
                                     onClick={() => setShowPassword(!showPassword)}
                                     disabled={disabled}
+                                    aria-label={showPassword ? "Hide password" : "Show password"}
                                 >
                                     {showPassword ? (
-                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                        <EyeOff className="h-5 w-5" />
                                     ) : (
-                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                        <Eye className="h-5 w-5" />
                                     )}
                                 </Button>
                             )}
