@@ -16,6 +16,7 @@ import { cn } from "@/features/shared/utils";
 import { Button } from "@/components/ui/button";
 import FileUploader from "@/components/common/FileUploader";
 import { signOutUser } from "@/features/auth/actions/user.actions";
+import Logo from "@/components/common/Logo";
 
 import { s3ConfigService, StorageMode } from "@/features/private-s3/services/s3-config.service";
 
@@ -46,13 +47,7 @@ const MobileNavigation = ({
 
   return (
     <header className="mobile-header">
-      <Image
-        src="/assets/icons/logo-full-brand.svg"
-        alt="logo"
-        width={120}
-        height={52}
-        className="h-auto"
-      />
+      <Logo variant="full" className="h-auto" />
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger>

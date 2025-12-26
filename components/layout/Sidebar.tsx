@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/common/Logo";
 
 interface Props {
     fullName: string;
@@ -36,23 +37,14 @@ const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNa
 
     return (
         <aside className="sidebar">
-            <Link href="/">
-                <Image
-                    src="/assets/icons/logo-full-brand.svg"
-                    alt="logo"
-                    width={160}
-                    height={50}
-                    className="hidden h-auto lg:block"
-                />
-
-                <Image
-                    src="/assets/icons/logo-brand.svg"
-                    alt="logo"
-                    width={52}
-                    height={52}
-                    className="lg:hidden"
-                />
-            </Link>
+            <Logo 
+                variant="full" 
+                className="hidden lg:flex mb-2"
+            />
+            <Logo 
+                variant="icon" 
+                className="lg:hidden mb-2"
+            />
 
             <nav className="sidebar-nav">
                 <ul className="flex flex-1 flex-col gap-6">
