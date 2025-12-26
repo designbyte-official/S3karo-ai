@@ -88,20 +88,40 @@ export function useUpload() {
       const presignedData: UploadResponse = await presignedResponse.json();
       const { url: presignedUrl, key, metadata } = presignedData;
 
-      // Step 2: Upload directly to S3 using presigned URL
-      const uploadResponse = await fetch(presignedUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type || 'application/octet-stream',
-        },
+      // Step 2: Upload directly to S3 using presigned URL with progress tracking
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(progress);
+            onUploadProgress?.(progress);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setUploadProgress(100);
+            onUploadProgress?.(100);
+            resolve();
+          } else {
+            reject(new Error('Failed to upload file to S3'));
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'));
+        });
+
+        xhr.addEventListener('abort', () => {
+          reject(new Error('Upload aborted'));
+        });
+
+        xhr.open('PUT', presignedUrl);
+        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.send(file);
       });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload file to S3');
-      }
-
-      setUploadProgress(100);
 
       // Step 3: Call callback endpoint to save metadata
       const callbackResponse = await fetch('/api/upload/callback', {

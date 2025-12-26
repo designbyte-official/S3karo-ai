@@ -75,6 +75,9 @@ export async function GET(request: NextRequest) {
 }
 
 // POST - Upload file
+// DEPRECATED: This endpoint buffers files through the server (inefficient)
+// Use /api/upload + /api/upload/callback for direct S3 uploads instead
+// Kept for backward compatibility only
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();

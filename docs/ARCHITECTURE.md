@@ -98,8 +98,10 @@ managed/123e4567-e89b-12d3-a456-426614174000/documents/2024/1704067200000-report
 - **GET** `/api/v1/files` - List files (coming soon)
 
 #### Internal API (`/api/*`)
-- **POST** `/api/files` - Internal file upload (web UI)
+- **POST** `/api/upload` - Request presigned URL for direct S3 upload (web UI)
+- **POST** `/api/upload/callback` - Save file metadata after upload
 - **GET** `/api/files` - Internal file listing
+- **POST** `/api/files` - DEPRECATED: Old upload endpoint (kept for backward compatibility)
 - **POST** `/api/v1/api-keys` - Create API key
 - **GET** `/api/v1/api-keys` - List API keys
 - **DELETE** `/api/v1/api-keys/:id` - Revoke API key

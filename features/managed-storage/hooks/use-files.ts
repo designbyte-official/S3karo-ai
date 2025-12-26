@@ -1,9 +1,9 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { s3ExplorerService } from "@/lib/services/s3/s3-explorer.service";
-import { platformStorageService } from "@/lib/services/platform/platform-storage.service";
-import { s3ConfigService } from "@/lib/services/s3/s3-config.service";
+import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
+import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import { useStorageStore } from "@/lib/stores/storage-store";
 import { useAuthStore } from "@/lib/stores/auth-store";
 
@@ -37,7 +37,6 @@ export function useFiles(filters?: {
         });
       } else {
         return await platformStorageService.getFiles({
-          userId: uid,
           types: filters?.types || [],
           searchText: filters?.searchText || "",
           sort: filters?.sort || "$createdAt-desc",
@@ -90,7 +89,7 @@ export function useDeleteFile() {
         if (!user) throw new Error("User not found");
         const config = await s3ConfigService.getConfig(user.$id || user.id);
 
-        const { s3CoreService } = await import("@/lib/services/s3/s3-core.service");
+        const { s3CoreService } = await import("@/features/private-s3/services/s3-core.service");
         return await s3CoreService.delete(config, bucketFileId);
       } else {
         return await platformStorageService.deleteFile({ fileId, path });
@@ -128,7 +127,7 @@ export function useRenameFile() {
 
       if (mode === "own-s3") {
         const config = await s3ConfigService.getConfig(ownerId);
-        const { s3CoreService } = await import("@/lib/services/s3/s3-core.service");
+        const { s3CoreService } = await import("@/features/private-s3/services/s3-core.service");
 
         const pathParts = bucketFileId.split('/');
         pathParts[pathParts.length - 1] = `${name}.${extension}`;

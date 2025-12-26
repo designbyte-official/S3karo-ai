@@ -170,9 +170,10 @@ npm run dev
 
 Managed Storage uses these API routes:
 
-- `POST /api/s3/presigned-url` - Generate presigned URLs for uploads/downloads
+- `POST /api/upload` - Request presigned URL for direct S3 upload
+- `POST /api/upload/callback` - Save file metadata after upload
 - `GET /api/files` - List files (uses platform bucket)
-- `POST /api/files` - Upload file metadata
+- `POST /api/files` - DEPRECATED: Old upload endpoint (kept for backward compatibility)
 - `DELETE /api/files/[id]` - Delete file
 
 All routes check subscription status before allowing access.

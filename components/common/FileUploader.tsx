@@ -7,10 +7,10 @@ import { cn } from "@/features/shared/utils";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
 import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
+import { useUpload } from "@/features/managed-storage/hooks/use-upload";
 
 interface Props {
     ownerId: string;
@@ -28,6 +28,7 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
     const router = useRouter();
     const user = useAuthStore((state: any) => state.user);
     const isPro = useAuthStore((state: any) => state.isPro);
+    const { upload: uploadFile } = useUpload(); // For managed storage direct uploads
 
     const onDrop = useCallback(async (acceptedFiles: File[], fileRejections: any[]) => {
         // Handle rejections (e.g. file too large)
@@ -75,22 +76,16 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
 
                     console.log('Upload successful:', result);
                 } else {
-                    // Need to implement uploadFile in platformStorageService or use an action
-                    const formData = new FormData();
-                    formData.append("file", file);
-                    formData.append("ownerId", ownerId);
-                    formData.append("accountId", accountId);
-                    formData.append("path", path);
-
-                    const res = await fetch("/api/files", {
-                        method: "POST",
-                        body: formData,
+                    // Managed storage - use direct S3 upload with presigned URLs
+                    await uploadFile(file, {
+                        path: uploadPath,
+                        onSuccess: (fileData) => {
+                            console.log('Managed storage upload success:', fileData);
+                        },
+                        onError: (error) => {
+                            throw error;
+                        },
                     });
-
-                    if (!res.ok) {
-                        const errorData = await res.json();
-                        throw new Error(errorData.details || errorData.error || "Upload failed");
-                    }
                 }
 
                 toast({

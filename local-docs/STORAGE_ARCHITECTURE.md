@@ -12,10 +12,10 @@ S3-Karo supports **two distinct storage modes** with completely different archit
 - **Service**: `s3ExplorerService` → `s3CoreService`
 
 ### 2. **Managed Storage** (Platform's Bucket)
-- **Server-Side**: All operations go through API routes
+- **Hybrid Architecture**: Direct S3 uploads (client-to-S3) + server-side metadata
 - **Database Required**: Files ARE stored in the database
 - **Pro Gated**: Upload/Delete/Share require Pro subscription
-- **Service**: `platformStorageService` → `/api/files` → Database
+- **Service**: `useUpload()` hook → `/api/upload` → Direct S3 → `/api/upload/callback` → Database
 
 ---
 
@@ -33,7 +33,6 @@ files {
   size: number
   url: string
   storageKey: string      // REQUIRED: S3 key for deletion/access
-  bucketName: string       // Optional: Platform bucket name
   sharedWith: string[]     // Array of emails
   createdAt: timestamp
   updatedAt: timestamp
@@ -73,13 +72,15 @@ File appears in list (fetched from S3)
 NO database interaction
 ```
 
-### Managed Storage Flow
+### Managed Storage Flow (Direct Upload)
 ```
 User uploads file
   ↓
-POST /api/files
+POST /api/upload (request presigned URL)
   ↓
-Upload to platform's S3 bucket
+Client uploads directly to S3 (bypasses server)
+  ↓
+POST /api/upload/callback (save metadata)
   ↓
 Save metadata to database (with storageKey)
   ↓
