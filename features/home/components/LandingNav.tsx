@@ -17,7 +17,7 @@ export const LandingNav = () => {
               </Button>
             </Link>
             <Link href="/sign-up">
-              <Button className="h-[52px] px-8 rounded-full bg-brand text-primary-foreground hover:bg-brand-100 shadow-drop-1 body-2">
+              <Button className="h-[52px] px-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-drop-1 body-2">
                 Get Started
               </Button>
             </Link>
