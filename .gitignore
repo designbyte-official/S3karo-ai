@@ -52,3 +52,6 @@ next-env.d.ts
 .cache/
 .turbo/
 .vercel/
+
+# Local documentation (internal docs, not for public)
+local-docs/

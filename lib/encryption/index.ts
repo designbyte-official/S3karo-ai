@@ -13,11 +13,21 @@ export const getKeys = async () => {
   const aesKeyBase64 = process.env.NEXT_PUBLIC_AES_KEY || process.env.NEXT_PUBLIC_ENCRYPTION_SECRET;
   
   if (!aesKeyBase64) {
-    console.warn('⚠️ NEXT_PUBLIC_AES_KEY not set. Using default key (INSECURE for production!)');
-    // Generate a default key for development (32 bytes = 256 bits)
-    const defaultKey = 'default-aes-key-32-bytes-long!!';
+    // SECURITY: Never use default keys in production
+    // In development, warn but allow; in production, throw error
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(
+        '❌ SECURITY ERROR: NEXT_PUBLIC_ENCRYPTION_SECRET is required in production!\n' +
+        'Please set NEXT_PUBLIC_ENCRYPTION_SECRET in your environment variables.\n' +
+        'Generate a secure secret: openssl rand -base64 32'
+      );
+    }
+    
+    console.warn('⚠️ NEXT_PUBLIC_ENCRYPTION_SECRET not set. Using development fallback (NOT SECURE for production!)');
+    // Development fallback - DO NOT USE IN PRODUCTION
+    const defaultKey = 'dev-fallback-key-change-in-production-32bytes';
     const encryptionKey = Buffer.from(defaultKey.padEnd(32, '0').slice(0, 32));
-    const initVector = Buffer.from('default-iv-12bytes'.padEnd(12, '0').slice(0, 12));
+    const initVector = Buffer.from('dev-iv-12bytes'.padEnd(12, '0').slice(0, 12));
     return { encryptionKey, initVector };
   }
 

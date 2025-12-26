@@ -24,9 +24,10 @@
 1. 🤖 [Introduction](#introduction)
 2. ⚙️ [Tech Stack](#tech-stack)
 3. 🔋 [Features](#features)
-4. 🤸 [Quick Start](#quick-start)
-5. 📚 [Documentation](#documentation)
-6. 🚀 [Deployment](#deployment)
+4. 🔒 [Security](#security)
+5. 🤸 [Quick Start](#quick-start)
+6. 📚 [Documentation](#documentation)
+7. 🚀 [Deployment](#deployment)
 
 ## <a name="introduction">🤖 Introduction</a>
 
@@ -61,6 +62,37 @@ Built with **Next.js 15**, **Drizzle ORM**, and **Neon DB** for high performance
 
 👉 **Modern Responsive Design**: A pixel-perfect, mobile-friendly UI built with modern aesthetics.
 
+## <a name="security">🔒 Security</a>
+
+**S3-Karo is open-source** - all code is publicly visible. Security is critical.
+
+### Security Features
+
+- ✅ **Encrypted Credentials**: S3 credentials encrypted with AES-256-CBC before browser storage
+- ✅ **JWT Authentication**: Secure token-based authentication
+- ✅ **Input Validation**: All user inputs validated and sanitized
+- ✅ **SQL Injection Prevention**: Parameterized queries only
+- ✅ **XSS Protection**: Content Security Policy (CSP) headers
+- ✅ **Rate Limiting**: API endpoints protected with rate limits
+- ✅ **Security Headers**: HSTS, XSS protection, frame options, and more
+- ✅ **Environment Variables**: All secrets stored in environment variables (never in code)
+
+### ⚠️ Critical: Before Deployment
+
+1. **Set Strong Secrets**: Generate unique secrets for `JWT_SECRET` and `NEXT_PUBLIC_ENCRYPTION_SECRET`
+   ```bash
+   openssl rand -base64 32  # Generate JWT_SECRET
+   openssl rand -base64 32  # Generate NEXT_PUBLIC_ENCRYPTION_SECRET
+   ```
+
+2. **Never Commit Secrets**: `.env.local` is in `.gitignore` - never commit it
+
+3. **Use HTTPS**: Always use HTTPS in production (never HTTP)
+
+4. **Review Security Guide**: Read `local-docs/SECURITY.md` for complete security checklist
+
+**See `local-docs/SECURITY.md` for complete security documentation.**
+
 ## <a name="quick-start">🤸 Quick Start</a>
 
 Follow these steps to set up the project locally.
@@ -86,12 +118,23 @@ pnpm install
 
 **3. Set Up Environment Variables**
 
-Create a `.env.local` file:
+**⚠️ SECURITY:** Generate strong, unique secrets. Never use default values in production!
+
+```bash
+# Copy the example file
+cp .env.example .env.local
+
+# Generate secure secrets
+openssl rand -base64 32  # For JWT_SECRET
+openssl rand -base64 32  # For NEXT_PUBLIC_ENCRYPTION_SECRET
+```
+
+Edit `.env.local` and fill in your values:
 
 ```env
 DATABASE_URL=postgresql://user:password@host/dbname?sslmode=require
-JWT_SECRET=your-jwt-secret-here
-NEXT_PUBLIC_ENCRYPTION_SECRET=your-encryption-secret-here
+JWT_SECRET=<generated-secret-here>
+NEXT_PUBLIC_ENCRYPTION_SECRET=<generated-secret-here>
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # Optional: For Managed Storage tier
@@ -100,6 +143,8 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 # AWS_S3_BUCKET=...
 # AWS_REGION=us-east-1
 ```
+
+**See `.env.example` for complete template.**
 
 **4. Setup Database**
 

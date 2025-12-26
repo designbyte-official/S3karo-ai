@@ -88,16 +88,24 @@ export async function getFilesForUser(userId: string, filters?: {
   const safeSortColumn = validColumns.includes(sortColumn) ? sortColumn : 'created_at';
   const safeSortDirection = sortDirection === 'ASC' ? 'ASC' : 'DESC';
   
-  // Build query with proper SQL - use the query helper function for dynamic SQL
-  const limitClause = filters?.limit ? `LIMIT ${filters.limit}` : '';
-  const queryText = `
+  // Build query with proper SQL - use parameterized queries to prevent SQL injection
+  // SECURITY: Always use parameterized queries, never string interpolation for user input
+  const params: any[] = [userId];
+  let queryText = `
     SELECT * FROM files 
     WHERE user_id = $1
     ORDER BY ${safeSortColumn} ${safeSortDirection}
-    ${limitClause}
   `.trim();
   
-  return await query(queryText, [userId]);
+  // Add LIMIT with parameterization if provided
+  if (filters?.limit) {
+    // Validate limit is a positive integer
+    const limit = Math.max(1, Math.min(1000, Math.floor(Number(filters.limit) || 100)));
+    queryText += ` LIMIT $${params.length + 1}`;
+    params.push(limit);
+  }
+  
+  return await query(queryText, params);
 }
 
 // Create file record

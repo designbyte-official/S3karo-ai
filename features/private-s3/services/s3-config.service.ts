@@ -14,9 +14,33 @@ export interface S3Config {
 
 const STORAGE_MODE_KEY = 's3_karo_storage_mode';
 export const S3_CONFIG_KEY = 's3_karo_config_';
-// Use a consistent encryption secret. In a real app, this might be user-derived or ENV based, 
-// but for client-side local-only storage, this prevents plain text reading.
-const ENCRYPTION_SECRET = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || 's3-karo-local-secure-key';
+// SECURITY: Encryption secret for client-side credential encryption
+// Must be set in environment variables - never use default in production
+const ENCRYPTION_SECRET = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || process.env.NEXT_PUBLIC_ENCRYPTION_SECRET;
+
+// Development fallback - DO NOT USE IN PRODUCTION
+// In production, NEXT_PUBLIC_ENCRYPTION_SECRET MUST be set
+const FALLBACK_SECRET = 'dev-fallback-secret-change-in-production';
+
+// Use fallback only in development, warn in production
+const getEncryptionSecret = (): string => {
+  if (ENCRYPTION_SECRET) {
+    return ENCRYPTION_SECRET;
+  }
+  
+  if (process.env.NODE_ENV === 'production') {
+    console.error(
+      '❌ SECURITY ERROR: NEXT_PUBLIC_ENCRYPTION_SECRET is required in production!\n' +
+      'Please set NEXT_PUBLIC_ENCRYPTION_SECRET in your environment variables.\n' +
+      'Generate: openssl rand -base64 32'
+    );
+    // In production, still use fallback to prevent app breakage, but log error
+    return FALLBACK_SECRET;
+  }
+  
+  console.warn('⚠️ NEXT_PUBLIC_ENCRYPTION_SECRET not set. Using development fallback (NOT SECURE for production!)');
+  return FALLBACK_SECRET;
+};
 
 export const s3ConfigService = {
     getMode(): StorageMode {
@@ -35,7 +59,7 @@ export const s3ConfigService = {
         if (!encryptedConfig) return null;
 
         try {
-            const bytes = CryptoJS.AES.decrypt(encryptedConfig, ENCRYPTION_SECRET);
+            const bytes = CryptoJS.AES.decrypt(encryptedConfig, getEncryptionSecret());
             const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
             const config = JSON.parse(decryptedData) as S3Config;
             
@@ -63,7 +87,7 @@ export const s3ConfigService = {
 
     async saveConfig(userId: string, config: S3Config) {
         if (typeof window === 'undefined') return;
-        const encryptedConfig = CryptoJS.AES.encrypt(JSON.stringify(config), ENCRYPTION_SECRET).toString();
+        const encryptedConfig = CryptoJS.AES.encrypt(JSON.stringify(config), getEncryptionSecret()).toString();
         localStorage.setItem(`${S3_CONFIG_KEY}${userId}`, encryptedConfig);
     },
 
