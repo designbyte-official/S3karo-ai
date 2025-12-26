@@ -4,7 +4,6 @@ import { users, files, apiKeys, type User, type NewUser, type File, type NewFile
 import crypto from "crypto";
 import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 
-// Helper to check database before queries
 const requireDatabase = () => {
   if (!db || !isDatabaseConfigured()) {
     throw new Error("Database not configured. Please add DATABASE_URL to .env.local");
@@ -12,7 +11,7 @@ const requireDatabase = () => {
   return db;
 };
 
-// User queries
+// Get user by ID
 export async function getUserById(userId: string): Promise<User | null> {
   if (!isDatabaseConfigured()) {
     return null;
@@ -27,6 +26,7 @@ export async function getUserById(userId: string): Promise<User | null> {
   }
 }
 
+// Get user by email
 export async function getUserByEmail(email: string): Promise<User | null> {
   if (!isDatabaseConfigured()) {
     return null;
@@ -41,6 +41,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   }
 }
 
+// Create new user
 export async function createUser(data: {
   email: string;
   fullName: string;
@@ -62,9 +63,7 @@ export async function createUser(data: {
   return result[0];
 }
 
-/**
- * Update verification token for a user
- */
+// Update email verification token
 export async function updateVerificationToken(
   userId: string,
   verificationToken: string,
@@ -83,13 +82,10 @@ export async function updateVerificationToken(
   return result[0] || null;
 }
 
-/**
- * Verify user email using verification token
- */
+// Verify user email with token
 export async function verifyUserEmail(token: string): Promise<User | null> {
   const database = requireDatabase();
   
-  // Find user with matching token
   const result = await database
     .select()
     .from(users)
@@ -107,7 +103,6 @@ export async function verifyUserEmail(token: string): Promise<User | null> {
   
   const user = result[0];
   
-  // Update user to mark email as verified
   const updated = await database
     .update(users)
     .set({
@@ -122,6 +117,7 @@ export async function verifyUserEmail(token: string): Promise<User | null> {
   return updated[0] || null;
 }
 
+// Update user fields
 export async function updateUser(userId: string, data: Partial<NewUser>): Promise<User | null> {
   const database = requireDatabase();
   const result = await database
@@ -132,7 +128,7 @@ export async function updateUser(userId: string, data: Partial<NewUser>): Promis
   return result[0] || null;
 }
 
-// File queries
+// Get files for user with optional filters
 export async function getFilesForUser(
   userId: string,
   filters?: {
@@ -158,10 +154,8 @@ export async function getFilesForUser(
       conditions.push(ilike(files.name, `%${filters.searchText}%`));
     }
 
-    // Build base query
     const baseQuery = database.select().from(files).where(and(...conditions));
 
-    // Apply sorting and limit
     if (filters?.sort) {
       const [field, direction] = filters.sort.split("-");
       const isAsc = direction === "asc";
@@ -193,7 +187,6 @@ export async function getFilesForUser(
       }
     }
     
-    // Default sort by created date descending
     const defaultSortedQuery = baseQuery.orderBy(desc(files.createdAt));
     if (filters?.limit) {
       return await defaultSortedQuery.limit(filters.limit);
@@ -205,9 +198,7 @@ export async function getFilesForUser(
   }
 }
 
-// Create file record (ONLY for Managed Storage - Private S3 files are NOT stored in DB)
-// storageKey format: "managed/{userId}/{path}/{timestamp}-{filename}"
-// This is REQUIRED - we need it to delete/access files from S3
+// Create file record in database
 export async function createFile(data: {
   userId: string;
   name: string;
@@ -215,7 +206,7 @@ export async function createFile(data: {
   extension: string;
   size: number;
   url: string;
-  storageKey: string; // REQUIRED: S3 key for file operations (bucket is always from env)
+  storageKey: string;
 }): Promise<File> {
   const database = requireDatabase();
   const result = await database
@@ -227,18 +218,16 @@ export async function createFile(data: {
       extension: data.extension,
       size: data.size,
       url: data.url,
-      storageKey: data.storageKey, // REQUIRED: S3 key for file operations
+      storageKey: data.storageKey,
       sharedWith: [],
     })
     .returning();
   return result[0];
 }
 
-// Delete file from database (returns file data before deletion so we can delete from S3)
-// NOTE: This is ONLY for Managed Storage - Private S3 files are NOT in the database
+// Delete file and return it before deletion (for S3 cleanup)
 export async function deleteFile(fileId: string, userId: string): Promise<File | null> {
   const database = requireDatabase();
-  // Get file first to retrieve storageKey before deleting
   const fileToDelete = await database
     .select()
     .from(files)
@@ -249,15 +238,14 @@ export async function deleteFile(fileId: string, userId: string): Promise<File |
     return null;
   }
 
-  // Delete from database
   await database
     .delete(files)
     .where(and(eq(files.id, fileId), eq(files.userId, userId)));
 
-  // Return the file data (including storageKey) so caller can delete from S3
   return fileToDelete[0];
 }
 
+// Update file metadata
 export async function updateFile(
   fileId: string,
   userId: string,
@@ -284,10 +272,7 @@ export async function updateFile(
   return result[0] || null;
 }
 
-/**
- * Update all file URLs to use CDN URL
- * This migration function regenerates URLs for all files using the new CDN URL format
- */
+// Migrate all file URLs to use CDN
 export async function migrateFileUrlsToCdn(): Promise<{ updated: number; errors: number }> {
   const database = requireDatabase();
   let updated = 0;
@@ -302,7 +287,6 @@ export async function migrateFileUrlsToCdn(): Promise<{ updated: number; errors:
       })
       .from(files);
 
-    // Update each file URL
     for (const file of allFiles) {
       try {
         const newUrl = getFileUrl(file.storageKey);
@@ -327,6 +311,7 @@ export async function migrateFileUrlsToCdn(): Promise<{ updated: number; errors:
   }
 }
 
+// Get storage usage by file type
 export async function getTotalSpaceUsed(userId: string): Promise<{
   image: { size: number; latestDate: string };
   document: { size: number; latestDate: string };
@@ -387,6 +372,7 @@ export async function getTotalSpaceUsed(userId: string): Promise<{
  * Generate a new API key
  * Returns: { key: "sk_live_...", prefix: "sk_live_ab", apiKey: ApiKey }
  */
+// Create new API key
 export async function createApiKey(data: {
   userId: string;
   name: string;
@@ -400,7 +386,6 @@ export async function createApiKey(data: {
   const randomBytes = crypto.randomBytes(32).toString("hex");
   const fullKey = `${keyPrefix}${randomBytes}`;
   
-  // Hash the key (never store plain text)
   const keyHash = crypto.createHash("sha256").update(fullKey).digest("hex");
   const prefix = `${keyPrefix}${randomBytes.substring(0, 2)}`;
   
@@ -418,22 +403,18 @@ export async function createApiKey(data: {
     .returning();
   
   return {
-    key: fullKey, // Only returned once - user must save it
+    key: fullKey,
     prefix: prefix,
     apiKey: result[0],
   };
 }
 
-/**
- * Verify API key and return associated user
- */
+// Verify API key and return user info
 export async function verifyApiKey(apiKey: string): Promise<{ userId: string; apiKey: ApiKey } | null> {
   const database = requireDatabase();
   
-  // Hash the provided key
   const keyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
   
-  // Find matching API key
   const result = await database
     .select()
     .from(apiKeys)
@@ -449,12 +430,10 @@ export async function verifyApiKey(apiKey: string): Promise<{ userId: string; ap
   
   const apiKeyRecord = result[0];
   
-  // Check expiration
   if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
     return null;
   }
   
-  // Update last used timestamp
   await database
     .update(apiKeys)
     .set({ lastUsedAt: new Date(), updatedAt: new Date() })
@@ -466,9 +445,7 @@ export async function verifyApiKey(apiKey: string): Promise<{ userId: string; ap
   };
 }
 
-/**
- * Get all API keys for a user
- */
+// Get all API keys for a user
 export async function getApiKeysForUser(userId: string): Promise<ApiKey[]> {
   const database = requireDatabase();
   return await database
@@ -478,9 +455,7 @@ export async function getApiKeysForUser(userId: string): Promise<ApiKey[]> {
     .orderBy(desc(apiKeys.createdAt));
 }
 
-/**
- * Revoke (deactivate) an API key
- */
+// Revoke an API key
 export async function revokeApiKey(apiKeyId: string, userId: string): Promise<boolean> {
   const database = requireDatabase();
   const result = await database
@@ -498,6 +473,7 @@ export async function revokeApiKey(apiKeyId: string, userId: string): Promise<bo
 /**
  * Check rate limit for an API key
  */
+// Check rate limit for API key
 export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boolean; remaining: number }> {
   const database = requireDatabase();
   
@@ -513,10 +489,6 @@ export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boole
   }
   
   const rateLimit = result[0].rateLimit || 1000;
-  
-  // TODO: Implement actual rate limiting with Redis or in-memory cache
-  // For now, we'll use a simple approach - in production, use Redis
-  // This is a placeholder - you should implement proper rate limiting
   
   return { allowed: true, remaining: rateLimit };
 }

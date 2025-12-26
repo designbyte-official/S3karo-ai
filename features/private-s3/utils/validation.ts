@@ -1,18 +1,11 @@
-/**
- * Validation utilities for S3 operations
- */
-
 import { S3ValidationError } from './errors';
 
-// S3 limits
-const MAX_FILE_NAME_LENGTH = 1024; // S3 key length limit
-const MAX_PATH_LENGTH = 1024; // S3 key total length limit
-const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB (S3 single upload limit)
-const INVALID_CHARACTERS = /[<>:"|?*\x00-\x1f]/; // Invalid characters for S3 keys
+const MAX_FILE_NAME_LENGTH = 1024;
+const MAX_PATH_LENGTH = 1024;
+const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024;
+const INVALID_CHARACTERS = /[<>:"|?*\x00-\x1f]/;
 
-/**
- * Validates a file name for S3
- */
+// Validate file name for S3
 export function validateFileName(fileName: string): void {
     if (!fileName || typeof fileName !== 'string') {
         throw new S3ValidationError('File name is required');
@@ -27,12 +20,10 @@ export function validateFileName(fileName: string): void {
         throw new S3ValidationError(`File name is too long (max ${MAX_FILE_NAME_LENGTH} characters)`);
     }
 
-    // Check for invalid characters
     if (INVALID_CHARACTERS.test(trimmed)) {
         throw new S3ValidationError('File name contains invalid characters');
     }
 
-    // Check for reserved names (Windows reserved names)
     const reservedNames = ['CON', 'PRN', 'AUX', 'NUL', 'COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', 'COM9', 'LPT1', 'LPT2', 'LPT3', 'LPT4', 'LPT5', 'LPT6', 'LPT7', 'LPT8', 'LPT9'];
     const upperName = trimmed.toUpperCase();
     if (reservedNames.includes(upperName)) {
@@ -40,9 +31,7 @@ export function validateFileName(fileName: string): void {
     }
 }
 
-/**
- * Validates a folder/path name for S3
- */
+// Validate folder path for S3
 export function validatePath(path: string): void {
     if (path && typeof path === 'string') {
         const trimmed = path.trim();
@@ -51,7 +40,6 @@ export function validatePath(path: string): void {
             throw new S3ValidationError(`Path is too long (max ${MAX_PATH_LENGTH} characters)`);
         }
 
-        // Check path segments
         const segments = trimmed.split('/').filter(Boolean);
         segments.forEach(segment => {
             if (INVALID_CHARACTERS.test(segment)) {
@@ -61,9 +49,7 @@ export function validatePath(path: string): void {
     }
 }
 
-/**
- * Validates file size
- */
+// Validate file size
 export function validateFileSize(size: number): void {
     if (typeof size !== 'number' || size < 0) {
         throw new S3ValidationError('Invalid file size');
@@ -74,9 +60,7 @@ export function validateFileSize(size: number): void {
     }
 }
 
-/**
- * Validates S3 configuration
- */
+// Validate S3 configuration
 export function validateS3Config(config: any): void {
     if (!config) {
         throw new S3ValidationError('S3 configuration is required');
@@ -98,7 +82,6 @@ export function validateS3Config(config: any): void {
         throw new S3ValidationError('Secret access key is required');
     }
 
-    // Validate bucket name format (basic validation)
     const bucketName = config.bucket.trim();
     if (bucketName.length < 3 || bucketName.length > 63) {
         throw new S3ValidationError('Bucket name must be between 3 and 63 characters');
@@ -109,27 +92,18 @@ export function validateS3Config(config: any): void {
     }
 }
 
-/**
- * Sanitizes a file name for safe S3 storage
- */
+// Clean file name for safe S3 storage
 export function sanitizeFileName(fileName: string): string {
     if (!fileName) return '';
 
-    // Remove invalid characters
     let sanitized = fileName.replace(INVALID_CHARACTERS, '_');
-
-    // Remove leading/trailing dots and spaces
     sanitized = sanitized.replace(/^[\s.]+|[\s.]+$/g, '');
-
-    // Replace multiple consecutive dots with single dot
     sanitized = sanitized.replace(/\.{2,}/g, '.');
 
-    // Ensure it's not empty
     if (!sanitized) {
         sanitized = 'file';
     }
 
-    // Truncate if too long (preserve extension)
     if (sanitized.length > MAX_FILE_NAME_LENGTH) {
         const ext = sanitized.substring(sanitized.lastIndexOf('.'));
         const nameWithoutExt = sanitized.substring(0, sanitized.lastIndexOf('.'));
@@ -140,16 +114,11 @@ export function sanitizeFileName(fileName: string): string {
     return sanitized;
 }
 
-/**
- * Normalizes a path for S3 (removes leading/trailing slashes, normalizes separators)
- */
+// Normalize path (remove slashes, etc)
 export function normalizePath(path: string): string {
     if (!path) return '';
 
-    // Remove leading and trailing slashes
     let normalized = path.trim().replace(/^\/+|\/+$/g, '');
-
-    // Replace multiple slashes with single slash
     normalized = normalized.replace(/\/+/g, '/');
 
     return normalized;
