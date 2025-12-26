@@ -8,6 +8,11 @@ import {
     DeleteObjectCommand,
     HeadObjectCommand,
     GetObjectCommand,
+    CreateMultipartUploadCommand,
+    UploadPartCommand,
+    CompleteMultipartUploadCommand,
+    AbortMultipartUploadCommand,
+    ListPartsCommand,
     ListObjectsV2CommandOutput
 } from "@aws-sdk/client-s3";
 import { handleS3Error, S3Error } from "../utils/errors";
@@ -156,22 +161,22 @@ export const s3ExplorerService = {
         }
 
         return withRetry(async () => {
-            const client = getS3Client(params.config);
+        const client = getS3Client(params.config);
 
             // Normalize and validate path
             const normalizedPath = params.subPath ? normalizePath(params.subPath) : "";
             const prefix = normalizedPath ? `${normalizedPath}/` : "";
 
-            try {
-                const command = new ListObjectsV2Command({
-                    Bucket: params.config.bucket,
+        try {
+            const command = new ListObjectsV2Command({
+                Bucket: params.config.bucket,
                     Prefix: params.searchText ? "" : prefix, // Recursive search from root if searchText
-                    Delimiter: params.searchText ? undefined : "/",
+                Delimiter: params.searchText ? undefined : "/",
                     MaxKeys: params.limit || 1000, // Default limit
                     ContinuationToken: params.continuationToken,
-                });
+            });
 
-                const response: ListObjectsV2CommandOutput = await client.send(command);
+            const response: ListObjectsV2CommandOutput = await client.send(command);
 
             const files: File[] = [];
 
@@ -248,11 +253,11 @@ export const s3ExplorerService = {
                 });
             }
 
-                let resultFiles = files;
-                if (params.searchText) {
+            let resultFiles = files;
+            if (params.searchText) {
                     const lowerQuery = params.searchText.toLowerCase().trim();
-                    resultFiles = resultFiles.filter(f => f.name.toLowerCase().includes(lowerQuery));
-                }
+                resultFiles = resultFiles.filter(f => f.name.toLowerCase().includes(lowerQuery));
+            }
 
                 // Apply sorting if provided
                 if (params.sort) {
@@ -282,9 +287,9 @@ export const s3ExplorerService = {
                     total: resultFiles.length,
                     continuationToken: response.NextContinuationToken,
                 };
-            } catch (error) {
+        } catch (error) {
                 throw handleS3Error(error, 'List files');
-            }
+        }
         }, {
             maxRetries: 2, // Fewer retries for list operations
         });
@@ -299,20 +304,20 @@ export const s3ExplorerService = {
         }
 
         return withRetry(async () => {
-            const client = getS3Client(config);
+        const client = getS3Client(config);
             
-            try {
+        try {
                 const normalizedPrefix = prefix ? normalizePath(prefix) : "";
-                const command = new ListObjectsV2Command({
-                    Bucket: config.bucket,
+            const command = new ListObjectsV2Command({
+                Bucket: config.bucket,
                     Prefix: normalizedPrefix ? `${normalizedPrefix}/` : "",
-                });
-                const response = await client.send(command);
+            });
+            const response = await client.send(command);
 
-                let totalSize = 0;
+            let totalSize = 0;
                 let fileCount = 0;
                 
-                if (response.Contents) {
+            if (response.Contents) {
                     totalSize = response.Contents.reduce((acc, item) => {
                         if (item.Size) {
                             fileCount++;
@@ -320,21 +325,22 @@ export const s3ExplorerService = {
                         }
                         return acc;
                     }, 0);
-                }
-
-                return {
-                    used: totalSize,
-                    fileCount,
-                    all: undefined, // Total bucket capacity is usually not available via API
-                };
-            } catch (error) {
-                throw handleS3Error(error, 'Get bucket stats');
             }
+
+            return {
+                used: totalSize,
+                    fileCount,
+                all: undefined, // Total bucket capacity is usually not available via API
+            };
+        } catch (error) {
+                throw handleS3Error(error, 'Get bucket stats');
+        }
         });
     },
 
     /**
      * Uploads a file to S3 with validation and error handling
+     * Automatically uses multipart upload for large files (>100MB)
      */
     async uploadFile(params: {
         config: S3Config;
@@ -343,6 +349,8 @@ export const s3ExplorerService = {
         accountId: string;
         path: string;
         onProgress?: (progress: number) => void;
+        onChunkProgress?: (chunkNumber: number, totalChunks: number) => void;
+        resume?: boolean; // Whether to resume an existing upload
     }) {
         // Validate inputs
         validateFileSize(params.file.size);
@@ -351,48 +359,279 @@ export const s3ExplorerService = {
             validatePath(params.path);
         }
 
-        return withRetry(async () => {
-            const client = getS3Client(params.config);
+        // Normalize and sanitize
+        const normalizedPath = params.path ? normalizePath(params.path) : "";
+        const sanitizedName = sanitizeFileName(params.file.name);
+        const key = normalizedPath ? `${normalizedPath}/${sanitizedName}` : sanitizedName;
 
-            // Normalize and sanitize
-            const normalizedPath = params.path ? normalizePath(params.path) : "";
-            const sanitizedName = sanitizeFileName(params.file.name);
-            const key = normalizedPath ? `${normalizedPath}/${sanitizedName}` : sanitizedName;
+        // Import multipart utilities
+        const {
+            shouldUseMultipart,
+            getFileId,
+            getUploadState,
+            saveUploadState,
+            removeUploadState,
+            calculatePartCount,
+            readChunk,
+            initiateMultipartUpload,
+            uploadPart,
+            completeMultipartUpload,
+            abortMultipartUpload,
+            listUploadParts,
+            isOnline,
+            waitForOnline,
+        } = await import("../utils/multipart-upload");
 
-            try {
-                // Report progress start
-                params.onProgress?.(0);
+        // Check if we should use multipart upload
+        const useMultipart = shouldUseMultipart(params.file.size);
 
-                // Convert File to ArrayBuffer for AWS SDK
-                const arrayBuffer = await params.file.arrayBuffer();
-                const buffer = Buffer.from(arrayBuffer);
+        if (useMultipart) {
+            return this.uploadFileMultipart({
+                ...params,
+                key,
+                getFileId,
+                getUploadState,
+                saveUploadState,
+                removeUploadState,
+                calculatePartCount,
+                readChunk,
+                initiateMultipartUpload,
+                uploadPart,
+                completeMultipartUpload,
+                abortMultipartUpload,
+                listUploadParts,
+                isOnline,
+                waitForOnline,
+            });
+        } else {
+            // Use simple upload for smaller files
+            return withRetry(async () => {
+        const client = getS3Client(params.config);
 
-                // Report progress (50% - data loaded)
-                params.onProgress?.(50);
+                try {
+                    // Check network connectivity
+                    if (!isOnline()) {
+                        await waitForOnline();
+                    }
 
-                const command = new PutObjectCommand({
-                    Bucket: params.config.bucket,
-                    Key: key,
-                    Body: buffer,
-                    ContentType: params.file.type || 'application/octet-stream',
-                    Metadata: {
-                        'original-name': params.file.name,
-                        'uploaded-by': params.ownerId,
-                    },
+                    // Report progress start
+                    params.onProgress?.(0);
+
+            // Convert File to ArrayBuffer for AWS SDK
+            const arrayBuffer = await params.file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+                    // Report progress (50% - data loaded)
+                    params.onProgress?.(50);
+
+            const command = new PutObjectCommand({
+                Bucket: params.config.bucket,
+                Key: key,
+                Body: buffer,
+                        ContentType: params.file.type || 'application/octet-stream',
+                        Metadata: {
+                            'original-name': params.file.name,
+                            'uploaded-by': params.ownerId,
+                        },
+            });
+
+            await client.send(command);
+
+                    // Report progress complete
+                    params.onProgress?.(100);
+
+                    return { success: true, key };
+                } catch (error) {
+                    throw handleS3Error(error, 'Upload file');
+                }
+            }, {
+                maxRetries: 2, // Fewer retries for uploads to avoid duplicate uploads
+            });
+        }
+    },
+
+    /**
+     * Multipart upload implementation for large files
+     */
+    async uploadFileMultipart(params: {
+        config: S3Config;
+        file: globalThis.File;
+        ownerId: string;
+        accountId: string;
+        key: string;
+        onProgress?: (progress: number) => void;
+        onChunkProgress?: (chunkNumber: number, totalChunks: number) => void;
+        resume?: boolean;
+        getFileId: (file: File) => string;
+        getUploadState: (fileId: string) => any;
+        saveUploadState: (state: any) => void;
+        removeUploadState: (fileId: string) => void;
+        calculatePartCount: (fileSize: number) => number;
+        readChunk: (file: File, start: number, end: number) => Promise<Uint8Array>;
+        initiateMultipartUpload: (client: S3Client, bucket: string, key: string, contentType: string, metadata: Record<string, string>) => Promise<string>;
+        uploadPart: (client: S3Client, bucket: string, key: string, uploadId: string, partNumber: number, chunk: Uint8Array) => Promise<string>;
+        completeMultipartUpload: (client: S3Client, bucket: string, key: string, uploadId: string, parts: Array<{ partNumber: number; etag: string }>) => Promise<void>;
+        abortMultipartUpload: (client: S3Client, bucket: string, key: string, uploadId: string) => Promise<void>;
+        listUploadParts: (client: S3Client, bucket: string, key: string, uploadId: string) => Promise<Array<{ partNumber: number; etag: string; size: number }>>;
+        isOnline: () => boolean;
+        waitForOnline: () => Promise<void>;
+    }) {
+        const client = getS3Client(params.config);
+        const fileId = params.getFileId(params.file);
+        const totalParts = params.calculatePartCount(params.file.size);
+        const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB - must match multipart-upload.ts
+
+        let uploadId: string;
+        let parts: Array<{ partNumber: number; etag: string }> = [];
+        let uploadedBytes = 0;
+
+        // Check for existing upload state (resume)
+        let existingState = params.resume ? params.getUploadState(fileId) : null;
+        if (existingState && existingState.key === params.key && existingState.bucket === params.config.bucket) {
+            uploadId = existingState.uploadId;
+            parts = existingState.parts;
+            uploadedBytes = existingState.uploadedBytes;
+
+            // Verify parts still exist on S3
+            const existingParts = await params.listUploadParts(client, params.config.bucket, params.key, uploadId);
+            const existingPartNumbers = new Set(existingParts.map(p => p.partNumber));
+            parts = parts.filter(p => existingPartNumbers.has(p.partNumber));
+            uploadedBytes = parts.reduce((sum, p) => {
+                const partInfo = existingParts.find(ep => ep.partNumber === p.partNumber);
+                return sum + (partInfo?.size || 0);
+            }, 0);
+
+            console.log(`Resuming upload: ${parts.length}/${totalParts} parts already uploaded`);
+        } else {
+            // Initiate new multipart upload
+            uploadId = await params.initiateMultipartUpload(
+                client,
+                params.config.bucket,
+                params.key,
+                params.file.type || 'application/octet-stream',
+                {
+                    'original-name': params.file.name,
+                    'uploaded-by': params.ownerId,
+                }
+            );
+
+            // Save initial state
+            params.saveUploadState({
+                uploadId,
+                key: params.key,
+                bucket: params.config.bucket,
+                parts: [],
+                totalParts,
+                uploadedBytes: 0,
+                totalBytes: params.file.size,
+                fileId,
+                timestamp: Date.now(),
+            });
+        }
+
+        try {
+            // Check network connectivity
+            if (!params.isOnline()) {
+                console.log('Waiting for network connection...');
+                await params.waitForOnline();
+            }
+
+            // Upload remaining parts
+            const uploadedPartNumbers = new Set(parts.map(p => p.partNumber));
+
+            for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+                if (uploadedPartNumbers.has(partNumber)) {
+                    // Part already uploaded, skip
+                    params.onChunkProgress?.(partNumber, totalParts);
+                    continue;
+                }
+
+                // Calculate chunk boundaries
+                const start = (partNumber - 1) * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, params.file.size);
+
+                // Read chunk
+                const chunk = await params.readChunk(params.file, start, end);
+
+                // Upload part with retry
+                let etag: string;
+                try {
+                    etag = await params.uploadPart(
+                        client,
+                        params.config.bucket,
+                        params.key,
+                        uploadId,
+                        partNumber,
+                        chunk
+                    );
+                } catch (error) {
+                    // Network error - save state and throw
+                    params.saveUploadState({
+                        uploadId,
+                        key: params.key,
+                        bucket: params.config.bucket,
+                        parts,
+                        totalParts,
+                        uploadedBytes,
+                        totalBytes: params.file.size,
+                        fileId,
+                        timestamp: Date.now(),
+                    });
+                    throw handleS3Error(error, `Upload part ${partNumber}`);
+                }
+
+                // Add to parts array
+                parts.push({ partNumber, etag });
+                uploadedBytes += chunk.length;
+
+                // Update state
+                params.saveUploadState({
+                    uploadId,
+                    key: params.key,
+                    bucket: params.config.bucket,
+                    parts,
+                    totalParts,
+                    uploadedBytes,
+                    totalBytes: params.file.size,
+                    fileId,
+                    timestamp: Date.now(),
                 });
 
-                await client.send(command);
-
-                // Report progress complete
-                params.onProgress?.(100);
-
-                return { success: true, key };
-            } catch (error) {
-                throw handleS3Error(error, 'Upload file');
+                // Report progress
+                const progress = Math.round((uploadedBytes / params.file.size) * 100);
+                params.onProgress?.(progress);
+                params.onChunkProgress?.(partNumber, totalParts);
             }
-        }, {
-            maxRetries: 2, // Fewer retries for uploads to avoid duplicate uploads
-        });
+
+            // Complete multipart upload
+            await params.completeMultipartUpload(
+                client,
+                params.config.bucket,
+                params.key,
+                uploadId,
+                parts
+            );
+
+            // Clean up state
+            params.removeUploadState(fileId);
+
+            params.onProgress?.(100);
+            return { success: true, key: params.key };
+        } catch (error) {
+            // On error, save state for resume (don't abort - allow manual resume)
+            params.saveUploadState({
+                uploadId,
+                key: params.key,
+                bucket: params.config.bucket,
+                parts,
+                totalParts,
+                uploadedBytes,
+                totalBytes: params.file.size,
+                fileId,
+                timestamp: Date.now(),
+            });
+            throw handleS3Error(error, 'Multipart upload');
+        }
     },
 
     /**
@@ -407,18 +646,18 @@ export const s3ExplorerService = {
         }
 
         return withRetry(async () => {
-            const client = getS3Client(params.config);
+        const client = getS3Client(params.config);
             
-            try {
-                const command = new DeleteObjectCommand({
-                    Bucket: params.config.bucket,
-                    Key: params.key,
-                });
-                await client.send(command);
+        try {
+            const command = new DeleteObjectCommand({
+                Bucket: params.config.bucket,
+                Key: params.key,
+            });
+            await client.send(command);
                 return { success: true };
-            } catch (error) {
+        } catch (error) {
                 throw handleS3Error(error, 'Delete item');
-            }
+        }
         });
     },
 
@@ -444,7 +683,7 @@ export const s3ExplorerService = {
         }
 
         return withRetry(async () => {
-            const client = getS3Client(params.config);
+        const client = getS3Client(params.config);
 
             // Normalize paths
             const normalizedPath = params.path ? normalizePath(params.path) : "";
@@ -453,20 +692,20 @@ export const s3ExplorerService = {
                 ? `${normalizedPath}/${normalizedFolderName}/` 
                 : `${normalizedFolderName}/`;
 
-            try {
-                const command = new PutObjectCommand({
-                    Bucket: params.config.bucket,
-                    Key: folderKey,
+        try {
+            const command = new PutObjectCommand({
+                Bucket: params.config.bucket,
+                Key: folderKey,
                     Metadata: {
                         'created-by': params.ownerId,
                         'folder': 'true',
                     },
-                });
-                await client.send(command);
+            });
+            await client.send(command);
                 return { success: true, key: folderKey };
-            } catch (error) {
+        } catch (error) {
                 throw handleS3Error(error, 'Create folder');
-            }
+        }
         });
     },
 
@@ -483,18 +722,18 @@ export const s3ExplorerService = {
         }
 
         return withRetry(async () => {
-            const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
-            const client = getS3Client(config);
+        const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+        const client = getS3Client(config);
 
-            try {
-                const command = new GetObjectCommand({
-                    Bucket: config.bucket,
-                    Key: key,
-                });
-                return await getSignedUrl(client, command, { expiresIn });
-            } catch (error) {
+        try {
+            const command = new GetObjectCommand({
+                Bucket: config.bucket,
+                Key: key,
+            });
+            return await getSignedUrl(client, command, { expiresIn });
+        } catch (error) {
                 throw handleS3Error(error, 'Get signed URL');
-            }
+        }
         });
     },
 
@@ -507,24 +746,24 @@ export const s3ExplorerService = {
         }
 
         return withRetry(async () => {
-            const client = getS3Client(config);
+        const client = getS3Client(config);
 
-            try {
-                const command = new HeadObjectCommand({
-                    Bucket: config.bucket,
-                    Key: key,
-                });
-                const response = await client.send(command);
-                return {
-                    metadata: response.Metadata || {},
-                    contentType: response.ContentType,
-                    contentLength: response.ContentLength,
+        try {
+            const command = new HeadObjectCommand({
+                Bucket: config.bucket,
+                Key: key,
+            });
+            const response = await client.send(command);
+            return {
+                metadata: response.Metadata || {},
+                contentType: response.ContentType,
+                contentLength: response.ContentLength,
                     lastModified: response.LastModified,
                     etag: response.ETag,
-                };
-            } catch (error) {
+            };
+        } catch (error) {
                 throw handleS3Error(error, 'Get object metadata');
-            }
+        }
         });
     },
 
@@ -548,27 +787,27 @@ export const s3ExplorerService = {
         }
 
         return withRetry(async () => {
-            const { CopyObjectCommand } = await import("@aws-sdk/client-s3");
-            const client = getS3Client(config);
+        const { CopyObjectCommand } = await import("@aws-sdk/client-s3");
+        const client = getS3Client(config);
 
-            try {
-                // Copy to new key
-                const copyCommand = new CopyObjectCommand({
-                    Bucket: config.bucket,
-                    CopySource: `${config.bucket}/${oldKey}`,
-                    Key: newKey,
-                    Metadata: metadata,
-                    MetadataDirective: metadata ? "REPLACE" : "COPY",
-                });
-                await client.send(copyCommand);
+        try {
+            // Copy to new key
+            const copyCommand = new CopyObjectCommand({
+                Bucket: config.bucket,
+                CopySource: `${config.bucket}/${oldKey}`,
+                Key: newKey,
+                Metadata: metadata,
+                MetadataDirective: metadata ? "REPLACE" : "COPY",
+            });
+            await client.send(copyCommand);
 
-                // Delete old key
-                await this.deleteItem({ config, key: oldKey });
+            // Delete old key
+            await this.deleteItem({ config, key: oldKey });
 
                 return { success: true, newKey };
-            } catch (error) {
+        } catch (error) {
                 throw handleS3Error(error, 'Rename file');
-            }
+        }
         }, {
             maxRetries: 1, // Don't retry rename to avoid duplicate files
         });

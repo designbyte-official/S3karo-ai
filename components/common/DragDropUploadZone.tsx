@@ -7,30 +7,36 @@ import { Upload, X, File, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
 import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
 import { Button } from "@/components/ui/button";
 import { convertFileSize } from "@/features/shared/utils";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 interface Props {
     ownerId: string;
     accountId: string;
     subPath?: string;
     onUploadComplete?: () => void;
+    mode?: "private" | "managed"; // Support both storage modes
 }
 
 interface FileWithStatus {
     file: File;
-    status: 'pending' | 'uploading' | 'success' | 'error';
+    status: 'pending' | 'uploading' | 'success' | 'error' | 'paused';
     progress?: number;
     error?: string;
+    canResume?: boolean;
+    chunkInfo?: { current: number; total: number };
 }
 
-const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete }: Props) => {
+const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete, mode = "private" }: Props) => {
     const [isUploading, setIsUploading] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [filesToUpload, setFilesToUpload] = useState<FileWithStatus[]>([]);
     const { toast } = useToast();
+    const isPro = useAuthStore((state: any) => state.isPro);
 
     // Helper function to create a unique key for a file
     const getFileKey = React.useCallback((file: File): string => {
@@ -184,48 +190,151 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
     }, [toast, isFileDuplicate]);
 
     const handleUpload = useCallback(async () => {
-        if (filesToUpload.length === 0) return;
+        // Get current state snapshot to avoid stale closures
+        let currentFilesState: FileWithStatus[] = [];
+        setFilesToUpload(prev => {
+            currentFilesState = prev;
+            return prev;
+        });
+
+        if (currentFilesState.length === 0) return;
 
         setIsUploading(true);
-        const config = await s3ConfigService.getConfig(ownerId);
-        if (!config) {
+
+        // For private S3, check configuration (no Pro required)
+        if (mode === 'private') {
+            const config = await s3ConfigService.getConfig(ownerId);
+            if (!config) {
+                toast({
+                    title: "Configuration Error",
+                    description: "S3 not configured. Please configure your bucket first.",
+                    variant: "destructive",
+                });
+                setIsUploading(false);
+                return;
+            }
+        }
+
+        // Check Pro subscription ONLY for managed storage
+        if (mode === 'managed' && !isPro) {
             toast({
-                title: "Configuration Error",
-                description: "S3 not configured. Please configure your bucket first.",
+                title: "Pro Subscription Required",
+                description: "Uploads in Managed Storage require a Pro subscription. Please upgrade or switch to Private S3.",
                 variant: "destructive",
             });
             setIsUploading(false);
             return;
         }
 
-        // Update all files to uploading status
-        setFilesToUpload(prev => prev.map(f => ({ ...f, status: 'uploading' as const, progress: 0 })));
+        // Update all pending files to uploading status
+        setFilesToUpload(prev => prev.map(f => 
+            f.status === 'pending' 
+                ? { ...f, status: 'uploading' as const, progress: 0 }
+                : f
+        ));
 
-        const uploadPromises = filesToUpload.map(async (fileWithStatus, index) => {
+        // Upload files sequentially to avoid overwhelming the network
+        // Process files that are pending or paused
+        const filesToProcess = currentFilesState
+            .map((f, idx) => ({ file: f, index: idx }))
+            .filter(({ file }) => file.status === 'pending' || file.status === 'paused');
+
+        for (const { file: fileWithStatus, index } of filesToProcess) {
+
             try {
-                console.log('DragDrop: Starting upload:', { fileName: fileWithStatus.file.name, size: fileWithStatus.file.size, path: subPath });
+                console.log('DragDrop: Starting upload:', { 
+                    fileName: fileWithStatus.file.name, 
+                    size: fileWithStatus.file.size, 
+                    path: subPath,
+                    mode,
+                    resume: fileWithStatus.status === 'paused'
+                });
+                
+                let result;
+                
+                if (mode === 'private') {
+                const config = await s3ConfigService.getConfig(ownerId);
+                    if (!config) {
+                        throw new Error("S3 not configured. Please configure your bucket first.");
+                    }
 
-                const result = await s3ExplorerService.uploadFile({
+                    result = await s3ExplorerService.uploadFile({
                     config,
-                    file: fileWithStatus.file,
+                        file: fileWithStatus.file,
                     ownerId,
                     accountId,
                     path: subPath,
-                    onProgress: (progress) => {
-                        setFilesToUpload(prev => {
-                            const updated = [...prev];
-                            updated[index] = { ...updated[index], progress };
-                            return updated;
+                        resume: fileWithStatus.status === 'paused', // Resume if paused
+                        onProgress: (progress) => {
+                            setFilesToUpload(prev => {
+                                const updated = [...prev];
+                                updated[index] = { ...updated[index], progress };
+                                return updated;
+                            });
+                        },
+                        onChunkProgress: (chunkNumber, totalChunks) => {
+                            setFilesToUpload(prev => {
+                                const updated = [...prev];
+                                updated[index] = { 
+                                    ...updated[index], 
+                                    chunkInfo: { current: chunkNumber, total: totalChunks }
+                                };
+                                return updated;
+                            });
+                        },
+                    });
+                } else {
+                    // Managed storage upload
+                    const formData = new FormData();
+                    formData.append("file", fileWithStatus.file);
+                    formData.append("ownerId", ownerId);
+                    formData.append("accountId", accountId);
+                    formData.append("path", subPath);
+
+                    // Track upload progress for managed storage
+                    const xhr = new XMLHttpRequest();
+                    
+                    result = await new Promise((resolve, reject) => {
+                        xhr.upload.addEventListener('progress', (e) => {
+                            if (e.lengthComputable) {
+                                const progress = Math.round((e.loaded / e.total) * 100);
+                                setFilesToUpload(prev => {
+                                    const updated = [...prev];
+                                    updated[index] = { ...updated[index], progress };
+                                    return updated;
+                                });
+                            }
                         });
-                    },
-                });
+
+                        xhr.addEventListener('load', () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                resolve({ success: true });
+                            } else {
+                                const errorData = xhr.responseText ? JSON.parse(xhr.responseText) : {};
+                                reject(new Error(errorData.details || errorData.error || "Upload failed"));
+                            }
+                        });
+
+                        xhr.addEventListener('error', () => {
+                            reject(new Error('Network error during upload'));
+                        });
+
+                        xhr.open('POST', '/api/files');
+                        xhr.send(formData);
+                    });
+                }
 
                 console.log('DragDrop: Upload successful:', result);
 
                 // Update to success
                 setFilesToUpload(prev => {
                     const updated = [...prev];
-                    updated[index] = { ...updated[index], status: 'success' as const, progress: 100 };
+                    updated[index] = { 
+                        ...updated[index], 
+                        status: 'success' as const, 
+                        progress: 100,
+                        chunkInfo: undefined
+                    };
                     return updated;
                 });
 
@@ -243,31 +352,55 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                     errorMessage = String((error as any).message);
                 }
 
-                // Update to error
+                // Check if it's a network error (can be resumed)
+                const isNetworkError = errorMessage.toLowerCase().includes('network') || 
+                                      errorMessage.toLowerCase().includes('timeout') ||
+                                      errorMessage.toLowerCase().includes('connection');
+
+                // Update to error or paused (if resumable)
                 setFilesToUpload(prev => {
                     const updated = [...prev];
-                    updated[index] = { ...updated[index], status: 'error' as const, error: errorMessage };
+                    const fileSize = fileWithStatus.file.size;
+                    const isLargeFile = fileSize >= 100 * 1024 * 1024; // 100MB+
+                    
+                    updated[index] = { 
+                        ...updated[index], 
+                        status: (isNetworkError && isLargeFile) ? 'paused' as const : 'error' as const,
+                        error: errorMessage,
+                        canResume: isNetworkError && isLargeFile,
+                    };
                     return updated;
                 });
                 
                 toast({
-                    title: "Upload Failed",
-                    description: `Failed to upload ${fileWithStatus.file.name}: ${errorMessage}`,
-                    variant: "destructive",
+                    title: isNetworkError && fileWithStatus.file.size >= 100 * 1024 * 1024 
+                        ? "Upload Paused" 
+                        : "Upload Failed",
+                    description: `${fileWithStatus.file.name}: ${errorMessage}${isNetworkError && fileWithStatus.file.size >= 100 * 1024 * 1024 ? ' (You can resume this upload)' : ''}`,
+                    variant: isNetworkError && fileWithStatus.file.size >= 100 * 1024 * 1024 ? "default" : "destructive",
                 });
             }
-        });
+        }
 
-        await Promise.all(uploadPromises);
         setIsUploading(false);
         
         // Call onUploadComplete callback to refresh the file list
         console.log('DragDrop: All uploads complete, calling onUploadComplete');
         onUploadComplete?.();
-    }, [filesToUpload, ownerId, accountId, subPath, toast, onUploadComplete]);
+    }, [filesToUpload, ownerId, accountId, subPath, toast, onUploadComplete, mode, isPro]);
 
     const handleRemoveFile = (index: number) => {
         setFilesToUpload(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleResumeUpload = (index: number) => {
+        setFilesToUpload(prev => {
+            const updated = [...prev];
+            updated[index] = { ...updated[index], status: 'pending' as const };
+            return updated;
+        });
+        // Trigger upload
+        handleUpload();
     };
 
     const handleCloseDialog = () => {
@@ -300,10 +433,11 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         accept: undefined, // Accept all file types
     });
 
-    const pendingFiles = filesToUpload.filter(f => f.status === 'pending');
+    const pendingFiles = filesToUpload.filter(f => f.status === 'pending' || f.status === 'paused');
     const uploadingFiles = filesToUpload.filter(f => f.status === 'uploading');
     const successFiles = filesToUpload.filter(f => f.status === 'success');
     const errorFiles = filesToUpload.filter(f => f.status === 'error');
+    const pausedFiles = filesToUpload.filter(f => f.status === 'paused');
     const allComplete = filesToUpload.length > 0 && filesToUpload.every(f => f.status === 'success' || f.status === 'error');
 
     return (
@@ -332,11 +466,13 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                 open={isDialogOpen}
                 onOpenChange={handleCloseDialog}
                 title={`Upload Files${filesToUpload.length > 0 ? ` (${filesToUpload.length})` : ''}`}
-                fullScreen={true}
+                fullScreen={false}
+                className="!max-w-[700px] !w-[95%] !h-[95vh] !max-h-[95vh] !m-0"
                 footer={
                     <div className="flex items-center justify-between w-full">
                         <div className="text-sm text-slate-600">
-                            {pendingFiles.length > 0 && <span className="text-blue-600">{pendingFiles.length} pending</span>}
+                            {pendingFiles.length > pausedFiles.length && <span className="text-blue-600">{pendingFiles.length - pausedFiles.length} pending</span>}
+                            {pausedFiles.length > 0 && <span className="text-orange-600 ml-2">{pausedFiles.length} paused</span>}
                             {uploadingFiles.length > 0 && <span className="text-orange-600 ml-2">{uploadingFiles.length} uploading</span>}
                             {successFiles.length > 0 && <span className="text-green-600 ml-2">{successFiles.length} success</span>}
                             {errorFiles.length > 0 && <span className="text-red-600 ml-2">{errorFiles.length} failed</span>}
@@ -356,6 +492,15 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                                     className="bg-brand hover:bg-brand/90 text-white"
                                 >
                                     {isUploading ? 'Uploading...' : `Upload ${pendingFiles.length} File${pendingFiles.length > 1 ? 's' : ''}`}
+                                </Button>
+                            )}
+                            {pausedFiles.length > 0 && !isUploading && (
+                                <Button
+                                    onClick={handleUpload}
+                                    variant="outline"
+                                    className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                                >
+                                    Resume {pausedFiles.length} Paused
                                 </Button>
                             )}
                         </div>
@@ -391,7 +536,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                     {filesToUpload.length > 0 && (
                         <div className="space-y-2">
                             <h3 className="text-lg font-semibold text-slate-800">Files to Upload</h3>
-                            <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
                                 {filesToUpload.map((fileWithStatus, index) => (
                                     <div
                                         key={index}
@@ -411,11 +556,33 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                                                             style={{ width: `${fileWithStatus.progress}%` }}
                                                         />
                                                     </div>
-                                                    <p className="text-xs text-slate-500 mt-1">{fileWithStatus.progress}%</p>
+                                                    <div className="flex items-center justify-between mt-1">
+                                                        <p className="text-xs text-slate-500">{fileWithStatus.progress}%</p>
+                                                        {fileWithStatus.chunkInfo && (
+                                                            <p className="text-xs text-slate-400">
+                                                                Chunk {fileWithStatus.chunkInfo.current}/{fileWithStatus.chunkInfo.total}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
-                                            {fileWithStatus.status === 'error' && fileWithStatus.error && (
-                                                <p className="text-sm text-red-600 mt-1">{fileWithStatus.error}</p>
+                                            {(fileWithStatus.status === 'error' || fileWithStatus.status === 'paused') && fileWithStatus.error && (
+                                                <div className="mt-1">
+                                                    <p className={`text-sm ${fileWithStatus.status === 'paused' ? 'text-orange-600' : 'text-red-600'}`}>
+                                                        {fileWithStatus.error}
+                                                    </p>
+                                                    {fileWithStatus.canResume && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleResumeUpload(index)}
+                                                            className="mt-2 text-xs"
+                                                            disabled={isUploading}
+                                                        >
+                                                            Resume Upload
+                                                        </Button>
+                                                    )}
+                                                </div>
                                             )}
                                         </div>
                                         <div className="flex items-center gap-2">

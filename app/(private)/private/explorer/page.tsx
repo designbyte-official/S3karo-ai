@@ -119,6 +119,7 @@ const OwnS3Client = () => {
         ownerId={user.$id}
         accountId={user.accountId}
         subPath={subPath}
+        mode="private"
         onUploadComplete={() => {
           console.log('Upload complete, reloading files...');
           reload();
