@@ -163,6 +163,7 @@ pnpm run dev
 Detailed guides are available in the [local-docs/](file:///local-docs/) directory:
 
 - [Setup Checklist](file:///local-docs/SETUP_CHECKLIST.md) - Step-by-step guide to get running.
+- [Authentication System](file:///local-docs/AUTHENTICATION.md) - Complete guide to JWT-based authentication.
 - [Managed Storage Setup](file:///local-docs/MANAGED_STORAGE_SETUP.md) - How the pro-tier works.
 - [S3 Integration](file:///local-docs/S3_INTEGRATION.md) - Technical architecture of the storage layer.
 - [Security Guide](file:///local-docs/SECURITY.md) - Detailed info on how we protect your data.
