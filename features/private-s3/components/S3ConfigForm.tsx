@@ -470,6 +470,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                     name="endpoint"
                     label="CloudFront URL / CDN URL (Optional)"
                     placeholder="https://d1234567890.cloudfront.net"
+                    description="CDN URL for directly accessing S3 files. For S3 API operations (MinIO, etc.), use a proper S3 endpoint."
                 />
 
                 <div className="flex justify-end gap-4">

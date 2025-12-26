@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useMemo, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
@@ -15,15 +15,34 @@ const Sort = () => {
   const router = useRouter();
   const path = usePathname();
   const sortValue = searchParams.get("sort") || "$createdAt-desc";
+  const isUpdatingRef = useRef(false);
 
-  const handleSort = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("sort", value);
-    router.replace(`${path}?${params.toString()}`, { scroll: false });
-  };
+  const handleSort = useCallback((value: string) => {
+    // Prevent infinite loops by checking if we're already updating
+    if (isUpdatingRef.current) return;
+    
+    // Only update if the value actually changed
+    if (value === sortValue) return;
+    
+    isUpdatingRef.current = true;
+    
+    try {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("sort", value);
+      router.replace(`${path}?${params.toString()}`, { scroll: false });
+    } finally {
+      // Reset the flag after a short delay to allow the update to complete
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+      }, 100);
+    }
+  }, [searchParams, router, path, sortValue]);
+
+  // Memoize the sort value to prevent unnecessary re-renders
+  const memoizedSortValue = useMemo(() => sortValue, [sortValue]);
 
   return (
-    <Select value={sortValue} onValueChange={handleSort}>
+    <Select value={memoizedSortValue} onValueChange={handleSort}>
       <SelectTrigger className="sort-select">
         <SelectValue placeholder="Sort by" />
       </SelectTrigger>

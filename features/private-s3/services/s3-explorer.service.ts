@@ -22,9 +22,24 @@ import { withRetry } from "../utils/retry";
 // Import URL utilities from shared location
 import { normalizeBaseUrl, encodeFileKey, constructFileUrl } from '@/lib/utils/url';
 
+// Check if endpoint is a CloudFront/CDN URL (not suitable for S3 API operations)
+const isCloudFrontUrl = (url?: string): boolean => {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.includes('cloudfront.net') || 
+           lowerUrl.includes('cdn.') ||
+           (lowerUrl.startsWith('https://') && !lowerUrl.includes('s3') && !lowerUrl.includes('minio'));
+};
+
 // Create S3 client (endpoint only, not cdnUrl)
+// Note: CloudFront URLs should NOT be used here - they're for viewing files only
 const getS3Client = (config: S3Config): S3Client => {
     validateS3Config(config);
+    
+    // Don't use CloudFront URLs for API operations - they're not S3 API endpoints
+    const endpoint = config.endpoint && !isCloudFrontUrl(config.endpoint) 
+        ? config.endpoint 
+        : undefined;
     
     return new S3Client({
         region: config.region,
@@ -32,8 +47,8 @@ const getS3Client = (config: S3Config): S3Client => {
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
         },
-        endpoint: config.endpoint || undefined,
-        forcePathStyle: !!config.endpoint,
+        endpoint: endpoint,
+        forcePathStyle: !!endpoint,
         requestHandler: {
             requestTimeout: 30000,
         },
