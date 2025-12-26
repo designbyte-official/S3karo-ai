@@ -21,14 +21,26 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const access = await hasPlatformAccess(user.id);
-
-    return createSuccessResponse({
-      hasPlatformAccess: access,
-    });
+    try {
+      const access = await hasPlatformAccess(user.id);
+      return createSuccessResponse({
+        hasPlatformAccess: access,
+      });
+    } catch (dbError: any) {
+      // If database schema is missing columns, return false but don't break the app
+      logger.warn('Subscription check failed (database schema may be outdated)', dbError);
+      return createSuccessResponse({
+        hasPlatformAccess: false,
+        message: 'Database schema may need migration. Run: pnpm db:fix-columns',
+      });
+    }
   } catch (error: any) {
     logger.error('Check subscription error', error);
-    return apiErrors.internalServerError('Failed to check subscription', error.message);
+    // Return false instead of error to prevent breaking private S3
+    return createSuccessResponse({
+      hasPlatformAccess: false,
+      message: 'Unable to check subscription access',
+    });
   }
 }
 

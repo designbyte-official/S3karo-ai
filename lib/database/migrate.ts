@@ -1,8 +1,14 @@
-import { db } from "./db";
-import { sql } from "drizzle-orm";
+import { db, isDatabaseConfigured } from "./db";
+import { sql, eq } from "drizzle-orm";
+import { logger } from "@/lib/utils/logger";
+import { users, subscriptions } from "./schema";
+import { createFreeTierSubscription } from "./queries-subscriptions";
 
 // Run this to create tables if they don't exist
 export async function runMigrations() {
+  if (!db) {
+    throw new Error("Database not configured");
+  }
   try {
     // Create users table
     await db.execute(sql`
@@ -12,9 +18,32 @@ export async function runMigrations() {
         full_name TEXT NOT NULL,
         avatar TEXT DEFAULT 'https://ui-avatars.com/api/?name=User&background=random',
         password_hash TEXT NOT NULL,
+        email_verified TEXT DEFAULT 'false',
+        verification_token TEXT,
+        verification_token_expiry TIMESTAMP WITH TIME ZONE,
+        is_pro BOOLEAN DEFAULT false,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       )
+    `);
+
+    // Add user columns if they don't exist (for existing databases)
+    await db.execute(sql`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='email_verified') THEN
+          ALTER TABLE users ADD COLUMN email_verified TEXT DEFAULT 'false';
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='verification_token') THEN
+          ALTER TABLE users ADD COLUMN verification_token TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='verification_token_expiry') THEN
+          ALTER TABLE users ADD COLUMN verification_token_expiry TIMESTAMP WITH TIME ZONE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='is_pro') THEN
+          ALTER TABLE users ADD COLUMN is_pro BOOLEAN DEFAULT false;
+        END IF;
+      END $$;
     `);
 
     // Create subscriptions table
@@ -24,6 +53,10 @@ export async function runMigrations() {
         user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         plan TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'active',
+        storage_limit BIGINT DEFAULT 1073741824,
+        storage_used BIGINT DEFAULT 0,
+        bandwidth_limit BIGINT DEFAULT 10737418240,
+        bandwidth_used BIGINT DEFAULT 0,
         stripe_subscription_id TEXT,
         stripe_customer_id TEXT,
         current_period_start TIMESTAMP WITH TIME ZONE,
@@ -32,6 +65,40 @@ export async function runMigrations() {
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
       )
+    `);
+
+    // Add columns if they don't exist (for existing databases)
+    await db.execute(sql`
+      DO $$ 
+      BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='storage_limit') THEN
+          ALTER TABLE subscriptions ADD COLUMN storage_limit BIGINT DEFAULT 1073741824;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='storage_used') THEN
+          ALTER TABLE subscriptions ADD COLUMN storage_used BIGINT DEFAULT 0;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='bandwidth_limit') THEN
+          ALTER TABLE subscriptions ADD COLUMN bandwidth_limit BIGINT DEFAULT 10737418240;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='bandwidth_used') THEN
+          ALTER TABLE subscriptions ADD COLUMN bandwidth_used BIGINT DEFAULT 0;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='stripe_subscription_id') THEN
+          ALTER TABLE subscriptions ADD COLUMN stripe_subscription_id TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='stripe_customer_id') THEN
+          ALTER TABLE subscriptions ADD COLUMN stripe_customer_id TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='current_period_start') THEN
+          ALTER TABLE subscriptions ADD COLUMN current_period_start TIMESTAMP WITH TIME ZONE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='current_period_end') THEN
+          ALTER TABLE subscriptions ADD COLUMN current_period_end TIMESTAMP WITH TIME ZONE;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='subscriptions' AND column_name='cancel_at_period_end') THEN
+          ALTER TABLE subscriptions ADD COLUMN cancel_at_period_end BOOLEAN DEFAULT false;
+        END IF;
+      END $$;
     `);
 
     // Create files table
@@ -142,10 +209,56 @@ export async function runMigrations() {
       CREATE INDEX IF NOT EXISTS idx_api_keys_is_active ON api_keys(is_active)
     `);
 
-    console.log("✅ Database migrations completed successfully");
+    logger.info("Database migrations completed successfully");
     return true;
   } catch (error) {
-    console.error("❌ Migration error:", error);
+    logger.error("Migration error", error);
+    throw error;
+  }
+}
+
+/**
+ * Create free subscriptions for users who don't have one
+ */
+export async function createFreeSubscriptionsForUsers() {
+  if (!db || !isDatabaseConfigured()) {
+    logger.warn("Database not configured, skipping free subscription creation");
+    return { created: 0, skipped: 0 };
+  }
+  try {
+    // Get all users
+    const allUsers = await db.select().from(users);
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const user of allUsers) {
+      // Check if user has any subscription
+      const existingSubscriptions = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.userId, user.id))
+        .limit(1);
+
+      if (existingSubscriptions.length === 0) {
+        // User has no subscription, create free tier
+        try {
+          await createFreeTierSubscription(user.id);
+          created++;
+          logger.info(`Created free subscription for user ${user.id}`);
+        } catch (error) {
+          logger.error(`Failed to create free subscription for user ${user.id}`, error);
+          skipped++;
+        }
+      } else {
+        skipped++;
+      }
+    }
+
+    logger.info(`Free subscription migration completed: ${created} created, ${skipped} skipped`);
+    return { created, skipped };
+  } catch (error) {
+    logger.error("Create free subscriptions error", error);
     throw error;
   }
 }

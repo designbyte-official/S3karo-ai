@@ -12,5 +12,7 @@ export const useS3ConfigStatus = (userId: string | undefined) => {
         },
         enabled: !!userId,
         staleTime: 5 * 60 * 1000,
+        retry: false, // Don't retry to prevent infinite loops
+        retryOnMount: false,
     });
 };

@@ -29,6 +29,7 @@ const OwnS3Page = () => {
 };
 
 import { LayoutGrid, List as ListIcon, Plus, FolderPlus, Search as SearchIcon, ChevronRight, Image as ImageIcon } from "lucide-react";
+import { ExplorerSkeleton } from "@/components/common/SkeletonLoader";
 
 // ... (OwnS3Client component definition)
 
@@ -57,24 +58,19 @@ const OwnS3Client = () => {
 
   // LocalSearch manages filteredFiles - we just provide the setter
   const [filteredFiles, setFilteredFiles] = React.useState<any[]>([]);
-
-  // Update filteredFiles when files change (only when length changes to avoid infinite loop)
-  const prevFilesLength = React.useRef(files.length);
+  
+  // Update filteredFiles when files actually change (using file IDs for comparison)
+  const filesIdsRef = React.useRef<string>('');
   React.useEffect(() => {
-    if (files.length !== prevFilesLength.current) {
+    const currentIds = files.map(f => f.$id || f.bucketFileId).join(',');
+    if (currentIds !== filesIdsRef.current) {
       setFilteredFiles(files);
-      prevFilesLength.current = files.length;
+      filesIdsRef.current = currentIds;
     }
-  }, [files.length]);
+  }, [files]);
 
-  // ... (auth checks are unchanged)
-
-  if (loading && !files.length) {
-    return (
-      <div className="page-container !items-start">
-        <p className="body-2 text-light-100">Loading explorer...</p>
-      </div>
-    );
+  if (loading) {
+    return <ExplorerSkeleton view={view} />;
   }
 
   if (!user) {

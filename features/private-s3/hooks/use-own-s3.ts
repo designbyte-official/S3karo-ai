@@ -35,8 +35,10 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     queryKey: ["s3-files", user?.$id, subPath, searchText, sort],
     queryFn: async () => {
       const config = await s3ConfigService.getConfig(user!.$id);
-      if (!config) throw new Error("No S3 config");
-      console.log('useOwnS3: Fetching files...', { subPath, searchText, sort });
+      if (!config) {
+        // Don't throw error - just return empty result to prevent infinite retries
+        return { documents: [], total: 0 };
+      }
       const result = await s3ExplorerService.listItems({
         config,
         ownerId: user!.$id,
@@ -45,12 +47,13 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
         searchText,
         sort
       });
-      console.log('useOwnS3: Files fetched:', result.documents.length, 'files');
       return result;
     },
     enabled: !!(user && hasConfig),
     staleTime: 0, // Always consider data stale to allow fresh fetches
     refetchOnWindowFocus: true, // Refetch when window regains focus
+    retry: false, // Don't retry on error to prevent infinite loops
+    retryOnMount: false, // Don't retry on mount
   });
 
   const {
@@ -62,14 +65,18 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     queryKey: ["s3-stats", user?.$id],
     queryFn: async () => {
       const config = await s3ConfigService.getConfig(user!.$id);
-      if (!config) throw new Error("No S3 config");
+      if (!config) {
+        // Don't throw error - just return empty stats to prevent infinite retries
+        return { used: 0, fileCount: 0, all: undefined };
+      }
       return s3ExplorerService.getBucketStats(config, ""); // Stats for entire bucket access
     },
     enabled: !!(user && hasConfig),
+    retry: false, // Don't retry on error to prevent infinite loops
+    retryOnMount: false, // Don't retry on mount
   });
 
   const reload = () => {
-    console.log('useOwnS3: Reloading files and stats...');
     refetchFiles();
     refetchStats();
   };

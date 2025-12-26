@@ -19,6 +19,7 @@ const StorageModeToggle = () => {
     const mode = isPrivate ? "private" : "managed";
 
     const handleToggle = (newMode: "managed" | "private") => {
+        // Direct URL navigation - no side effects
         if (newMode === "managed") {
             router.push("/");
         } else {

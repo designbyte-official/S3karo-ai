@@ -15,6 +15,7 @@
     "db:studio": "drizzle-kit studio --port 4984",
     "db:setup": "drizzle-kit push",
     "db:migrate-urls": "tsx lib/database/migrate-urls.ts",
+    "db:fix-columns": "tsx scripts/fix-subscription-columns.ts",
     "prebuild": "pnpm validate-env"
   },
   "dependencies": {

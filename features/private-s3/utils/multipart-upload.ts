@@ -41,7 +41,7 @@ export function getUploadState(fileId: string): MultipartUploadState | null {
 // Save upload state to localStorage
 export function saveUploadState(state: MultipartUploadState): void {
     try {
-        localStorage.setItem(`s3-upload-${getFileIdFromState(state)}`, JSON.stringify(state));
+        localStorage.setItem(`s3-upload-${state.fileId}`, JSON.stringify(state));
     } catch (error) {
         console.error('Failed to save upload state:', error);
     }
@@ -56,9 +56,6 @@ export function removeUploadState(fileId: string): void {
     }
 }
 
-function getFileIdFromState(state: MultipartUploadState): string {
-    return state.fileId;
-}
 
 // Calculate number of parts for file
 export function calculatePartCount(fileSize: number): number {

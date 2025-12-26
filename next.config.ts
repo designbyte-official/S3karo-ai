@@ -13,10 +13,6 @@ const nextConfig: NextConfig = {
     // Only ignore build errors in development
     ignoreBuildErrors: process.env.NODE_ENV === "development",
   },
-  eslint: {
-    // Only ignore ESLint errors in development
-    ignoreDuringBuilds: process.env.NODE_ENV === "development",
-  },
   experimental: {
     serverActions: {
       bodySizeLimit: "100MB",

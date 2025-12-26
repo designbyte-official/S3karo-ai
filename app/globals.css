@@ -435,7 +435,15 @@
      DASHBOARD SPECIFIC
      ========================================================================== */
   .dashboard-container {
-    @apply mx-auto grid max-w-7xl grid-cols-1 gap-6 md:grid-cols-2 xl:gap-10 !important;
+    @apply mx-auto flex max-w-7xl flex-col gap-6 px-4 md:flex-row md:gap-8 xl:gap-10 !important;
+  }
+
+  .dashboard-left-sidebar {
+    @apply w-full md:w-[40%] md:max-w-[480px] flex-shrink-0 !important;
+  }
+
+  .dashboard-right-content {
+    @apply flex-1 min-w-0 !important;
   }
 
   .dashboard-summary-list {

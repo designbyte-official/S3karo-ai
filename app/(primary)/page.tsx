@@ -43,7 +43,7 @@ const Dashboard = async () => {
       other: { size: 0, latestDate: "" },
     });
   } catch (e) {
-    console.error("Dashboard data fetch error:", e);
+    // Error handled silently - will show empty state
   }
 
   return (

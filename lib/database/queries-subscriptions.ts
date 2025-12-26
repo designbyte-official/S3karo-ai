@@ -40,9 +40,14 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
     }
 
     return subscription;
-  } catch (error) {
+  } catch (error: any) {
+    // Check if error is due to missing columns (database schema issue)
+    if (error?.message?.includes('does not exist') || error?.code === '42703') {
+      logger.warn('Database schema missing columns. Run migration: pnpm db:fix-columns', error);
+      throw new Error('Database schema needs migration. Missing required columns.');
+    }
     logger.error('Get active subscription error', error);
-    return null;
+    throw error;
   }
 }
 
@@ -53,11 +58,20 @@ export async function hasPlatformAccess(userId: string): Promise<boolean> {
   if (!isDatabaseConfigured()) {
     return false;
   }
-  const subscription = await getActiveSubscription(userId);
-  if (!subscription) return false;
-  
-  // Only paid plans have platform S3 access
-  return subscription.plan !== 'free';
+  try {
+    const subscription = await getActiveSubscription(userId);
+    if (!subscription) return false;
+    
+    // Only paid plans have platform S3 access
+    return subscription.plan !== 'free';
+  } catch (error: any) {
+    // If database schema is missing columns, return false gracefully
+    if (error?.message?.includes('needs migration') || error?.code === '42703') {
+      logger.warn('Database schema needs migration. Returning false for platform access.');
+      return false;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -132,6 +146,9 @@ export async function cancelSubscription(userId: string): Promise<boolean> {
  * Get subscription by user ID
  */
 export async function getSubscriptionByUserId(userId: string): Promise<Subscription | null> {
+  if (!db || !isDatabaseConfigured()) {
+    return null;
+  }
   try {
     const result = await db
       .select()
@@ -141,7 +158,7 @@ export async function getSubscriptionByUserId(userId: string): Promise<Subscript
 
     return result.length > 0 ? result[0] : null;
   } catch (error) {
-    logger.error('Get subscription by user ID error:', error);
+    logger.error('Get subscription by user ID error', error);
     return null;
   }
 }
@@ -237,9 +254,12 @@ export async function incrementStorageUsage(userId: string, fileSize: number): P
       })
       .where(eq(subscriptions.id, subscription.id));
 
+    await deleteCache(`storage-stats:${userId}`);
+    await deleteCache(`subscription:${userId}`);
+
     return true;
   } catch (error) {
-    logger.error('Increment storage usage error:', error);
+    logger.error('Increment storage usage error', error);
     return false;
   }
 }

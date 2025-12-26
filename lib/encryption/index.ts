@@ -79,11 +79,18 @@ export const encrypt = async (text: string, userId?: string): Promise<string> =>
 
 // Decrypt encrypted text
 export const decrypt = async (encryptedText: string, userId?: string): Promise<string> => {
-  if (!encryptedText || typeof encryptedText !== 'string') {
+  if (!encryptedText || typeof encryptedText !== 'string' || encryptedText.trim().length === 0) {
     throw new Error('Invalid encrypted text: empty or not a string');
   }
 
   try {
+    // Validate base64 format first
+    try {
+      Buffer.from(encryptedText, 'base64');
+    } catch {
+      throw new Error('Invalid base64 format');
+    }
+
     const { encryptionKey, initVector } = await getKeys();
 
     const cryptoKey = await crypto.subtle.importKey(
@@ -98,6 +105,12 @@ export const decrypt = async (encryptedText: string, userId?: string): Promise<s
     );
 
     const encryptedBuffer = Buffer.from(encryptedText, 'base64');
+    
+    // Validate buffer size (must be at least 16 bytes for AES-GCM with tag)
+    if (encryptedBuffer.length < 16) {
+      throw new Error('Invalid encrypted data: too short');
+    }
+
     const decodedData = await crypto.subtle.decrypt(
       {
         name: 'AES-GCM',
@@ -110,19 +123,30 @@ export const decrypt = async (encryptedText: string, userId?: string): Promise<s
     const decryptedText = new TextDecoder().decode(decodedData);
     
     if (!decryptedText || decryptedText.length === 0) {
-      throw new Error('Decryption failed: wrong key or corrupted data');
+      throw new Error('Decryption failed: empty result');
     }
     
     return decryptedText;
   } catch (error: any) {
-    const errorMessage = error?.message || 'Unknown decryption error';
-    console.error('Decryption failed:', errorMessage);
-    
-    if (errorMessage.includes('empty string') || errorMessage.includes('operation') || errorMessage.includes('key')) {
-      throw new Error('Decryption failed: Corrupted data or wrong encryption key');
-    } else {
-      throw new Error(`Decryption failed: ${errorMessage}`);
+    // Extract error message more reliably
+    let errorMessage = 'Unknown decryption error';
+    if (error) {
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.name) {
+        errorMessage = `${error.name}: ${error.message || 'Decryption operation failed'}`;
+      } else {
+        errorMessage = String(error);
+      }
     }
+    
+    // Silently fail - don't log to avoid spam, just return null
+    // The calling code will handle the null return
+    
+    // Throw a simple error that can be caught
+    throw new Error('Decryption failed');
   }
 };
 
@@ -133,7 +157,14 @@ export const encryptS3Config = async (config: {
   region: string;
   bucket: string;
 }, userId?: string): Promise<string> => {
-  const configString = JSON.stringify(config);
+  // Use a replacer to prevent circular reference errors and ensure clean serialization
+  const configString = JSON.stringify(config, (key, value) => {
+    // Filter out any undefined values and prevent circular references
+    if (value === undefined) {
+      return null;
+    }
+    return value;
+  });
   return await encrypt(configString, userId);
 };
 
@@ -145,19 +176,50 @@ export const decryptS3Config = async (encryptedConfig: string, userId?: string):
   bucket: string;
 } | null> => {
   try {
-    const decrypted = await decrypt(encryptedConfig, userId);
-    if (!decrypted) {
+    if (!encryptedConfig || typeof encryptedConfig !== 'string' || encryptedConfig.trim().length === 0) {
       return null;
     }
-    const parsed = JSON.parse(decrypted);
     
-    if (!parsed.accessKeyId || !parsed.secretAccessKey || !parsed.region || !parsed.bucket) {
-      throw new Error('Invalid S3 config structure');
+    let decrypted: string;
+    try {
+      decrypted = await decrypt(encryptedConfig, userId);
+    } catch (decryptError) {
+      // Decryption failed - config is corrupted or wrong key
+      // Return null silently - the calling code will handle it
+      return null;
     }
     
-    return parsed;
+    if (!decrypted || decrypted.trim().length === 0) {
+      return null;
+    }
+    
+    // Parse with error handling for circular references or invalid JSON
+    let parsed: any;
+    try {
+      parsed = JSON.parse(decrypted);
+    } catch (parseError) {
+      // Invalid JSON - corrupted data
+      return null;
+    }
+    
+    // Validate required fields
+    if (!parsed || typeof parsed !== 'object') {
+      return null;
+    }
+    
+    if (!parsed.accessKeyId || !parsed.secretAccessKey || !parsed.region || !parsed.bucket) {
+      // Missing required fields
+      return null;
+    }
+    
+    return {
+      accessKeyId: String(parsed.accessKeyId),
+      secretAccessKey: String(parsed.secretAccessKey),
+      region: String(parsed.region),
+      bucket: String(parsed.bucket),
+    };
   } catch (error) {
-    console.error('Failed to decrypt S3 config:', error);
+    // Any other error - return null silently
     return null;
   }
 };

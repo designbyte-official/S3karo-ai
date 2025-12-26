@@ -378,7 +378,7 @@ export const s3ExplorerService = {
                 return sum + (partInfo?.size || 0);
             }, 0);
 
-            console.log(`Resuming upload: ${parts.length}/${totalParts} parts already uploaded`);
+            // Resuming upload: parts already uploaded
         } else {
             // Initiate new multipart upload
             uploadId = await params.initiateMultipartUpload(
@@ -409,7 +409,6 @@ export const s3ExplorerService = {
         try {
             // Check network connectivity
             if (!params.isOnline()) {
-                console.log('Waiting for network connection...');
                 await params.waitForOnline();
             }
 

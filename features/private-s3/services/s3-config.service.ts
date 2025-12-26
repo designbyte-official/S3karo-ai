@@ -1,4 +1,4 @@
-import CryptoJS from "crypto-js";
+import { encryptS3Config, decryptS3Config } from "@/lib/encryption";
 
 export type StorageMode = 'managed-storage' | 'own-s3';
 
@@ -13,31 +13,6 @@ export interface S3Config {
 
 const STORAGE_MODE_KEY = 's3_karo_storage_mode';
 export const S3_CONFIG_KEY = 's3_karo_config_';
-// SECURITY: Encryption secret for client-side credential encryption
-// Must be set in environment variables - never use default in production
-const ENCRYPTION_SECRET = process.env.NEXT_PUBLIC_ENCRYPTION_KEY || process.env.NEXT_PUBLIC_ENCRYPTION_SECRET;
-
-// Development fallback - DO NOT USE IN PRODUCTION
-// In production, NEXT_PUBLIC_ENCRYPTION_SECRET MUST be set
-const FALLBACK_SECRET = 'dev-fallback-secret-change-in-production';
-
-// Use fallback only in development, warn in production
-const getEncryptionSecret = (): string => {
-  if (ENCRYPTION_SECRET) {
-    return ENCRYPTION_SECRET;
-  }
-  
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      '❌ SECURITY ERROR: NEXT_PUBLIC_ENCRYPTION_SECRET is required in production!\n' +
-      'Please set NEXT_PUBLIC_ENCRYPTION_SECRET in your environment variables.\n' +
-      'Generate: openssl rand -base64 32'
-    );
-  }
-  
-  console.warn('⚠️ NEXT_PUBLIC_ENCRYPTION_SECRET not set. Using development fallback (NOT SECURE for production!)');
-  return FALLBACK_SECRET;
-};
 
 export const s3ConfigService = {
     getMode(): StorageMode {
@@ -56,21 +31,64 @@ export const s3ConfigService = {
         if (!encryptedConfig) return null;
 
         try {
-            const bytes = CryptoJS.AES.decrypt(encryptedConfig, getEncryptionSecret());
-            const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
-            const config = JSON.parse(decryptedData) as S3Config;
+            const decrypted = await decryptS3Config(encryptedConfig, userId);
+            if (!decrypted) {
+                // Clear corrupted config
+                this.clearConfig(userId);
+                return null;
+            }
             
-            return config;
+            // Get metadata (endpoint, cdnUrl) if exists
+            let metadata: { endpoint?: string; cdnUrl?: string } = {};
+            const metadataStr = localStorage.getItem(`${S3_CONFIG_KEY}${userId}_meta`);
+            if (metadataStr) {
+                try {
+                    metadata = JSON.parse(metadataStr);
+                } catch (parseError) {
+                    // If metadata is corrupted, just use empty metadata
+                    console.warn('Failed to parse S3 config metadata, using defaults');
+                    metadata = {};
+                }
+            }
+            
+            return {
+                bucket: decrypted.bucket,
+                region: decrypted.region,
+                accessKeyId: decrypted.accessKeyId,
+                secretAccessKey: decrypted.secretAccessKey,
+                endpoint: metadata.endpoint,
+                cdnUrl: metadata.cdnUrl,
+            };
         } catch (e) {
-            console.error("Failed to decrypt config", e);
+            console.error('Failed to get S3 config:', e);
+            // Clear corrupted config on error
+            this.clearConfig(userId);
             return null;
         }
     },
 
     async saveConfig(userId: string, config: S3Config) {
         if (typeof window === 'undefined') return;
-        const encryptedConfig = CryptoJS.AES.encrypt(JSON.stringify(config), getEncryptionSecret()).toString();
-        localStorage.setItem(`${S3_CONFIG_KEY}${userId}`, encryptedConfig);
+        try {
+            const encryptedConfig = await encryptS3Config({
+                bucket: config.bucket,
+                region: config.region,
+                accessKeyId: config.accessKeyId,
+                secretAccessKey: config.secretAccessKey,
+            }, userId);
+            localStorage.setItem(`${S3_CONFIG_KEY}${userId}`, encryptedConfig);
+            
+            // Also store endpoint and cdnUrl separately (not encrypted, they're not sensitive)
+            if (config.endpoint || config.cdnUrl) {
+                const metadata = { endpoint: config.endpoint, cdnUrl: config.cdnUrl };
+                // Use replacer to prevent any circular reference issues
+                localStorage.setItem(`${S3_CONFIG_KEY}${userId}_meta`, JSON.stringify(metadata, (key, value) => {
+                    return value === undefined ? null : value;
+                }));
+            }
+        } catch (error) {
+            throw new Error('Failed to save S3 config');
+        }
     },
 
     async hasConfig(userId: string): Promise<boolean> {
@@ -81,5 +99,6 @@ export const s3ConfigService = {
     async clearConfig(userId: string) {
         if (typeof window === 'undefined') return;
         localStorage.removeItem(`${S3_CONFIG_KEY}${userId}`);
+        localStorage.removeItem(`${S3_CONFIG_KEY}${userId}_meta`);
     }
 };
