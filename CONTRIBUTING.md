@@ -1,36 +1,66 @@
 # Contributing to S3-Karo
 
-We love contributions! Whether it's a bug fix, a new feature, or better documentation, we welcome your help.
+Thank you for your interest in contributing to S3-Karo! This document provides guidelines and instructions for contributing.
 
-## How to Contribute
+## Project Structure
 
-1. **Fork the repository** to your own GitHub account.
-2. **Create a new branch** for your feature or bug fix:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Make your changes**. Ensure your code follows the project's style and is well-documented.
-4. **Test your changes** locally to ensure everything works as expected.
-5. **Commit your changes**:
-   ```bash
-   git commit -m "Add some feature"
-   ```
-6. **Push to your branch**:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-7. **Create a Pull Request** from your branch to the main repository's `main` branch.
+```
+s3-karo/
+├── app/                    # Next.js app directory
+│   ├── (auth)/            # Authentication routes
+│   ├── (private)/        # Private routes
+│   └── api/               # API routes
+├── components/            # React components
+│   ├── common/           # Shared components
+│   ├── form-inputs/      # Form components
+│   ├── layout/           # Layout components
+│   ├── ui/               # UI primitives (shadcn)
+│   └── wrappers/         # Wrapper components
+├── features/              # Feature-based modules
+│   ├── auth/             # Authentication feature
+│   ├── managed-storage/  # Platform-managed storage
+│   ├── private-s3/       # Private S3 integration
+│   └── shared/           # Shared utilities
+├── lib/                   # Core libraries
+│   ├── auth/             # Authentication utilities
+│   ├── database/         # Database layer
+│   ├── email/            # Email utilities
+│   └── utils/            # General utilities
+├── docs/                  # Public documentation
+└── local-docs/           # Internal documentation
+```
 
 ## Development Setup
 
-See the [README.md](README.md#quick-start) for local development setup instructions.
+1. Clone the repository
+2. Install dependencies: `pnpm install`
+3. Set up environment variables (see `.env.example`)
+4. Run database migrations: `pnpm db:push`
+5. Start development server: `pnpm dev`
 
-### Coding Standards
+## Code Style
 
-- Use TypeScript for all new code.
-- Follow the existing project structure and naming conventions.
-- Ensure all UI components are accessible and responsive.
+- Use TypeScript for all new code
+- Follow existing code patterns
+- Use meaningful variable and function names
+- Add JSDoc comments for public functions
+- Keep functions small and focused
+
+## Commit Messages
+
+Use clear, descriptive commit messages:
+- `feat: add CDN URL support`
+- `fix: resolve database null check errors`
+- `docs: update API documentation`
+
+## Pull Request Process
+
+1. Create a feature branch
+2. Make your changes
+3. Ensure all tests pass
+4. Update documentation if needed
+5. Submit a pull request with a clear description
 
 ## Questions?
 
-If you have any questions, feel free to open an issue or reach out via our community channels.
+Open an issue or reach out to the maintainers.

@@ -1,9 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { verifyApiKey, checkRateLimit, createFile } from '@/lib/database/queries';
-import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
+import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getFileType } from '@/features/shared/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
+import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Public API Endpoint for File Uploads
@@ -32,29 +36,20 @@ export async function POST(request: NextRequest) {
   try {
     // Check database
     if (!isDatabaseConfigured()) {
-      return NextResponse.json(
-        { error: 'Service unavailable', message: 'Database not configured' },
-        { status: 503 }
-      );
+      return apiErrors.serviceUnavailable('Database not configured');
     }
 
     // Authenticate via API key
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Missing or invalid API key. Use: Authorization: Bearer sk_live_...' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Missing or invalid API key. Use: Authorization: Bearer sk_live_...');
     }
 
     const apiKey = authHeader.substring(7); // Remove "Bearer "
     const authResult = await verifyApiKey(apiKey);
     
     if (!authResult) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Invalid or expired API key' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Invalid or expired API key');
     }
 
     const { userId, apiKey: apiKeyRecord } = authResult;
@@ -64,7 +59,7 @@ export async function POST(request: NextRequest) {
     if (!rateLimitCheck.allowed) {
       return NextResponse.json(
         { 
-          error: 'Rate limit exceeded', 
+          error: 'Too Many Requests', 
           message: `Rate limit exceeded. Limit: ${apiKeyRecord.rateLimit} requests/hour` 
         },
         { 
@@ -83,19 +78,21 @@ export async function POST(request: NextRequest) {
     const path = formData.get('path') as string | null;
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'Bad request', message: 'No file provided' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('No file provided');
     }
 
-    // Validate file size (max 5GB for API uploads)
-    const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
-    if (file.size > MAX_FILE_SIZE) {
-      return NextResponse.json(
-        { error: 'File too large', message: `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024 / 1024}GB` },
-        { status: 400 }
-      );
+    // Validate file name
+    try {
+      validateFileName(file.name);
+    } catch (error: any) {
+      return apiErrors.badRequest(error.message);
+    }
+
+    // Validate file size
+    try {
+      validateFileSize(file.size);
+    } catch (error: any) {
+      return apiErrors.badRequest(error.message);
     }
 
     // Upload to S3
@@ -103,9 +100,8 @@ export async function POST(request: NextRequest) {
     const client = createPlatformS3Client();
     const bucket = getPlatformS3Bucket();
 
-    // Construct storage key: managed/{userId}/{path}/{timestamp}-{filename}
-    const cleanPath = path ? (path.endsWith('/') ? path : `${path}/`) : '';
-    const storageKey = `managed/${userId}/${cleanPath}${Date.now()}-${file.name}`;
+    // Generate storage key using utility
+    const storageKey = generateStorageKey(userId, file.name, path || undefined);
 
     try {
       await client.send(new PutObjectCommand({
@@ -119,19 +115,12 @@ export async function POST(request: NextRequest) {
         },
       }));
     } catch (s3Error: any) {
-      console.error("S3 Upload Error:", s3Error);
-      return NextResponse.json(
-        { 
-          error: 'Upload failed', 
-          message: 'Failed to upload file to storage',
-          details: s3Error.message 
-        },
-        { status: 500 }
-      );
+      logger.error('S3 Upload Error', s3Error);
+      return apiErrors.internalServerError('Failed to upload file to storage', s3Error.message);
     }
 
-    // Generate URL
-    const url = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${storageKey}`;
+    // Generate URL using CDN
+    const url = getFileUrl(storageKey);
     const { type, extension } = getFileType(file.name);
 
     // Save to database
@@ -146,7 +135,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Return response
-    return NextResponse.json({
+    return createSuccessResponse({
       id: dbFile.id,
       name: dbFile.name,
       url: dbFile.url,
@@ -154,23 +143,16 @@ export async function POST(request: NextRequest) {
       type: dbFile.type,
       extension: dbFile.extension,
       createdAt: dbFile.createdAt.toISOString(),
-    }, {
-      status: 201,
-      headers: {
-        'X-RateLimit-Limit': apiKeyRecord.rateLimit.toString(),
-        'X-RateLimit-Remaining': (rateLimitCheck.remaining - 1).toString(),
-      }
+    }, 201, undefined, {
+      'X-RateLimit-Limit': apiKeyRecord.rateLimit.toString(),
+      'X-RateLimit-Remaining': (rateLimitCheck.remaining - 1).toString(),
     });
 
   } catch (error: any) {
-    console.error('API upload error:', error);
-    return NextResponse.json(
-      { 
-        error: 'Internal server error', 
-        message: 'An unexpected error occurred',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      },
-      { status: 500 }
+    logger.error('API upload error', error);
+    return apiErrors.internalServerError(
+      'An unexpected error occurred',
+      process.env.NODE_ENV === 'development' ? error.message : undefined
     );
   }
 }

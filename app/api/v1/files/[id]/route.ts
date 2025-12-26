@@ -17,20 +17,14 @@ export async function DELETE(
     // Authenticate
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Missing or invalid API key' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Missing or invalid API key');
     }
 
     const apiKey = authHeader.substring(7);
     const authResult = await verifyApiKey(apiKey);
     
     if (!authResult) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Invalid or expired API key' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Invalid or expired API key');
     }
 
     const { userId } = authResult;
@@ -39,10 +33,7 @@ export async function DELETE(
     const deletedFile = await deleteFile(id, userId);
 
     if (!deletedFile) {
-      return NextResponse.json(
-        { error: 'Not found', message: 'File not found or access denied' },
-        { status: 404 }
-      );
+      return apiErrors.notFound('File not found or access denied');
     }
 
     // Delete from S3
@@ -55,21 +46,18 @@ export async function DELETE(
         Key: deletedFile.storageKey,
       }));
     } catch (s3Error: any) {
-      console.error('Failed to delete from S3:', s3Error);
+      logger.error('Failed to delete from S3', s3Error);
       // Continue even if S3 delete fails - file is already removed from DB
     }
 
-    return NextResponse.json({
+    return createSuccessResponse({
       message: 'File deleted successfully',
       id: id,
     });
 
   } catch (error: any) {
-    console.error('API delete error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    logger.error('API delete error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

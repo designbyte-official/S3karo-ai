@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { createFile } from '@/lib/database/queries';
-import { getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
+import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 import { getFileType } from '@/features/shared/utils';
+import { validateStorageKeyOwnership } from '@/features/managed-storage/utils/storage-key';
 
 /**
  * POST /api/upload/callback
@@ -31,40 +32,27 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Authentication required');
     }
 
     if (!isDatabaseConfigured()) {
-      return NextResponse.json(
-        { error: 'Service unavailable', message: 'Database not configured' },
-        { status: 503 }
-      );
+      return apiErrors.serviceUnavailable('Database not configured');
     }
 
     const body = await request.json();
     const { key, fileName, fileType, fileSize, path } = body;
 
     if (!key || !fileName || !fileType || !fileSize) {
-      return NextResponse.json(
-        { error: 'Bad request', message: 'key, fileName, fileType, and fileSize are required' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('key, fileName, fileType, and fileSize are required');
     }
 
     // Verify the key belongs to this user
-    if (!key.startsWith(`managed/${user.id}/`)) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'Invalid storage key' },
-        { status: 403 }
-      );
+    if (!validateStorageKeyOwnership(key, user.id)) {
+      return apiErrors.forbidden('Invalid storage key');
     }
 
-    // Generate file URL
-    const bucket = getPlatformS3Bucket();
-    const url = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    // Generate file URL using CDN
+    const url = getFileUrl(key);
     const { type, extension } = getFileType(fileName);
 
     // Save to database
@@ -78,7 +66,7 @@ export async function POST(request: NextRequest) {
       storageKey: key,
     });
 
-    return NextResponse.json({
+    return createSuccessResponse({
       id: dbFile.id,
       name: dbFile.name,
       url: dbFile.url,
@@ -86,14 +74,11 @@ export async function POST(request: NextRequest) {
       type: dbFile.type,
       extension: dbFile.extension,
       createdAt: dbFile.createdAt.toISOString(),
-    }, { status: 201 });
+    }, 201);
 
   } catch (error: any) {
-    console.error('S3-Karo callback error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    logger.error('S3-Karo callback error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

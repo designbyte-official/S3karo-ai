@@ -2,6 +2,7 @@ import { eq, and, ilike, inArray, desc, asc, sql } from "drizzle-orm";
 import { db, isDatabaseConfigured } from "./db";
 import { users, files, apiKeys, type User, type NewUser, type File, type NewFile, type ApiKey, type NewApiKey } from "./schema";
 import crypto from "crypto";
+import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 
 // Helper to check database before queries
 const requireDatabase = () => {
@@ -93,31 +94,47 @@ export async function getFilesForUser(
       conditions.push(ilike(files.name, `%${filters.searchText}%`));
     }
 
-    let query = database.select().from(files).where(and(...conditions));
+    // Build base query
+    const baseQuery = database.select().from(files).where(and(...conditions));
 
-    // Apply sorting
+    // Apply sorting and limit
     if (filters?.sort) {
       const [field, direction] = filters.sort.split("-");
+      const isAsc = direction === "asc";
+      
       if (field === "$createdAt" || field === "createdAt") {
-        query = query.orderBy(direction === "asc" ? asc(files.createdAt) : desc(files.createdAt));
+        const sortedQuery = baseQuery.orderBy(isAsc ? asc(files.createdAt) : desc(files.createdAt));
+        if (filters?.limit) {
+          return await sortedQuery.limit(filters.limit);
+        }
+        return await sortedQuery;
       } else if (field === "$updatedAt" || field === "updatedAt") {
-        query = query.orderBy(direction === "asc" ? asc(files.updatedAt) : desc(files.updatedAt));
+        const sortedQuery = baseQuery.orderBy(isAsc ? asc(files.updatedAt) : desc(files.updatedAt));
+        if (filters?.limit) {
+          return await sortedQuery.limit(filters.limit);
+        }
+        return await sortedQuery;
       } else if (field === "name") {
-        query = query.orderBy(direction === "asc" ? asc(files.name) : desc(files.name));
+        const sortedQuery = baseQuery.orderBy(isAsc ? asc(files.name) : desc(files.name));
+        if (filters?.limit) {
+          return await sortedQuery.limit(filters.limit);
+        }
+        return await sortedQuery;
       } else if (field === "size") {
-        query = query.orderBy(direction === "asc" ? asc(files.size) : desc(files.size));
+        const sortedQuery = baseQuery.orderBy(isAsc ? asc(files.size) : desc(files.size));
+        if (filters?.limit) {
+          return await sortedQuery.limit(filters.limit);
+        }
+        return await sortedQuery;
       }
-    } else {
-      // Default sort by created date descending
-      query = query.orderBy(desc(files.createdAt));
     }
-
-    // Apply limit
+    
+    // Default sort by created date descending
+    const defaultSortedQuery = baseQuery.orderBy(desc(files.createdAt));
     if (filters?.limit) {
-      query = query.limit(filters.limit);
+      return await defaultSortedQuery.limit(filters.limit);
     }
-
-    return await query;
+    return await defaultSortedQuery;
   } catch (error) {
     console.warn("Database query failed:", error);
     return [];
@@ -136,7 +153,8 @@ export async function createFile(data: {
   url: string;
   storageKey: string; // REQUIRED: S3 key for file operations (bucket is always from env)
 }): Promise<File> {
-  const result = await db
+  const database = requireDatabase();
+  const result = await database
     .insert(files)
     .values({
       userId: data.userId,
@@ -155,8 +173,9 @@ export async function createFile(data: {
 // Delete file from database (returns file data before deletion so we can delete from S3)
 // NOTE: This is ONLY for Managed Storage - Private S3 files are NOT in the database
 export async function deleteFile(fileId: string, userId: string): Promise<File | null> {
+  const database = requireDatabase();
   // Get file first to retrieve storageKey before deleting
-  const fileToDelete = await db
+  const fileToDelete = await database
     .select()
     .from(files)
     .where(and(eq(files.id, fileId), eq(files.userId, userId)))
@@ -167,7 +186,7 @@ export async function deleteFile(fileId: string, userId: string): Promise<File |
   }
 
   // Delete from database
-  await db
+  await database
     .delete(files)
     .where(and(eq(files.id, fileId), eq(files.userId, userId)));
 
@@ -181,21 +200,67 @@ export async function updateFile(
   data: {
     name?: string;
     sharedWith?: string[];
+    url?: string;
   }
 ): Promise<File | null> {
+  const database = requireDatabase();
   const updateData: Partial<NewFile> = {
     updatedAt: new Date(),
   };
 
   if (data.name) updateData.name = data.name;
   if (data.sharedWith) updateData.sharedWith = data.sharedWith;
+  if (data.url) updateData.url = data.url;
 
-  const result = await db
+  const result = await database
     .update(files)
     .set(updateData)
     .where(and(eq(files.id, fileId), eq(files.userId, userId)))
     .returning();
   return result[0] || null;
+}
+
+/**
+ * Update all file URLs to use CDN URL
+ * This migration function regenerates URLs for all files using the new CDN URL format
+ */
+export async function migrateFileUrlsToCdn(): Promise<{ updated: number; errors: number }> {
+  const database = requireDatabase();
+  let updated = 0;
+  let errors = 0;
+
+  try {
+    // Get all files
+    const allFiles = await database
+      .select({
+        id: files.id,
+        storageKey: files.storageKey,
+      })
+      .from(files);
+
+    // Update each file URL
+    for (const file of allFiles) {
+      try {
+        const newUrl = getFileUrl(file.storageKey);
+        await database
+          .update(files)
+          .set({
+            url: newUrl,
+            updatedAt: new Date(),
+          })
+          .where(eq(files.id, file.id));
+        updated++;
+      } catch (error) {
+        console.error(`Error updating file ${file.id}:`, error);
+        errors++;
+      }
+    }
+
+    return { updated, errors };
+  } catch (error) {
+    console.error('Migration error:', error);
+    throw error;
+  }
 }
 
 export async function getTotalSpaceUsed(userId: string): Promise<{
@@ -207,7 +272,20 @@ export async function getTotalSpaceUsed(userId: string): Promise<{
   used: number;
   all: number;
 }> {
-  const userFiles = await db
+  if (!isDatabaseConfigured()) {
+    return {
+      image: { size: 0, latestDate: "" },
+      document: { size: 0, latestDate: "" },
+      video: { size: 0, latestDate: "" },
+      audio: { size: 0, latestDate: "" },
+      other: { size: 0, latestDate: "" },
+      used: 0,
+      all: 2 * 1024 * 1024 * 1024 * 1024, // 2TB
+    };
+  }
+  
+  const database = requireDatabase();
+  const userFiles = await database
     .select({
       type: files.type,
       size: files.size,

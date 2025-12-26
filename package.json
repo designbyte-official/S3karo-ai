@@ -7,11 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "type-check": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio --port 4984",
-    "db:setup": "drizzle-kit push"
+    "db:setup": "drizzle-kit push",
+    "db:migrate-urls": "tsx lib/database/migrate-urls.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",

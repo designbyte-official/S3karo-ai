@@ -57,9 +57,8 @@ export const platformStorageService = {
     },
 
     async uploadFile(params: { file: File; ownerId: string; accountId: string; path: string }) {
-        // DEPRECATED: Use useUpload() hook instead for direct S3 uploads
-        // This method is kept for backward compatibility only
-        throw new Error('Use useUpload() hook for file uploads. This method is deprecated.');
+        // Use useUpload() hook instead for direct S3 uploads
+        throw new Error('Use useUpload() hook for file uploads.');
     },
 
     async renameFile(params: { fileId: string; name: string; extension: string; path: string }) {

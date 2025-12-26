@@ -1,11 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getFilesForUser, createFile } from '@/lib/database/queries';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
-
-import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
+import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getFileType } from '@/features/shared/utils';
+import { validateFileName } from '@/features/private-s3/utils/validation';
+import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 // GET - List files
 export async function GET(request: NextRequest) {
@@ -66,35 +69,25 @@ export async function GET(request: NextRequest) {
       total: transformedFiles.length,
     });
   } catch (error: any) {
-    console.error('Get files error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Get files error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 
 // POST - Upload file
-// DEPRECATED: This endpoint buffers files through the server (inefficient)
+// NOTE: This endpoint buffers files through the server (inefficient)
 // Use /api/upload + /api/upload/callback for direct S3 uploads instead
-// Kept for backward compatibility only
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized();
     }
 
     // Platform S3 requires database
     if (!isDatabaseConfigured()) {
-      return NextResponse.json(
-        { error: 'Database not configured. Platform S3 requires database connection.' },
-        { status: 503 }
-      );
+      return apiErrors.serviceUnavailable('Database not configured. Platform S3 requires database connection.');
     }
 
     const formData = await request.formData();
@@ -104,45 +97,43 @@ export async function POST(request: NextRequest) {
     const path = formData.get('path') as string;
 
     if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('No file provided');
+    }
+
+    // Validate file name
+    try {
+      validateFileName(file.name);
+    } catch (error: any) {
+      return apiErrors.badRequest(error.message);
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const client = createPlatformS3Client();
     const bucket = getPlatformS3Bucket();
 
-    // Construct a safe key: managed/{userId}/{originalName} or managed/{userId}/{path}/{originalName}
-    // For now simplistic strategy to avoid collisions could use a timestamp or uuid, but retaining name is nice.
-    const cleanPath = path ? (path.endsWith('/') ? path : `${path}/`) : '';
-    const storageKey = `managed/${user.id}/${cleanPath}${Date.now()}-${file.name}`;
+    // Generate storage key using utility
+    const storageKey = generateStorageKey(user.id, file.name, path);
 
     try {
-      console.log(`Attempting S3 upload to bucket: ${bucket}, key: ${storageKey}`);
+      logger.info('Attempting S3 upload', { bucket, key: storageKey });
       await client.send(new PutObjectCommand({
         Bucket: bucket,
         Key: storageKey,
         Body: buffer,
         ContentType: file.type,
       }));
-      console.log("S3 upload successful");
+      logger.info('S3 upload successful', { bucket, key: storageKey });
     } catch (s3Error: any) {
-      console.error("S3 Upload Error Detail:", {
-        message: s3Error.message,
+      logger.error('S3 Upload Error', s3Error, {
         code: s3Error.code,
         requestId: s3Error.$metadata?.requestId,
         bucket,
         region: process.env.AWS_REGION
       });
-      return NextResponse.json(
-        { error: 'Failed to upload to storage', details: s3Error.message, code: s3Error.name },
-        { status: 500 }
-      );
+      return apiErrors.internalServerError('Failed to upload to storage', s3Error.message);
     }
 
-    const url = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${storageKey}`;
+    const url = getFileUrl(storageKey);
     const { type, extension } = getFileType(file.name);
 
     // Create file record in database (Managed Storage only)
@@ -178,13 +169,10 @@ export async function POST(request: NextRequest) {
       $updatedAt: dbFile.updatedAt.toISOString(),
     };
 
-    return NextResponse.json(transformedFile);
+    return createSuccessResponse(transformedFile);
   } catch (error: any) {
-    console.error('Upload file error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Upload file error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

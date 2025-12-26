@@ -1,4 +1,7 @@
-// Centralized error handling
+/**
+ * Centralized error handling utilities
+ * Single source of truth for error handling across the application
+ */
 
 export class AppError extends Error {
   constructor(
@@ -35,15 +38,5 @@ export function handleError(error: unknown): {
     message: "An unexpected error occurred",
     statusCode: 500,
   };
-}
-
-export function logError(error: unknown, context?: string) {
-  const errorInfo = handleError(error);
-  console.error(`[${context || "Error"}]`, {
-    message: errorInfo.message,
-    statusCode: errorInfo.statusCode,
-    code: errorInfo.code,
-    timestamp: new Date().toISOString(),
-  });
 }
 

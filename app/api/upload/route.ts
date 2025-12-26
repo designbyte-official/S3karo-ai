@@ -1,10 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
+import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * S3-Karo File Upload API
@@ -52,62 +56,55 @@ export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized', message: 'Authentication required' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized('Authentication required');
     }
 
     // Check Pro subscription for managed storage
     const hasAccess = await hasPlatformAccess(user.id);
     if (!hasAccess) {
-      return NextResponse.json(
-        { error: 'Forbidden', message: 'Managed storage requires an active Pro subscription' },
-        { status: 403 }
-      );
+      return apiErrors.forbidden('Managed storage requires an active Pro subscription');
     }
 
     if (!isDatabaseConfigured()) {
-      return NextResponse.json(
-        { error: 'Service unavailable', message: 'Database not configured' },
-        { status: 503 }
-      );
+      return apiErrors.serviceUnavailable('Database not configured');
     }
 
     const body = await request.json();
     const { fileName, fileType, fileSize, path, route = DEFAULT_FILE_ROUTE } = body;
 
     if (!fileName || !fileType || !fileSize) {
-      return NextResponse.json(
-        { error: 'Bad request', message: 'fileName, fileType, and fileSize are required' },
-        { status: 400 }
-      );
+      return apiErrors.badRequest('fileName, fileType, and fileSize are required');
+    }
+
+    // Validate file name
+    try {
+      validateFileName(fileName);
+    } catch (error: any) {
+      return apiErrors.badRequest(error.message);
     }
 
     // Validate file size
+    try {
+      validateFileSize(fileSize);
+    } catch (error: any) {
+      return apiErrors.badRequest(error.message);
+    }
+
+    // Check against route-specific max size
     const maxSize = route.maxFileSize || DEFAULT_FILE_ROUTE.maxFileSize!;
     if (fileSize > maxSize) {
-      return NextResponse.json(
-        { error: 'File too large', message: `File size exceeds maximum of ${maxSize / 1024 / 1024}MB` },
-        { status: 400 }
-      );
+      return apiErrors.badRequest(`File size exceeds maximum of ${maxSize / 1024 / 1024}MB`);
     }
 
     // Validate file type (if specified)
     if (route.allowedFileTypes && !route.allowedFileTypes.includes('*')) {
       if (!route.allowedFileTypes.includes(fileType)) {
-        return NextResponse.json(
-          { error: 'File type not allowed', message: `File type ${fileType} is not allowed` },
-          { status: 400 }
-        );
+        return apiErrors.badRequest(`File type ${fileType} is not allowed`);
       }
     }
 
-    // Generate storage key
-    const cleanPath = path ? (path.endsWith('/') ? path : `${path}/`) : '';
-    const timestamp = Date.now();
-    const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storageKey = `managed/${user.id}/${cleanPath}${timestamp}-${sanitizedFileName}`;
+    // Generate storage key using utility
+    const storageKey = generateStorageKey(user.id, fileName, path);
 
     // Create presigned URL for direct S3 upload
     const client = createPlatformS3Client();
@@ -127,7 +124,7 @@ export async function POST(request: NextRequest) {
     const expiresIn = 3600;
     const presignedUrl = await getSignedUrl(client, command, { expiresIn });
 
-    return NextResponse.json({
+    return createSuccessResponse({
       url: presignedUrl,
       key: storageKey,
       expiresIn: expiresIn,
@@ -141,11 +138,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('S3-Karo upload route error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
-      { status: 500 }
-    );
+    logger.error('S3-Karo upload route error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 

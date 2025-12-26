@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { deleteFile, updateFile } from '@/lib/database/queries';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 // DELETE - Delete file (Managed Storage only)
 // NOTE: Private S3 files are NOT in the database - they're deleted client-side
@@ -15,20 +17,14 @@ export async function DELETE(
     const { id } = await params;
     
     if (!user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized();
     }
 
     // Get file first to get storageKey (needed to delete from S3)
     const deletedFile = await deleteFile(id, user.id);
 
     if (!deletedFile) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
+      return apiErrors.notFound('File not found');
     }
 
     // Delete from S3 using storageKey (REQUIRED - this is why we store it!)
@@ -40,19 +36,16 @@ export async function DELETE(
         Bucket: bucket,
         Key: deletedFile.storageKey,
       }));
-      console.log(`Deleted file from S3: ${deletedFile.storageKey}`);
+      logger.info('Deleted file from S3', { storageKey: deletedFile.storageKey });
     } catch (s3Error: any) {
-      console.error('Failed to delete from S3 (file already deleted from DB):', s3Error);
+      logger.error('Failed to delete from S3 (file already deleted from DB)', s3Error);
       // Continue even if S3 delete fails - file is already removed from DB
     }
 
-    return NextResponse.json({ status: 'success' });
+    return createSuccessResponse({ status: 'success' });
   } catch (error: any) {
-    console.error('Delete file error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Delete file error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 
@@ -67,10 +60,7 @@ export async function PATCH(
     const body = await request.json();
     
     if (!user) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
+      return apiErrors.unauthorized();
     }
 
     // Update file using Drizzle
@@ -80,10 +70,7 @@ export async function PATCH(
     });
 
     if (!updatedFile) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
+      return apiErrors.notFound('File not found');
     }
 
     // Transform to match existing format
@@ -106,13 +93,10 @@ export async function PATCH(
       $updatedAt: updatedFile.updatedAt.toISOString(),
     };
 
-    return NextResponse.json(transformedFile);
+    return createSuccessResponse(transformedFile);
   } catch (error: any) {
-    console.error('Update file error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
-      { status: 500 }
-    );
+    logger.error('Update file error', error);
+    return apiErrors.internalServerError('Internal server error', error.message);
   }
 }
 
