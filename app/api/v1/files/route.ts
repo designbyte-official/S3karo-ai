@@ -13,37 +13,12 @@ import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/featu
 import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
 import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
 
-/**
- * Public API Endpoint for File Uploads
- * 
- * Authentication: API Key in Authorization header
- * Format: Authorization: Bearer sk_live_...
- * 
- * POST /api/v1/files
- * Content-Type: multipart/form-data
- * 
- * Body:
- *   - file: File (required)
- *   - path: string (optional) - folder path
- * 
- * Response:
- *   {
- *     "id": "uuid",
- *     "name": "filename.jpg",
- *     "url": "https://...",
- *     "size": 12345,
- *     "type": "image",
- *     "createdAt": "2024-01-01T00:00:00Z"
- *   }
- */
 export async function POST(request: NextRequest) {
   try {
-    // Check database
     if (!isDatabaseConfigured()) {
       return apiErrors.serviceUnavailable('Database not configured');
     }
 
-    // Authenticate via API key
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return apiErrors.unauthorized('Missing or invalid API key. Use: Authorization: Bearer sk_live_...');
@@ -58,7 +33,6 @@ export async function POST(request: NextRequest) {
 
     const { userId, apiKey: apiKeyRecord } = authResult;
 
-    // Check rate limit
     const rateLimitCheck = await checkRateLimit(apiKeyRecord.id);
     if (!rateLimitCheck.allowed) {
       const rateLimit = apiKeyRecord.rateLimit ?? 1000;
@@ -77,7 +51,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse form data
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const path = formData.get('path') as string | null;
@@ -113,7 +86,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate storage key using utility
     const storageKey = generateStorageKey(userId, file.name, path || undefined);
 
     try {
@@ -132,11 +104,9 @@ export async function POST(request: NextRequest) {
       return apiErrors.internalServerError('Failed to upload file to storage', s3Error.message);
     }
 
-    // Generate URL using CDN
     const url = getFileUrl(storageKey);
     const { type, extension } = getFileType(file.name);
 
-    // Save to database
     const dbFile = await createFile({
       userId: userId,
       name: file.name,
@@ -147,10 +117,8 @@ export async function POST(request: NextRequest) {
       storageKey: storageKey,
     });
 
-    // Update storage usage
     await incrementStorageUsage(userId, file.size);
 
-    // Return response
     const rateLimit = apiKeyRecord.rateLimit ?? 1000;
     return createSuccessResponse({
       id: dbFile.id,
@@ -174,12 +142,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * GET /api/v1/files - List files (optional, for API users)
- */
 export async function GET(request: NextRequest) {
   try {
-    // Authenticate
     const authHeader = request.headers.get('authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return apiErrors.unauthorized('Missing or invalid API key');
@@ -192,7 +156,6 @@ export async function GET(request: NextRequest) {
       return apiErrors.unauthorized('Invalid or expired API key');
     }
 
-    // Get files for the authenticated user
     const { searchParams } = new URL(request.url);
     const types = searchParams.get('types')?.split(',') || undefined;
     const searchText = searchParams.get('search') || undefined;

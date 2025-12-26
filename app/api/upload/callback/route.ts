@@ -11,28 +11,6 @@ import { getFileType } from '@/features/shared/utils';
 import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 import { validateStorageKeyOwnership } from '@/features/managed-storage/utils/storage-key';
 
-/**
- * POST /api/upload/callback
- * Callback endpoint called after successful S3 upload
- * Saves file metadata to database
- * 
- * Body: {
- *   key: string, // S3 key from presigned URL response
- *   fileName: string,
- *   fileType: string,
- *   fileSize: number,
- *   path?: string
- * }
- * 
- * Response: {
- *   id: string,
- *   name: string,
- *   url: string,
- *   size: number,
- *   type: string,
- *   createdAt: string
- * }
- */
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -51,12 +29,10 @@ export async function POST(request: NextRequest) {
       return apiErrors.badRequest('key, fileName, fileType, and fileSize are required');
     }
 
-    // Verify the key belongs to this user
     if (!validateStorageKeyOwnership(key, user.id)) {
       return apiErrors.forbidden('Invalid storage key');
     }
 
-    // Check storage limit before saving
     const storageCheck = await checkStorageLimit(user.id, fileSize);
     if (!storageCheck.allowed) {
       return apiErrors.badRequest(
@@ -64,11 +40,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate file URL using CDN
     const url = getFileUrl(key);
     const { type, extension } = getFileType(fileName);
 
-    // Save to database
     const dbFile = await createFile({
       userId: user.id,
       name: fileName,
@@ -79,7 +53,6 @@ export async function POST(request: NextRequest) {
       storageKey: key,
     });
 
-    // Update storage usage
     await incrementStorageUsage(user.id, fileSize);
 
     return createSuccessResponse({

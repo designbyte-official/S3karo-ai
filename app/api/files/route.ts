@@ -14,7 +14,6 @@ import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/featu
 import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
 import { validateFileName } from '@/features/private-s3/utils/validation';
 
-// GET - List files
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -29,15 +28,12 @@ export async function GET(request: NextRequest) {
     const sort = searchParams.get('sort') || '$createdAt-desc';
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
 
-    // Platform S3 requires database
     if (!isDatabaseConfigured()) {
       return NextResponse.json(
-        { error: 'Database not configured. Platform S3 requires database connection.' },
+        { error: 'Database not configured' },
         { status: 503 }
       );
     }
-
-    // Get files using Drizzle (database is configured)
     const files = await getFilesForUser(user.id, {
       types: types.length > 0 ? types : undefined,
       searchText: searchText || undefined,
@@ -45,7 +41,6 @@ export async function GET(request: NextRequest) {
       limit: limit || undefined,
     });
 
-    // Transform to match existing format
     const transformedFiles = files.map(file => ({
       $id: file.id,
       id: file.id,
@@ -75,9 +70,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Upload file
-// NOTE: This endpoint buffers files through the server (inefficient)
-// Use /api/upload + /api/upload/callback for direct S3 uploads instead
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -86,9 +78,8 @@ export async function POST(request: NextRequest) {
       return apiErrors.unauthorized();
     }
 
-    // Platform S3 requires database
     if (!isDatabaseConfigured()) {
-      return apiErrors.serviceUnavailable('Database not configured. Platform S3 requires database connection.');
+      return apiErrors.serviceUnavailable('Database not configured');
     }
 
     const formData = await request.formData();
@@ -101,14 +92,12 @@ export async function POST(request: NextRequest) {
       return apiErrors.badRequest('No file provided');
     }
 
-    // Validate file name
     try {
       validateFileName(file.name);
     } catch (error: any) {
       return apiErrors.badRequest(error.message);
     }
 
-    // Check storage limit before upload
     const storageCheck = await checkStorageLimit(user.id, file.size);
     if (!storageCheck.allowed) {
       return apiErrors.badRequest(
@@ -120,7 +109,6 @@ export async function POST(request: NextRequest) {
     const client = createPlatformS3Client();
     const bucket = getPlatformS3Bucket();
 
-    // Generate storage key using utility
     const storageKey = generateStorageKey(user.id, file.name, path);
 
     try {
@@ -145,9 +133,6 @@ export async function POST(request: NextRequest) {
     const url = getFileUrl(storageKey);
     const { type, extension } = getFileType(file.name);
 
-    // Create file record in database (Managed Storage only)
-    // storageKey is REQUIRED - we need it to delete/access the file from S3
-    // bucketName is NOT stored - always use getPlatformS3Bucket() from env
     const dbFile = await createFile({
       userId: user.id,
       name: file.name,
@@ -155,13 +140,10 @@ export async function POST(request: NextRequest) {
       extension: extension,
       size: file.size,
       url: url,
-      storageKey: storageKey, // S3 key: needed for deletion, signed URLs, etc.
+      storageKey: storageKey,
     });
 
-    // Update storage usage
     await incrementStorageUsage(user.id, file.size);
-
-    // Transform to match existing format
     const transformedFile = {
       $id: dbFile.id,
       id: dbFile.id,

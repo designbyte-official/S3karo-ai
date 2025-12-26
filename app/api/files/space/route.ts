@@ -4,11 +4,6 @@ import { getCurrentUser } from '@/lib/auth/utils';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
-/**
- * GET /api/files/space
- * Get storage space usage by file type
- * @deprecated Use /api/storage/stats instead for comprehensive stats
- */
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();

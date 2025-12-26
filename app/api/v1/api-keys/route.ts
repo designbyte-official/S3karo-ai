@@ -5,10 +5,6 @@ import { isDatabaseConfigured } from '@/lib/database/db';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
-/**
- * GET /api/v1/api-keys
- * List all API keys for the authenticated user
- */
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -22,7 +18,6 @@ export async function GET(request: NextRequest) {
 
     const keys = await getApiKeysForUser(user.id);
 
-    // Return keys without sensitive data
     return createSuccessResponse({
       keys: keys.map(k => ({
         id: k.id,
@@ -42,11 +37,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-/**
- * POST /api/v1/api-keys
- * Create a new API key
- * Body: { name: string, expiresAt?: string, rateLimit?: number }
- */
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
@@ -72,9 +62,8 @@ export async function POST(request: NextRequest) {
       rateLimit: rateLimit || 1000,
     });
 
-    // IMPORTANT: Return the full key only once
     return createSuccessResponse({
-      key: result.key, // User must save this - it won't be shown again
+      key: result.key,
       prefix: result.prefix,
       id: result.apiKey.id,
       name: result.apiKey.name,
@@ -90,10 +79,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * DELETE /api/v1/api-keys/:id
- * Revoke an API key
- */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
