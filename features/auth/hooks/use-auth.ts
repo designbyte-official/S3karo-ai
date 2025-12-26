@@ -4,10 +4,7 @@ import { useEffect } from 'react';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { getCurrentUser } from '@/features/auth/actions/user.actions';
 
-/**
- * Hook to sync auth state with server
- * Call this in your root layout or app component
- */
+// Sync auth state with server
 export function useAuthSync() {
   const { setUser, setLoading } = useAuthStore();
 
@@ -40,9 +37,7 @@ export function useAuthSync() {
   }, [setUser, setLoading]);
 }
 
-/**
- * Hook to get current auth state
- */
+// Get current auth state
 export function useAuth() {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   return { user, isAuthenticated, isLoading };

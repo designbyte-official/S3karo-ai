@@ -22,13 +22,8 @@ import { withRetry } from "../utils/retry";
 // Import URL utilities from shared location
 import { normalizeBaseUrl, encodeFileKey, constructFileUrl } from '@/lib/utils/url';
 
-/**
- * Creates an S3 client with validated configuration
- * IMPORTANT: Only use 'endpoint' for S3 API operations (e.g., MinIO)
- * NEVER use 'cdnUrl' here - it's only for viewing files, not API operations
- */
+// Create S3 client (endpoint only, not cdnUrl)
 const getS3Client = (config: S3Config): S3Client => {
-    // Validate config before creating client
     validateS3Config(config);
     
     return new S3Client({
@@ -37,19 +32,16 @@ const getS3Client = (config: S3Config): S3Client => {
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
         },
-        endpoint: config.endpoint || undefined, // Only S3 API endpoint, NOT cdnUrl
-        forcePathStyle: !!config.endpoint, // Needed for MinIO/Custom endpoints
-        // Add request timeout
+        endpoint: config.endpoint || undefined,
+        forcePathStyle: !!config.endpoint,
         requestHandler: {
-            requestTimeout: 30000, // 30 seconds
+            requestTimeout: 30000,
         },
     });
 };
 
 export const s3ExplorerService = {
-    /**
-     * Lists items in S3 bucket with validation and error handling
-     */
+    // List files and folders in S3
     async listItems(params: {
         config: S3Config;
         ownerId: string;
@@ -68,16 +60,15 @@ export const s3ExplorerService = {
         return withRetry(async () => {
         const client = getS3Client(params.config);
 
-            // Normalize and validate path
             const normalizedPath = params.subPath ? normalizePath(params.subPath) : "";
             const prefix = normalizedPath ? `${normalizedPath}/` : "";
 
         try {
             const command = new ListObjectsV2Command({
                 Bucket: params.config.bucket,
-                    Prefix: params.searchText ? "" : prefix, // Recursive search from root if searchText
+                    Prefix: params.searchText ? "" : prefix,
                 Delimiter: params.searchText ? undefined : "/",
-                    MaxKeys: params.limit || 1000, // Default limit
+                    MaxKeys: params.limit || 1000,
                     ContinuationToken: params.continuationToken,
             });
 
@@ -85,7 +76,6 @@ export const s3ExplorerService = {
 
             const files: File[] = [];
 
-            // Process Folders (CommonPrefixes)
             if (response.CommonPrefixes && !params.searchText) {
                 response.CommonPrefixes.forEach((p) => {
                     const name = p.Prefix!.replace(prefix, "").replace("/", "");
@@ -111,7 +101,6 @@ export const s3ExplorerService = {
                 });
             }
 
-            // Process Files (Contents)
             if (response.Contents) {
                 response.Contents.forEach((item) => {
                     if (item.Key === prefix || !item.Key) return;
@@ -121,21 +110,15 @@ export const s3ExplorerService = {
 
                     const { type, extension } = getFileType(name);
 
-                    // Use cdnUrl for viewing files if available, otherwise use endpoint or default S3 URL
-                    // cdnUrl is for CloudFront/CDN (viewing only), endpoint is for S3 API operations
                     let baseUrl: string;
                     if (params.config.cdnUrl) {
-                        // CloudFront/CDN URL for viewing files
                         baseUrl = normalizeBaseUrl(params.config.cdnUrl);
                     } else if (params.config.endpoint) {
-                        // Custom S3 endpoint (e.g., MinIO) for viewing
                         baseUrl = normalizeBaseUrl(params.config.endpoint);
                     } else {
-                        // Default AWS S3 URL
                         baseUrl = normalizeBaseUrl(`https://${params.config.bucket}.s3.${params.config.region}.amazonaws.com`);
                     }
 
-                    // Construct URL with proper encoding and normalization
                     const url = constructFileUrl(baseUrl, item.Key || '');
 
                     files.push({
@@ -200,9 +183,7 @@ export const s3ExplorerService = {
         });
     },
 
-    /**
-     * Gets bucket statistics with error handling
-     */
+    // Get bucket stats
     async getBucketStats(config: S3Config, prefix: string = "") {
         if (prefix) {
             validatePath(prefix);
@@ -235,7 +216,7 @@ export const s3ExplorerService = {
             return {
                 used: totalSize,
                     fileCount,
-                all: undefined, // Total bucket capacity is usually not available via API
+                all: undefined,
             };
         } catch (error) {
                 throw handleS3Error(error, 'Get bucket stats');
@@ -243,10 +224,7 @@ export const s3ExplorerService = {
         });
     },
 
-    /**
-     * Uploads a file to S3 with validation and error handling
-     * Automatically uses multipart upload for large files (>100MB)
-     */
+    // Upload file (auto multipart for large files)
     async uploadFile(params: {
         config: S3Config;
         file: globalThis.File;
@@ -255,21 +233,18 @@ export const s3ExplorerService = {
         path: string;
         onProgress?: (progress: number) => void;
         onChunkProgress?: (chunkNumber: number, totalChunks: number) => void;
-        resume?: boolean; // Whether to resume an existing upload
+        resume?: boolean;
     }) {
-        // Validate inputs
         validateFileSize(params.file.size);
         validateFileName(params.file.name);
         if (params.path) {
             validatePath(params.path);
         }
 
-        // Normalize and sanitize
         const normalizedPath = params.path ? normalizePath(params.path) : "";
         const sanitizedName = sanitizeFileName(params.file.name);
         const key = normalizedPath ? `${normalizedPath}/${sanitizedName}` : sanitizedName;
 
-        // Import multipart utilities
         const {
             shouldUseMultipart,
             getFileId,
@@ -287,7 +262,6 @@ export const s3ExplorerService = {
             waitForOnline,
         } = await import("../utils/multipart-upload");
 
-        // Check if we should use multipart upload
         const useMultipart = shouldUseMultipart(params.file.size);
 
         if (useMultipart) {
@@ -384,13 +358,11 @@ export const s3ExplorerService = {
         const client = getS3Client(params.config);
         const fileId = params.getFileId(params.file);
         const totalParts = params.calculatePartCount(params.file.size);
-        const CHUNK_SIZE = 10 * 1024 * 1024; // 10MB - must match multipart-upload.ts
+        const CHUNK_SIZE = 10 * 1024 * 1024;
 
         let uploadId: string;
         let parts: Array<{ partNumber: number; etag: string }> = [];
         let uploadedBytes = 0;
-
-        // Check for existing upload state (resume)
         let existingState = params.resume ? params.getUploadState(fileId) : null;
         if (existingState && existingState.key === params.key && existingState.bucket === params.config.bucket) {
             uploadId = existingState.uploadId;
@@ -566,9 +538,7 @@ export const s3ExplorerService = {
         });
     },
 
-    /**
-     * Creates a folder in S3 with validation
-     */
+    // Create folder
     async createFolder(params: {
         config: S3Config;
         ownerId: string;
@@ -642,9 +612,7 @@ export const s3ExplorerService = {
         });
     },
 
-    /**
-     * Gets object metadata
-     */
+    // Get file metadata
     async head(config: S3Config, key: string) {
         if (!key || typeof key !== 'string') {
             throw new S3Error('Key is required', 'VALIDATION_ERROR');
@@ -672,9 +640,7 @@ export const s3ExplorerService = {
         });
     },
 
-    /**
-     * Renames a file (copy + delete) with validation
-     */
+    // Rename file (copy + delete)
     async rename(config: S3Config, oldKey: string, newKey: string, metadata?: Record<string, string>) {
         if (!oldKey || typeof oldKey !== 'string') {
             throw new S3Error('Old key is required', 'VALIDATION_ERROR');
@@ -684,7 +650,6 @@ export const s3ExplorerService = {
             throw new S3Error('New key is required', 'VALIDATION_ERROR');
         }
 
-        // Validate new key (extract filename if it's a path)
         const newKeyParts = newKey.split('/');
         const newFileName = newKeyParts[newKeyParts.length - 1];
         if (newFileName) {
@@ -706,7 +671,6 @@ export const s3ExplorerService = {
             });
             await client.send(copyCommand);
 
-            // Delete old key
             await this.deleteItem({ config, key: oldKey });
 
                 return { success: true, newKey };
@@ -714,7 +678,7 @@ export const s3ExplorerService = {
                 throw handleS3Error(error, 'Rename file');
         }
         }, {
-            maxRetries: 1, // Don't retry rename to avoid duplicate files
+            maxRetries: 1,
         });
     },
 

@@ -29,18 +29,7 @@ export interface UploadResponse {
   };
 }
 
-/**
- * S3-Karo React hook for file uploads
- * 
- * Usage:
- * const { upload, isUploading } = useUpload();
- * 
- * await upload(file, {
- *   path: 'documents/2024/',
- *   onUploadProgress: (progress) => console.log(progress),
- *   onSuccess: (file) => console.log('Uploaded:', file),
- * });
- */
+// Hook for direct S3 uploads
 export function useUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -62,7 +51,6 @@ export function useUpload() {
     setUploadProgress(0);
 
     try {
-      // Step 1: Request presigned URL from server
       const presignedResponse = await fetch('/api/upload', {
         method: 'POST',
         headers: {
@@ -123,7 +111,6 @@ export function useUpload() {
         xhr.send(file);
       });
 
-      // Step 3: Call callback endpoint to save metadata
       const callbackResponse = await fetch('/api/upload/callback', {
         method: 'POST',
         headers: {
