@@ -60,25 +60,25 @@ const features = [
 
 export const FeaturesSection = () => {
   return (
-    <section id="features" className="py-20 lg:py-32 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <section id="features" className="py-20 lg:py-32 px-4 sm:px-6 lg:px-8 bg-muted/50">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-16">
-          <h2 className="h1 text-3xl sm:text-4xl lg:text-5xl text-dark-200 mb-4">
+          <h2 className="h1 text-3xl sm:text-4xl lg:text-5xl text-foreground mb-4">
             Everything You Need
           </h2>
-          <p className="body-1 text-lg sm:text-xl text-light-100 max-w-2xl mx-auto">
+          <p className="body-1 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
             Powerful features designed for modern file management
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div key={index} className="bg-white rounded-[20px] p-8 shadow-drop-1 border border-light-300 hover:shadow-drop-2 transition-all">
+            <div key={index} className="bg-card rounded-[20px] p-8 shadow-drop-1 border border-border hover:shadow-drop-2 transition-all">
               <div className="w-14 h-14 bg-brand/10 rounded-xl flex items-center justify-center mb-6">
                 {feature.icon}
               </div>
-              <h3 className="h3 text-dark-200 mb-3">{feature.title}</h3>
-              <p className="body-1 text-light-100 leading-relaxed">{feature.description}</p>
+              <h3 className="h3 text-card-foreground mb-3">{feature.title}</h3>
+              <p className="body-1 text-muted-foreground leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>

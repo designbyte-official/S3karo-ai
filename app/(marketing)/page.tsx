@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 
 export default function LandingPage() {
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-background">
             <LandingNav />
             <HeroSection />
             <FeaturesSection />
