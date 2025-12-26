@@ -1,6 +1,7 @@
 import { db, isDatabaseConfigured } from './db';
 import { subscriptions } from './schema';
 import { eq, and, gte } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import type { Subscription, NewSubscription } from './schema';
 import { deleteCache } from '@/lib/redis/cache';
 import { logger } from '@/lib/utils/logger';
@@ -13,6 +14,7 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
     return null;
   }
   try {
+    // First try with all columns
     const result = await db
       .select()
       .from(subscriptions)
@@ -26,7 +28,7 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
 
     if (result.length === 0) return null;
 
-    const subscription = result[0];
+    const subscription = result[0] as any;
     
     // Check if subscription is expired
     if (subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) < new Date()) {
@@ -39,12 +41,57 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
       return null;
     }
 
-    return subscription;
+    // Ensure default values for missing columns (in case schema is outdated)
+    return {
+      ...subscription,
+      storageLimit: subscription.storageLimit ?? 1073741824, // 1GB default
+      storageUsed: subscription.storageUsed ?? 0,
+      bandwidthLimit: subscription.bandwidthLimit ?? 10737418240, // 10GB default
+      bandwidthUsed: subscription.bandwidthUsed ?? 0,
+    } as Subscription;
   } catch (error: any) {
     // Check if error is due to missing columns (database schema issue)
-    if (error?.message?.includes('does not exist') || error?.code === '42703') {
-      logger.warn('Database schema missing columns. Run migration: pnpm db:fix-columns', error);
-      throw new Error('Database schema needs migration. Missing required columns.');
+    if (error?.message?.includes('does not exist') || error?.code === '42703' || error?.cause?.code === '42703') {
+      logger.warn('Subscription check failed (database schema may be outdated)', {
+        query: error?.query || 'N/A',
+        params: error?.params || 'N/A',
+        cause: error?.cause
+      });
+      // Try fallback query with only core columns
+      try {
+        const fallbackResult = await db.execute(sql`
+          SELECT id, user_id, plan, status, stripe_subscription_id, stripe_customer_id, 
+                 current_period_start, current_period_end, cancel_at_period_end, 
+                 created_at, updated_at
+          FROM subscriptions 
+          WHERE user_id = ${userId} AND status = 'active' 
+          LIMIT 1
+        `);
+        
+        if (fallbackResult.rows.length === 0) return null;
+        
+        const sub = fallbackResult.rows[0] as any;
+        return {
+          id: sub.id,
+          userId: sub.user_id,
+          plan: sub.plan,
+          status: sub.status,
+          storageLimit: 1073741824, // Default 1GB
+          storageUsed: 0,
+          bandwidthLimit: 10737418240, // Default 10GB
+          bandwidthUsed: 0,
+          stripeSubscriptionId: sub.stripe_subscription_id,
+          stripeCustomerId: sub.stripe_customer_id,
+          currentPeriodStart: sub.current_period_start,
+          currentPeriodEnd: sub.current_period_end,
+          cancelAtPeriodEnd: sub.cancel_at_period_end,
+          createdAt: sub.created_at,
+          updatedAt: sub.updated_at,
+        } as Subscription;
+      } catch (fallbackError) {
+        logger.warn('Fallback query also failed, returning null', fallbackError);
+        return null;
+      }
     }
     logger.error('Get active subscription error', error);
     throw error;
