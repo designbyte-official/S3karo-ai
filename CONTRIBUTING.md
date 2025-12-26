@@ -32,11 +32,31 @@ s3-karo/
 
 ## Development Setup
 
-1. Clone the repository
-2. Install dependencies: `pnpm install`
-3. Set up environment variables (see `.env.example`)
-4. Run database migrations: `pnpm db:push`
-5. Start development server: `pnpm dev`
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/s3-karo.git
+   cd s3-karo
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+
+3. **Set up environment variables**
+   - Copy `.env.example` to `.env.local`
+   - Fill in all required variables
+   - Validate: `pnpm validate-env`
+
+4. **Set up database**
+   ```bash
+   pnpm db:push
+   ```
+
+5. **Start development server**
+   ```bash
+   pnpm dev
+   ```
 
 ## Code Style
 
@@ -55,11 +75,31 @@ Use clear, descriptive commit messages:
 
 ## Pull Request Process
 
-1. Create a feature branch
-2. Make your changes
-3. Ensure all tests pass
-4. Update documentation if needed
-5. Submit a pull request with a clear description
+1. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+
+2. **Make your changes**
+   - Follow code style guidelines
+   - Add comments for complex logic
+   - Update documentation if needed
+
+3. **Run checks**
+   ```bash
+   pnpm lint          # Check code style
+   pnpm type-check    # Verify TypeScript
+   pnpm validate-env  # Validate environment
+   ```
+
+4. **Commit your changes**
+   - Use clear, descriptive commit messages
+   - Follow conventional commit format
+
+5. **Submit a pull request**
+   - Fill out the PR template
+   - Link related issues
+   - Request review from maintainers
 
 ## Questions?
 

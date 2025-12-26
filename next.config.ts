@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   
+  // Standalone output for Docker
+  output: process.env.DOCKER_BUILD === 'true' ? 'standalone' : undefined,
+  
   typescript: {
     // Only ignore build errors in development
     ignoreBuildErrors: process.env.NODE_ENV === "development",

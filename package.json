@@ -8,12 +8,14 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
+    "validate-env": "tsx scripts/validate-env.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio --port 4984",
     "db:setup": "drizzle-kit push",
-    "db:migrate-urls": "tsx lib/database/migrate-urls.ts"
+    "db:migrate-urls": "tsx lib/database/migrate-urls.ts",
+    "prebuild": "pnpm validate-env"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.958.0",
@@ -87,6 +89,7 @@
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }

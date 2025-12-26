@@ -160,22 +160,38 @@ pnpm run dev
 
 ## <a name="documentation">📚 Documentation</a>
 
-Detailed guides are available in the [local-docs/](file:///local-docs/) directory:
+### Quick Links
+- 📖 [Setup Guide](local-docs/SETUP_GUIDE.md) - Complete setup instructions
+- 🔐 [Security Guide](local-docs/SECURITY.md) - Security best practices
+- 🔑 [Authentication](local-docs/AUTHENTICATION.md) - Auth system documentation
+- 📡 [API Documentation](docs/API.md) - Public API reference
+- 🏗️ [Architecture](docs/ARCHITECTURE.md) - System architecture
 
-- [Setup Checklist](file:///local-docs/SETUP_CHECKLIST.md) - Step-by-step guide to get running.
-- [Authentication System](file:///local-docs/AUTHENTICATION.md) - Complete guide to JWT-based authentication.
-- [Managed Storage Setup](file:///local-docs/MANAGED_STORAGE_SETUP.md) - How the pro-tier works.
-- [S3 Integration](file:///local-docs/S3_INTEGRATION.md) - Technical architecture of the storage layer.
-- [Security Guide](file:///local-docs/SECURITY.md) - Detailed info on how we protect your data.
-- [Environment Variables](file:///local-docs/ENV_VARIABLES.md) - Complete reference for all config.
+### Internal Documentation
+Detailed guides are available in the `local-docs/` directory (not committed to git):
+
+- [Setup Checklist](local-docs/SETUP_CHECKLIST.md) - Step-by-step guide
+- [Authentication System](local-docs/AUTHENTICATION.md) - JWT authentication guide
+- [Managed Storage Setup](local-docs/MANAGED_STORAGE_SETUP.md) - Pro-tier setup
+- [S3 Integration](local-docs/S3_INTEGRATION.md) - Storage layer architecture
+- [Environment Variables](local-docs/ENV_VARIABLES.md) - Complete env var reference
+
+### Public Documentation
+- [API Documentation](docs/API.md) - Public API endpoints
+- [Architecture](docs/ARCHITECTURE.md) - System design
+- [Upload Architecture](docs/UPLOAD_ARCHITECTURE.md) - Upload system details
 
 **Running the Project**
 
 ```bash
-npm run dev
+# Validate environment variables
+pnpm validate-env
+
+# Start development server
+pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the project.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## <a name="snippets">🕸️ Snippets</a>
 
@@ -1099,20 +1115,84 @@ declare interface ShareInputProps {
 
 </details>
 
-## <a name="links">🔗 Assets</a>
+## <a name="contributing">🤝 Contributing</a>
 
-- Assets used in the project can be found [here](https://drive.google.com/file/d/1NCQH7HNXjfZMQ1MzpX3uRCixSY32iWl2/view?usp=sharing)
-- [Watch Next.js 15 Crash Course ](https://www.youtube.com/watch?v=Zq5fmkH0T78)
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## <a name="more">🚀 More</a>
+### Quick Start for Contributors
 
-**Advance your skills with Next.js Pro Course**
+```bash
+# Clone and setup
+git clone https://github.com/your-username/s3-karo.git
+cd s3-karo
+pnpm install
 
-Enjoyed creating this project? Dive deeper into our PRO courses for a richer learning adventure. They're packed with
-detailed explanations, cool features, and exercises to boost your skills. Give it a go!
+# Validate environment
+pnpm validate-env
 
-<a href="https://jsmastery.pro/next15" target="_blank">
-   <img src="https://github.com/user-attachments/assets/b8760e69-1f81-4a71-9108-ceeb1de36741" alt="Project Banner">
-</a>
+# Start development
+pnpm dev
+```
+
+### Development Workflow
+
+1. Create a feature branch from `main`
+2. Make your changes
+3. Run `pnpm lint` and `pnpm type-check`
+4. Submit a pull request
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+## <a name="license">📝 License</a>
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## <a name="changelog">📋 Changelog</a>
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and changes.
+
+## <a name="support">💬 Support & Resources</a>
+
+- 📖 [Documentation](local-docs/README.md) - Complete documentation index
+- 🐛 [Report a Bug](.github/ISSUE_TEMPLATE/bug_report.md) - Bug report template
+- 💡 [Request a Feature](.github/ISSUE_TEMPLATE/feature_request.md) - Feature request template
+- 🔒 [Security Issues](local-docs/SECURITY.md#reporting-security-issues) - Security reporting
+- 📊 [Project Status](PROJECT_STATUS.md) - Current project status and roadmap
+
+## <a name="deployment">🚀 Deployment</a>
+
+### Environment Validation
+
+Before deploying, validate your environment:
+
+```bash
+pnpm validate-env
+```
+
+### Docker Deployment
+
+```bash
+# Build Docker image
+docker build -t s3-karo .
+
+# Run with docker-compose
+docker-compose up -d
+```
+
+### Platform Deployment
+
+**Vercel (Recommended)**
+1. Push code to GitHub
+2. Import project in Vercel
+3. Add environment variables
+4. Deploy
+
+**Other Platforms**
+- Railway, Render, AWS, DigitalOcean all supported
+- See [local-docs/SETUP_GUIDE.md](local-docs/SETUP_GUIDE.md) for details
+
+---
+
+**Made with ❤️ by the S3-Karo team**
 
 #

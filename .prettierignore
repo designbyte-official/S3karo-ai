@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+build
+dist
+
+# Logs
+*.log
+
+# Environment
+.env*
+
+# Database
+*.db
+*.sqlite
+
+# Misc
+.cache
+.turbo
+.vercel
+pnpm-lock.yaml
+package-lock.json
+
+# Generated
+*.tsbuildinfo
+next-env.d.ts
+
