@@ -6,7 +6,7 @@ export interface S3Config {
     region: string;
     accessKeyId: string;
     secretAccessKey: string;
-    endpoint?: string; // For S3 API operations (e.g., MinIO custom endpoint)
+    endpoint?: string; // CloudFront/CDN URL or S3 API endpoint (e.g., MinIO custom endpoint)
     cdnUrl?: string; // For viewing files via CDN/CloudFront (NOT for S3 API operations)
 }
 

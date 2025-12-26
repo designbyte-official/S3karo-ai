@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { FormPasswordInput } from "@/components/form-inputs/FormPasswordInput";
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -152,27 +153,12 @@ const AuthForm = ({ type }: { type: FormType }) => {
             )}
           />
 
-          <FormField
+          <FormPasswordInput
             control={form.control}
             name="password"
-            render={({ field }) => (
-              <FormItem>
-                <div className="shad-form-item">
-                  <FormLabel className="shad-form-label">Password</FormLabel>
-
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your password"
-                      className="shad-input"
-                      {...field}
-                    />
-                  </FormControl>
-                </div>
-
-                <FormMessage className="shad-form-message" />
-              </FormItem>
-            )}
+            label="Password"
+            placeholder="Enter your password"
+            showToggle={true}
           />
 
           <Button

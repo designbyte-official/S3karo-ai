@@ -103,7 +103,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         try {
             // Get current config to preserve any fields not in the form (like cdnUrl)
             const existingConfig = await s3ConfigService.getConfig(userId);
-            
+
             await s3ConfigService.saveConfig(userId, {
                 ...(existingConfig || {}),
                 ...values,
@@ -125,7 +125,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             // Dispatch custom event for same-tab updates
             window.dispatchEvent(new Event('s3-config-updated'));
             window.dispatchEvent(new Event('storage'));
-            
+
             setTimeout(() => {
                 router.refresh();
                 setIsEditMode(false);
@@ -181,10 +181,10 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
 
     // Sync CDN URL state when currentConfig changes
     useEffect(() => {
-        const newCdnUrl = currentConfig?.cdnUrl !== undefined 
+        const newCdnUrl = currentConfig?.cdnUrl !== undefined
             ? (currentConfig.cdnUrl || "")
-            : (currentConfig?.endpoint && currentConfig.endpoint.startsWith('https://') 
-                ? currentConfig.endpoint 
+            : (currentConfig?.endpoint && currentConfig.endpoint.startsWith('https://')
+                ? currentConfig.endpoint
                 : "");
         setCdnUrl(newCdnUrl);
     }, [currentConfig?.cdnUrl, currentConfig?.endpoint]);
@@ -195,30 +195,30 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             setCdnError("");
             return true; // Empty is valid (optional field)
         }
-        
+
         const trimmed = url.trim();
-        
+
         // Basic format check: must start with http:// or https://
         if (!trimmed.match(/^https?:\/\//i)) {
             setCdnError("URL must start with http:// or https://");
             return false;
         }
-        
+
         try {
             const urlObj = new URL(trimmed);
-            
+
             // Validate protocol
             if (!['http:', 'https:'].includes(urlObj.protocol)) {
                 setCdnError("URL must use http:// or https:// protocol");
                 return false;
             }
-            
+
             // Validate hostname exists
             if (!urlObj.hostname || urlObj.hostname.trim() === '') {
                 setCdnError("URL must have a valid hostname");
                 return false;
             }
-            
+
             setCdnError("");
             return true;
         } catch (e) {
@@ -272,7 +272,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             // Normalize and update ONLY the cdnUrl field, preserve all other current values exactly as they are
             // IMPORTANT: cdnUrl is for viewing files only, NOT for S3 API operations
             const normalizedUrl = cdnUrl.trim() ? normalizeCdnUrl(cdnUrl) : undefined;
-            
+
             const updatedConfig = {
                 ...latestConfig,
                 cdnUrl: normalizedUrl, // Store normalized URL (without trailing slash)
@@ -293,7 +293,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             // Dispatch events for same-tab and cross-tab updates
             window.dispatchEvent(new Event('s3-config-updated'));
             window.dispatchEvent(new Event('storage'));
-            
+
             router.refresh();
         } catch (error) {
             console.error(error);
@@ -308,7 +308,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
     };
 
     // Get current cdnUrl value for comparison
-    const currentCdnUrl = currentConfig?.cdnUrl || 
+    const currentCdnUrl = currentConfig?.cdnUrl ||
         (currentConfig?.endpoint && currentConfig.endpoint.startsWith('https://') ? currentConfig.endpoint : "") || "";
 
     if (!isEditMode && currentConfig?.bucket) {
@@ -422,9 +422,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                             {isSavingCdn ? "Saving..." : "Update"}
                         </Button>
                     </div>
-                    <p className="text-xs text-light-200 mt-1">
-                        CDN URL is only used for viewing files. S3 operations (upload, delete, etc.) continue using your S3 credentials.
-                    </p>
+
                 </div>
             </div>
         );
@@ -470,16 +468,15 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 <FormTextInput
                     control={form.control}
                     name="endpoint"
-                    label="S3 Custom Endpoint (Optional - for MinIO, etc.)"
-                    placeholder="http://localhost:9000"
-                    description="Only for S3 API operations. Leave empty for standard AWS S3."
+                    label="CloudFront URL / CDN URL (Optional)"
+                    placeholder="https://d1234567890.cloudfront.net"
                 />
 
                 <div className="flex justify-end gap-4">
                     {currentConfig?.bucket && (
-                        <Button 
-                            type="button" 
-                            variant="ghost" 
+                        <Button
+                            type="button"
+                            variant="ghost"
                             onClick={() => {
                                 // Reset form to current config values when canceling
                                 form.reset({
