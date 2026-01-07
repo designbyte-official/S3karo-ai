@@ -24,7 +24,7 @@ export const CTASection = () => {
             </Button>
           </Link>
           <Link href="/sign-in">
-            <Button variant="outline" className="h-[60px] px-12 rounded-full border-2 border-white text-white hover:bg-white/10 text-lg font-semibold transition-all duration-300">
+            <Button className="h-[60px] px-12 rounded-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-brand text-lg font-semibold transition-all duration-300">
               Sign In
             </Button>
           </Link>
