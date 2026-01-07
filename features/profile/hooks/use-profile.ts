@@ -55,20 +55,36 @@ export const useProfile = (isManagedStorage: boolean) => {
       setSubscription(data);
     } catch (error: any) {
       toast.error("Failed to load subscription", { description: error.message });
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (user) {
+    const loadData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      
       if (isManagedStorage) {
-        fetchKeys();
-        fetchSubscription();
+        try {
+          // Fetch both in parallel
+          const keysPromise = fetchKeys();
+          const subscriptionPromise = fetchSubscription();
+          await Promise.all([keysPromise, subscriptionPromise]);
+        } catch (error) {
+          // Errors are already handled in individual fetch functions
+        } finally {
+          setLoading(false);
+        }
       } else {
         setLoading(false);
       }
-    }
+    };
+
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isManagedStorage]);
 
   return {

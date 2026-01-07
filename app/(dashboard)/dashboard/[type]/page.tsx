@@ -5,11 +5,18 @@ import { getFiles } from "@/features/managed-storage/actions/file.actions";
 import { getFileTypesParams } from "@/features/shared/utils";
 import FileList from "@/features/managed-storage/components/FileList";
 import { S3File as MyFile } from "@/types/file";
+import { notFound } from "next/navigation";
 
 const Page = async ({ searchParams, params }: SearchParamProps) => {
   const type = ((await params)?.type as string) || "";
   const searchText = ((await searchParams)?.query as string) || "";
   const sort = ((await searchParams)?.sort as string) || "";
+
+  // Valid file types only
+  const validTypes = ["documents", "images", "media", "others"];
+  if (!validTypes.includes(type)) {
+    notFound();
+  }
 
   const types = getFileTypesParams(type) as FileType[];
   const currentUser = await getCurrentUser();
