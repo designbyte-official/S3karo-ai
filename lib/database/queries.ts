@@ -21,7 +21,7 @@ export async function getUserById(userId: string): Promise<User | null> {
     const database = requireDatabase();
     const result = await database.select().from(users).where(eq(users.id, userId)).limit(1);
     return result[0] || null;
-  } catch (error) {
+  } catch (error: any) {
     logger.warn("Database query failed:", error);
     return null;
   }
@@ -36,7 +36,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     const database = requireDatabase();
     const result = await database.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0] || null;
-  } catch (error) {
+  } catch (error: any) {
     logger.warn("Database query failed:", error);
     return null;
   }
@@ -86,7 +86,7 @@ export async function updateVerificationToken(
 // Verify user email with token
 export async function verifyUserEmail(token: string): Promise<User | null> {
   const database = requireDatabase();
-  
+
   const result = await database
     .select()
     .from(users)
@@ -97,13 +97,13 @@ export async function verifyUserEmail(token: string): Promise<User | null> {
       )
     )
     .limit(1);
-  
+
   if (result.length === 0) {
     return null;
   }
-  
+
   const user = result[0];
-  
+
   const updated = await database
     .update(users)
     .set({
@@ -114,7 +114,7 @@ export async function verifyUserEmail(token: string): Promise<User | null> {
     })
     .where(eq(users.id, user.id))
     .returning();
-  
+
   return updated[0] || null;
 }
 
@@ -160,7 +160,7 @@ export async function getFilesForUser(
     if (filters?.sort) {
       const [field, direction] = filters.sort.split("-");
       const isAsc = direction === "asc";
-      
+
       if (field === "$createdAt" || field === "createdAt") {
         const sortedQuery = baseQuery.orderBy(isAsc ? asc(files.createdAt) : desc(files.createdAt));
         if (filters?.limit) {
@@ -187,13 +187,13 @@ export async function getFilesForUser(
         return await sortedQuery;
       }
     }
-    
+
     const defaultSortedQuery = baseQuery.orderBy(desc(files.createdAt));
     if (filters?.limit) {
       return await defaultSortedQuery.limit(filters.limit);
     }
     return await defaultSortedQuery;
-  } catch (error) {
+  } catch (error: any) {
     logger.warn("Database query failed:", error);
     return [];
   }
@@ -234,7 +234,7 @@ export async function deleteFile(fileId: string, userId: string): Promise<File |
     .from(files)
     .where(and(eq(files.id, fileId), eq(files.userId, userId)))
     .limit(1);
-  
+
   if (fileToDelete.length === 0) {
     return null;
   }
@@ -299,14 +299,14 @@ export async function migrateFileUrlsToCdn(): Promise<{ updated: number; errors:
           })
           .where(eq(files.id, file.id));
         updated++;
-      } catch (error) {
+      } catch (error: any) {
         logger.error(`Error updating file ${file.id}:`, error);
         errors++;
       }
     }
 
     return { updated, errors };
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Migration error:', error);
     throw error;
   }
@@ -333,7 +333,7 @@ export async function getTotalSpaceUsed(userId: string): Promise<{
       all: 2 * 1024 * 1024 * 1024 * 1024, // 2TB
     };
   }
-  
+
   const database = requireDatabase();
   const userFiles = await database
     .select({
@@ -381,15 +381,15 @@ export async function createApiKey(data: {
   rateLimit?: number;
 }): Promise<{ key: string; prefix: string; apiKey: ApiKey }> {
   const database = requireDatabase();
-  
+
   // Generate secure API key
   const keyPrefix = "sk_live_";
   const randomBytes = crypto.randomBytes(32).toString("hex");
   const fullKey = `${keyPrefix}${randomBytes}`;
-  
+
   const keyHash = crypto.createHash("sha256").update(fullKey).digest("hex");
   const prefix = `${keyPrefix}${randomBytes.substring(0, 2)}`;
-  
+
   const result = await database
     .insert(apiKeys)
     .values({
@@ -402,7 +402,7 @@ export async function createApiKey(data: {
       isActive: true,
     })
     .returning();
-  
+
   return {
     key: fullKey,
     prefix: prefix,
@@ -413,9 +413,9 @@ export async function createApiKey(data: {
 // Verify API key and return user info
 export async function verifyApiKey(apiKey: string): Promise<{ userId: string; apiKey: ApiKey } | null> {
   const database = requireDatabase();
-  
+
   const keyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
-  
+
   const result = await database
     .select()
     .from(apiKeys)
@@ -424,22 +424,22 @@ export async function verifyApiKey(apiKey: string): Promise<{ userId: string; ap
       eq(apiKeys.isActive, true)
     ))
     .limit(1);
-  
+
   if (result.length === 0) {
     return null;
   }
-  
+
   const apiKeyRecord = result[0];
-  
+
   if (apiKeyRecord.expiresAt && apiKeyRecord.expiresAt < new Date()) {
     return null;
   }
-  
+
   await database
     .update(apiKeys)
     .set({ lastUsedAt: new Date(), updatedAt: new Date() })
     .where(eq(apiKeys.id, apiKeyRecord.id));
-  
+
   return {
     userId: apiKeyRecord.userId,
     apiKey: apiKeyRecord,
@@ -467,7 +467,7 @@ export async function revokeApiKey(apiKeyId: string, userId: string): Promise<bo
       eq(apiKeys.userId, userId)
     ))
     .returning();
-  
+
   return result.length > 0;
 }
 
@@ -477,19 +477,19 @@ export async function revokeApiKey(apiKeyId: string, userId: string): Promise<bo
 // Check rate limit for API key (uses Redis if available, no middleware required)
 export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boolean; remaining: number; reset?: number }> {
   const database = requireDatabase();
-  
+
   const result = await database
     .select({ rateLimit: apiKeys.rateLimit })
     .from(apiKeys)
     .where(eq(apiKeys.id, apiKeyId))
     .limit(1);
-  
+
   if (result.length === 0) {
     return { allowed: false, remaining: 0 };
   }
-  
+
   const rateLimit = result[0].rateLimit || 1000;
-  
+
   const { checkRateLimit: checkRedisRateLimit } = await import('@/lib/redis/rate-limit');
   return await checkRedisRateLimit(`api-key:${apiKeyId}`, rateLimit);
 }

@@ -11,46 +11,25 @@ if (!connectionString) {
 
 export const sql = neon(connectionString);
 
-// Helper function to execute queries
+// Helper function to execute raw queries with parameters
 export async function query(text: string, params?: any[]) {
   try {
-    const result = await sql(text, params);
-    return result;
+    // For Neon, we need to use the sql function differently for raw queries
+    // We'll construct a parameterized query manually
+    if (!params || params.length === 0) {
+      // No parameters, use as-is (but this is risky - avoid if possible)
+      const result = await sql([text] as any);
+      return result;
+    }
+
+    // With parameters, we need to construct the query properly
+    // Neon doesn't support positional parameters the same way
+    // We'll need to use the tagged template approach
+    throw new Error('Use sql tagged template literals instead of query() with params');
   } catch (error) {
     logger.error('Database query error', error);
     throw error;
   }
-}
-
-// Get current user from database
-export async function getUserById(userId: string) {
-  const result = await sql`
-    SELECT * FROM users WHERE id = ${userId}
-  `;
-  return result[0] || null;
-}
-
-// Get user by email
-export async function getUserByEmail(email: string) {
-  const result = await sql`
-    SELECT * FROM users WHERE email = ${email.toLowerCase()}
-  `;
-  return result[0] || null;
-}
-
-// Create user
-export async function createUser(data: {
-  email: string;
-  full_name: string;
-  password_hash: string;
-  avatar?: string;
-}) {
-  const result = await sql`
-    INSERT INTO users (email, full_name, password_hash, avatar)
-    VALUES (${data.email.toLowerCase()}, ${data.full_name}, ${data.password_hash}, ${data.avatar || 'https://ui-avatars.com/api/?name=User&background=random'})
-    RETURNING *
-  `;
-  return result[0];
 }
 
 // Get files for user
@@ -60,53 +39,60 @@ export async function getFilesForUser(userId: string, filters?: {
   sort?: string;
   limit?: number;
 }) {
-  let query = sql`
-    SELECT * FROM files WHERE user_id = ${userId}
-  `;
+  // Build base query
+  let baseQuery = sql`SELECT * FROM files WHERE user_id = ${userId}`;
 
+  // Apply filters
   if (filters?.types && filters.types.length > 0) {
-    query = sql`
+    baseQuery = sql`
       SELECT * FROM files 
       WHERE user_id = ${userId} AND type = ANY(${filters.types})
     `;
   }
 
   if (filters?.searchText) {
-    query = sql`
+    const searchPattern = `%${filters.searchText}%`;
+    baseQuery = sql`
       SELECT * FROM files 
-      WHERE user_id = ${userId} AND name ILIKE ${'%' + filters.searchText + '%'}
+      WHERE user_id = ${userId} AND name ILIKE ${searchPattern}
     `;
   }
 
-  // Add sorting - build query dynamically but safely
+  // For sorting and limiting, we need to use raw SQL since Neon doesn't support dynamic ORDER BY
+  // Get the sort parameters
   const sortBy = filters?.sort?.split('-')[0] || 'created_at';
   const orderBy = filters?.sort?.split('-')[1] || 'desc';
   const sortColumn = sortBy === '$createdAt' ? 'created_at' : sortBy === '$updatedAt' ? 'updated_at' : sortBy;
   const sortDirection = orderBy === 'asc' ? 'ASC' : 'DESC';
-  
+
   // Validate sort column to prevent SQL injection
   const validColumns = ['created_at', 'updated_at', 'name', 'size', 'type'];
   const safeSortColumn = validColumns.includes(sortColumn) ? sortColumn : 'created_at';
   const safeSortDirection = sortDirection === 'ASC' ? 'ASC' : 'DESC';
-  
-  // Build query with proper SQL - use parameterized queries to prevent SQL injection
-  // SECURITY: Always use parameterized queries, never string interpolation for user input
-  const params: any[] = [userId];
-  let queryText = `
-    SELECT * FROM files 
-    WHERE user_id = $1
-    ORDER BY ${safeSortColumn} ${safeSortDirection}
-  `.trim();
-  
-  // Add LIMIT with parameterization if provided
-  if (filters?.limit) {
-    // Validate limit is a positive integer
-    const limit = Math.max(1, Math.min(1000, Math.floor(Number(filters.limit) || 100)));
-    queryText += ` LIMIT $${params.length + 1}`;
-    params.push(limit);
+
+  // Build the complete query with sorting
+  let queryText = `SELECT * FROM files WHERE user_id = '${userId}'`;
+
+  if (filters?.types && filters.types.length > 0) {
+    const typesArray = filters.types.map(t => `'${t}'`).join(',');
+    queryText = `SELECT * FROM files WHERE user_id = '${userId}' AND type = ANY(ARRAY[${typesArray}])`;
   }
-  
-  return await query(queryText, params);
+
+  if (filters?.searchText) {
+    const escapedSearch = filters.searchText.replace(/'/g, "''");
+    queryText = `SELECT * FROM files WHERE user_id = '${userId}' AND name ILIKE '%${escapedSearch}%'`;
+  }
+
+  queryText += ` ORDER BY ${safeSortColumn} ${safeSortDirection}`;
+
+  if (filters?.limit) {
+    const limit = Math.max(1, Math.min(1000, Math.floor(Number(filters.limit) || 100)));
+    queryText += ` LIMIT ${limit}`;
+  }
+
+  // Execute using Neon's sql function with raw query
+  const result = await sql([queryText] as any);
+  return result;
 }
 
 // Create file record
