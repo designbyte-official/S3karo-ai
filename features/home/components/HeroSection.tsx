@@ -5,48 +5,67 @@ import { Button } from "@/components/ui/button";
 
 export const HeroSection = () => {
   return (
-    <section className="pt-32 pb-20 lg:pt-40 lg:pb-32 px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto max-w-6xl">
-        <div className="text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary body-2 mb-4 shadow-drop-1">
-            <span className="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+    <section className="relative pt-24 pb-20 lg:pt-32 lg:pb-28 px-4 sm:px-6 lg:px-8 bg-white overflow-hidden">
+      {/* Background Gradient Orbs */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand/5 rounded-full blur-3xl -z-10"></div>
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-75/10 rounded-full blur-3xl -z-10"></div>
+
+      <div className="container mx-auto max-w-7xl">
+        {/* Hero Content */}
+        <div className="text-center space-y-8 mb-16 lg:mb-20">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-50 text-brand subtitle-2">
+            <span className="w-2 h-2 bg-brand rounded-full animate-pulse"></span>
             Privacy-First File Storage
           </div>
-          <h1 className="h1 text-4xl sm:text-5xl lg:text-6xl xl:text-7xl tracking-tight text-foreground">
+
+          {/* Main Heading - HUGE */}
+          <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-dark-100 leading-[1.1]">
             Store, Share & Manage
             <br />
-            <span className="text-primary">Your Files Securely</span>
+            <span className="text-brand">Your Files Securely</span>
           </h1>
-          <p className="body-1 text-lg sm:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+
+          {/* Subheading */}
+          <p className="text-xl sm:text-2xl lg:text-3xl text-light-100 max-w-4xl mx-auto leading-relaxed font-normal">
             A powerful, privacy-first file management platform. Use our Managed Storage tier or bring your Own S3 bucket.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-4">
             <Link href="/sign-up">
-              <Button className="h-[52px] px-8 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 shadow-drop-1 body-2">
+              <Button className="primary-btn h-[60px] px-10 text-lg font-semibold">
                 Start Free Trial
               </Button>
             </Link>
             <Link href="#features">
-              <Button variant="outline" className="h-[52px] px-8 rounded-full border-border shadow-drop-1 body-2">
+              <Button variant="outline" className="h-[60px] px-10 rounded-full button text-lg font-semibold bg-white hover:bg-light-300 border-2 border-light-200">
                 Learn More
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* Hero Visual */}
-        <div className="mt-16 lg:mt-24 relative">
-          <div className="relative rounded-[20px] bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-8 lg:p-12 border border-primary/20 shadow-drop-1">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-card rounded-xl p-6 shadow-drop-1 border border-border hover:shadow-drop-2 transition-all">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl mb-4 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        {/* Hero Visual - File Cards */}
+        <div className="relative">
+          <div className="relative rounded-3xl bg-gradient-to-br from-brand-50 via-brand-75/30 to-white p-8 lg:p-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { name: "Project Proposal.pdf", size: "2.4 MB", color: "from-brand to-brand-100" },
+                { name: "Design Assets.zip", size: "15.8 MB", color: "from-orange to-orange/80" },
+                { name: "Team Photo.jpg", size: "4.2 MB", color: "from-green to-green/80" }
+              ].map((file, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl p-8 transition-all duration-300 hover:scale-105 group"
+                >
+                  <div className={`w-16 h-16 bg-gradient-to-br ${file.color} rounded-2xl mb-6 flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <h3 className="h5 text-card-foreground mb-2">File {i}</h3>
-                  <p className="body-2 text-muted-foreground">2.4 MB</p>
+                  <h3 className="subtitle-1 text-dark-100 mb-2 font-semibold">{file.name}</h3>
+                  <p className="body-2 text-light-100">{file.size}</p>
                 </div>
               ))}
             </div>
@@ -56,4 +75,3 @@ export const HeroSection = () => {
     </section>
   );
 };
-

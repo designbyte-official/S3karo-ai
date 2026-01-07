@@ -8,40 +8,93 @@ interface LogoProps {
   variant?: "full" | "icon";
   className?: string;
   href?: string;
-  textColor?: "brand" | "white";
 }
 
-const Logo = ({ 
-  variant = "full", 
+const Logo = ({
+  variant = "full",
   className,
   href = "/",
-  textColor = "brand",
 }: LogoProps) => {
   const iconSize = variant === "full" ? 40 : 32;
-  const textColorClass = textColor === "white" ? "text-white" : "text-brand";
-  
+
   const logoContent = (
-    <div className={cn("flex items-center gap-3", className)}>
-      {/* S3 Storage Icon - Enhanced cloud icon with rounded design */}
-      <div className={cn("flex-shrink-0 rounded-xl p-1.5 bg-brand/10", textColorClass)}>
+    <div className={cn("flex items-center gap-3 group", className)}>
+      {/* Premium S3Karo Icon - Cloud with Hexagonal Bucket */}
+      <div className="flex-shrink-0 relative">
         <svg
-          width={iconSize - 8}
-          height={iconSize - 8}
-          viewBox="0 0 40 40"
+          width={iconSize}
+          height={iconSize}
+          viewBox="0 0 48 48"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          className="rounded-lg"
+          className="transition-transform duration-300 group-hover:scale-110"
         >
-          {/* Cloud shape with better design */}
+          {/* Cloud base with gradient */}
+          <defs>
+            <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#FA7275" />
+              <stop offset="100%" stopColor="#EA6365" />
+            </linearGradient>
+          </defs>
+
+          {/* Left cloud curve */}
           <path
-            d="M28 17C29.6569 17 31 18.3431 31 20C31 20.5523 31.4477 21 32 21C33.1046 21 34 21.8954 34 23C34 24.1046 33.1046 25 32 25H12C10.8954 25 10 24.1046 10 23C10 21.8954 10.8954 21 12 21H13C13 18.7909 14.7909 17 17 17C18.3807 17 19.6307 17.5571 20.5355 18.4645C21.2092 19.1382 21.6235 20.0117 21.7461 20.9648C21.9101 20.988 22.0787 21 22.25 21C24.3211 21 26 22.6789 26 24.75V25H28C29.1046 25 30 24.1046 30 23C30 21.8954 29.1046 21 28 21H27C27 19.3431 27.6569 17.6569 28 17Z"
-            fill="currentColor"
+            d="M8 28C8 28 6 28 6 26C6 24 8 24 8 24C8 20 11 17 15 17C16 17 17 17.3 18 17.8"
+            stroke="url(#brandGradient)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            fill="none"
+          />
+
+          {/* Right cloud curve */}
+          <path
+            d="M30 17.8C31 17.3 32 17 33 17C37 17 40 20 40 24C40 24 42 24 42 26C42 28 40 28 40 28"
+            stroke="url(#brandGradient)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            fill="none"
+          />
+
+          {/* Top cloud curve */}
+          <path
+            d="M18 17.8C18.5 16.2 20 15 22 15C23 15 24 15.3 24.5 16C25 15.3 26 15 27 15C29 15 30.5 16.2 31 17.8"
+            stroke="url(#brandGradient)"
+            strokeWidth="3"
+            strokeLinecap="round"
+            fill="none"
+          />
+
+          {/* Hexagonal S3 Bucket in center */}
+          <path
+            d="M24 20L28.5 22.5V27.5L24 30L19.5 27.5V22.5L24 20Z"
+            fill="url(#brandGradient)"
+            className="transition-opacity duration-300 group-hover:opacity-80"
+          />
+
+          {/* S3 text inside hexagon */}
+          <text
+            x="24"
+            y="27"
+            fontSize="7"
+            fontWeight="bold"
+            fill="white"
+            textAnchor="middle"
+            className="select-none"
+          >
+            S3
+          </text>
+
+          {/* Security shield accent */}
+          <path
+            d="M24 31L24 33C24 33 26 33.5 26 35.5C26 36.5 25.5 37 24 37C22.5 37 22 36.5 22 35.5C22 33.5 24 33 24 33L24 31Z"
+            fill="url(#brandGradient)"
+            opacity="0.6"
           />
         </svg>
       </div>
-      
+
       {variant === "full" && (
-        <span className={cn("font-bold text-xl lg:text-2xl tracking-tight", textColorClass)}>
+        <span className="font-bold text-xl lg:text-2xl tracking-tight text-brand transition-colors duration-300 group-hover:text-brand-100">
           S3Karo
         </span>
       )}
@@ -60,4 +113,3 @@ const Logo = ({
 };
 
 export default Logo;
-
