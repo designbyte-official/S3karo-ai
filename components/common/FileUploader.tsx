@@ -61,8 +61,8 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
                         throw new Error("S3 not configured. Please configure your bucket first.");
                     }
 
-                    console.log('Starting upload:', { fileName: file.name, size: file.size, path: uploadPath });
-                    
+                    // console.log('Starting upload:', { fileName: file.name, size: file.size, path: uploadPath });
+
                     const result = await s3ExplorerService.uploadFile({
                         config,
                         file,
@@ -70,17 +70,17 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
                         accountId,
                         path: uploadPath,
                         onProgress: (progress) => {
-                            console.log(`Upload progress for ${file.name}: ${progress}%`);
+                            // console.log(`Upload progress for ${file.name}: ${progress}%`);
                         },
                     });
 
-                    console.log('Upload successful:', result);
+                    // console.log('Upload successful:', result);
                 } else {
                     // Managed storage - use direct S3 upload with presigned URLs
                     await uploadFile(file, {
                         path: uploadPath,
                         onSuccess: (fileData) => {
-                            console.log('Managed storage upload success:', fileData);
+                            // console.log('Managed storage upload success:', fileData);
                         },
                         onError: (error) => {
                             throw error;
@@ -94,7 +94,7 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
                 });
             } catch (error) {
                 console.error("Upload error:", error);
-                
+
                 // Extract user-friendly error message
                 let errorMessage = 'Unknown error occurred';
                 if (error instanceof Error) {
@@ -102,7 +102,7 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
                 } else if (typeof error === 'object' && error !== null && 'message' in error) {
                     errorMessage = String((error as any).message);
                 }
-                
+
                 toast({
                     title: "Upload Failed",
                     description: `Failed to upload ${file.name}: ${errorMessage}`,
@@ -114,7 +114,7 @@ const FileUploader = ({ ownerId, accountId, className, mode = "managed", path: u
         await Promise.all(uploadPromises);
         setIsUploading(false);
         setFiles([]);
-        
+
         // Force refresh the page to show new files
         // Use setTimeout to ensure upload completes before refresh
         setTimeout(() => {

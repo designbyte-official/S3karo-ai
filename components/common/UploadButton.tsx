@@ -48,7 +48,7 @@ export function UploadButton({
         maxFileSize,
         allowedFileTypes,
         onSuccess: (file) => {
-          console.log('Uploaded:', file);
+          // console.log('Uploaded:', file);
         },
       });
 

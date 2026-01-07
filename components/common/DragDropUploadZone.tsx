@@ -77,10 +77,10 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
             e.preventDefault();
             e.stopPropagation();
             setIsDragActive(false);
-            
+
             const files = Array.from(e.dataTransfer?.files || []);
             if (files.length > 0) {
-                
+
                 // Filter out duplicates
                 setFilesToUpload(prev => {
                     const uniqueFiles: FileWithStatus[] = [];
@@ -217,8 +217,8 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         }
 
         // Update all pending files to uploading status
-        setFilesToUpload(prev => prev.map(f => 
-            f.status === 'pending' 
+        setFilesToUpload(prev => prev.map(f =>
+            f.status === 'pending'
                 ? { ...f, status: 'uploading' as const, progress: 0 }
                 : f
         ));
@@ -233,19 +233,19 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
 
             try {
                 let result;
-                
+
                 if (mode === 'private') {
-                const config = await s3ConfigService.getConfig(ownerId);
+                    const config = await s3ConfigService.getConfig(ownerId);
                     if (!config) {
                         throw new Error("S3 not configured. Please configure your bucket first.");
                     }
 
                     result = await s3ExplorerService.uploadFile({
-                    config,
+                        config,
                         file: fileWithStatus.file,
-                    ownerId,
-                    accountId,
-                    path: subPath,
+                        ownerId,
+                        accountId,
+                        path: subPath,
                         resume: fileWithStatus.status === 'paused', // Resume if paused
                         onProgress: (progress) => {
                             setFilesToUpload(prev => {
@@ -257,8 +257,8 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                         onChunkProgress: (chunkNumber, totalChunks) => {
                             setFilesToUpload(prev => {
                                 const updated = [...prev];
-                                updated[index] = { 
-                                    ...updated[index], 
+                                updated[index] = {
+                                    ...updated[index],
                                     chunkInfo: { current: chunkNumber, total: totalChunks }
                                 };
                                 return updated;
@@ -287,9 +287,9 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                 // Update to success
                 setFilesToUpload(prev => {
                     const updated = [...prev];
-                    updated[index] = { 
-                        ...updated[index], 
-                        status: 'success' as const, 
+                    updated[index] = {
+                        ...updated[index],
+                        status: 'success' as const,
                         progress: 100,
                         chunkInfo: undefined
                     };
@@ -302,7 +302,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                 });
             } catch (error) {
                 console.error("DragDrop: Upload error:", error);
-                
+
                 let errorMessage = 'Unknown error occurred';
                 if (error instanceof Error) {
                     errorMessage = error.message;
@@ -311,28 +311,28 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                 }
 
                 // Check if it's a network error (can be resumed)
-                const isNetworkError = errorMessage.toLowerCase().includes('network') || 
-                                      errorMessage.toLowerCase().includes('timeout') ||
-                                      errorMessage.toLowerCase().includes('connection');
+                const isNetworkError = errorMessage.toLowerCase().includes('network') ||
+                    errorMessage.toLowerCase().includes('timeout') ||
+                    errorMessage.toLowerCase().includes('connection');
 
                 // Update to error or paused (if resumable)
                 setFilesToUpload(prev => {
                     const updated = [...prev];
                     const fileSize = fileWithStatus.file.size;
                     const isLargeFile = fileSize >= 100 * 1024 * 1024; // 100MB+
-                    
-                    updated[index] = { 
-                        ...updated[index], 
+
+                    updated[index] = {
+                        ...updated[index],
                         status: (isNetworkError && isLargeFile) ? 'paused' as const : 'error' as const,
                         error: errorMessage,
                         canResume: isNetworkError && isLargeFile,
                     };
                     return updated;
                 });
-                
+
                 toast({
-                    title: isNetworkError && fileWithStatus.file.size >= 100 * 1024 * 1024 
-                        ? "Upload Paused" 
+                    title: isNetworkError && fileWithStatus.file.size >= 100 * 1024 * 1024
+                        ? "Upload Paused"
                         : "Upload Failed",
                     description: `${fileWithStatus.file.name}: ${errorMessage}${isNetworkError && fileWithStatus.file.size >= 100 * 1024 * 1024 ? ' (You can resume this upload)' : ''}`,
                     variant: isNetworkError && fileWithStatus.file.size >= 100 * 1024 * 1024 ? "default" : "destructive",
@@ -341,7 +341,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         }
 
         setIsUploading(false);
-        
+
         onUploadComplete?.();
     }, [filesToUpload, ownerId, accountId, subPath, toast, onUploadComplete, mode, isPro]);
 
@@ -377,7 +377,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
             e.preventDefault();
         },
         onDragLeave: (e) => {
-            console.log('DragDrop: Drag leave');
+            // console.log('DragDrop: Drag leave');
             // Check if we're leaving the dropzone area
             const relatedTarget = e.relatedTarget as HTMLElement;
             if (!relatedTarget) {
@@ -567,7 +567,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
             </ScrollableDialog>
 
             {/* Visible dropzone hint in bottom-right corner - clickable to open file picker */}
-            <div 
+            <div
                 className="fixed bottom-6 right-6 z-40 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border-2 border-dashed border-brand/30 hover:border-brand/60 transition-all cursor-pointer group pointer-events-auto"
                 title="Click to select files or drag and drop files anywhere on the page"
                 onClick={(e) => {
