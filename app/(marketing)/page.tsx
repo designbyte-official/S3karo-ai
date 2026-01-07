@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { generateMetadata } from "@/lib/seo/metadata";
 import {
     LandingNav,
     HeroSection,
@@ -10,15 +11,17 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateMetadata({
     title: "Home",
     description: "Store, Share & Manage Your Files Securely - Privacy-first file management platform with dual storage modes.",
-    openGraph: {
-        title: "S3Karo - Privacy-First File Storage",
-        description: "Store, Share & Manage Your Files Securely with our privacy-first platform.",
-        images: ["/thumbnail.webp"],
-    },
-};
+    keywords: [
+        "privacy-first storage",
+        "secure file sharing",
+        "dual storage modes",
+        "managed storage",
+        "private S3",
+    ],
+});
 
 export default function LandingPage() {
     return (
