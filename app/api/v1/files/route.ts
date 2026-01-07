@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     const apiKey = authHeader.substring(7); // Remove "Bearer "
     const authResult = await verifyApiKey(apiKey);
-    
+
     if (!authResult) {
       return apiErrors.unauthorized('Invalid or expired API key');
     }
@@ -40,17 +40,17 @@ export async function POST(request: NextRequest) {
         'X-RateLimit-Limit': rateLimit.toString(),
         'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
       };
-      
+
       if (rateLimitCheck.reset) {
         headers['X-RateLimit-Reset'] = new Date(rateLimitCheck.reset).toISOString();
       }
 
       return NextResponse.json(
-        { 
-          error: 'Too Many Requests', 
-          message: `Rate limit exceeded. Limit: ${rateLimit} requests/hour` 
+        {
+          error: 'Too Many Requests',
+          message: `Rate limit exceeded. Limit: ${rateLimit} requests/hour`
         },
-        { 
+        {
           status: 429,
           headers,
         }
@@ -93,7 +93,6 @@ export async function POST(request: NextRequest) {
     }
 
     const storageKey = generateStorageKey(userId, file.name, path || undefined);
-    const client = createPlatformS3Client();
 
     try {
       await client.send(new PutObjectCommand({
@@ -131,7 +130,7 @@ export async function POST(request: NextRequest) {
       'X-RateLimit-Limit': rateLimit.toString(),
       'X-RateLimit-Remaining': rateLimitCheck.remaining.toString(),
     };
-    
+
     if (rateLimitCheck.reset) {
       headers['X-RateLimit-Reset'] = new Date(rateLimitCheck.reset).toISOString();
     }
@@ -164,7 +163,7 @@ export async function GET(request: NextRequest) {
 
     const apiKey = authHeader.substring(7);
     const authResult = await verifyApiKey(apiKey);
-    
+
     if (!authResult) {
       return apiErrors.unauthorized('Invalid or expired API key');
     }
