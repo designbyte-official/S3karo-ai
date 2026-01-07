@@ -29,7 +29,7 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
     if (result.length === 0) return null;
 
     const subscription = result[0] as any;
-    
+
     // Check if subscription is expired
     if (subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) < new Date()) {
       // Update status to expired
@@ -37,7 +37,7 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
         .update(subscriptions)
         .set({ status: 'expired' })
         .where(eq(subscriptions.id, subscription.id));
-      
+
       return null;
     }
 
@@ -67,9 +67,9 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
           WHERE user_id = ${userId} AND status = 'active' 
           LIMIT 1
         `);
-        
+
         if (fallbackResult.rows.length === 0) return null;
-        
+
         const sub = fallbackResult.rows[0] as any;
         return {
           id: sub.id,
@@ -88,7 +88,7 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
           createdAt: sub.created_at,
           updatedAt: sub.updated_at,
         } as Subscription;
-      } catch (fallbackError) {
+      } catch (fallbackError: any) {
         logger.warn('Fallback query also failed, returning null', fallbackError);
         return null;
       }
@@ -108,7 +108,7 @@ export async function hasPlatformAccess(userId: string): Promise<boolean> {
   try {
     const subscription = await getActiveSubscription(userId);
     if (!subscription) return false;
-    
+
     // Only paid plans have platform S3 access
     return subscription.plan !== 'free';
   } catch (error: any) {
@@ -240,7 +240,7 @@ export async function createFreeTierSubscription(userId: string): Promise<Subscr
  */
 export async function checkStorageLimit(userId: string, fileSize: number): Promise<{ allowed: boolean; remaining: number; limit: number }> {
   const subscription = await getActiveSubscription(userId);
-  
+
   if (!subscription) {
     // No subscription = no access
     return { allowed: false, remaining: 0, limit: 0 };
@@ -262,7 +262,7 @@ export async function checkStorageLimit(userId: string, fileSize: number): Promi
  */
 export async function checkBandwidthLimit(userId: string, transferSize: number): Promise<{ allowed: boolean; remaining: number; limit: number }> {
   const subscription = await getActiveSubscription(userId);
-  
+
   if (!subscription) {
     // No subscription = no access
     return { allowed: false, remaining: 0, limit: 0 };
@@ -292,7 +292,7 @@ export async function incrementStorageUsage(userId: string, fileSize: number): P
     if (!subscription) return false;
 
     const newUsed = (subscription.storageUsed || 0) + fileSize;
-    
+
     await db
       .update(subscriptions)
       .set({
@@ -324,7 +324,7 @@ export async function decrementStorageUsage(userId: string, fileSize: number): P
     if (!subscription) return false;
 
     const newUsed = Math.max(0, (subscription.storageUsed || 0) - fileSize);
-    
+
     await db
       .update(subscriptions)
       .set({
@@ -356,7 +356,7 @@ export async function incrementBandwidthUsage(userId: string, transferSize: numb
     if (!subscription) return false;
 
     const newUsed = (subscription.bandwidthUsed || 0) + transferSize;
-    
+
     await db
       .update(subscriptions)
       .set({
