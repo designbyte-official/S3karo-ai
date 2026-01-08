@@ -110,7 +110,7 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="shad-input"
+                className="rename-input-field"
                 onKeyDown={(e) => e.key === "Enter" && onExecuteAction()}
               />
             )}
@@ -130,16 +130,20 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
             )}
           </DialogHeader>
 
-          <DialogFooter className="flex flex-col gap-3 md:flex-row">
+          <DialogFooter className="flex flex-col gap-3 md:flex-row mt-5">
             <Button
               onClick={closeAllModals}
               variant="outline"
-              className="flex-1"
+              className="modal-cancel-button"
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button onClick={onExecuteAction} className="bg-brand text-white" disabled={isLoading}>
+            <Button
+              onClick={onExecuteAction}
+              className="modal-submit-button"
+              disabled={isLoading}
+            >
               <p className="capitalize">{action.value}</p>
               {isLoading && (
                 <Image

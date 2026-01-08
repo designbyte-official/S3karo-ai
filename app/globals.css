@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @layer base {
+
   /* ==========================================================================
      DESIGN SYSTEM & VARIABLES
      ========================================================================== */
@@ -227,6 +228,7 @@
 }
 
 @layer components {
+
   /* ==========================================================================
      LAYOUT COMPONENTS
      ========================================================================== */
@@ -374,7 +376,7 @@
   }
 
   .rename-input-field {
-    @apply body-2 shad-no-focus h-[52px] w-full rounded-full border px-4 shadow-drop-1 !important;
+    @apply body-2 shad-no-focus h-[52px] w-full rounded-full border border-light-200 px-4 shadow-drop-1 flex items-center !important;
   }
 
   .delete-confirmation {

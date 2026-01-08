@@ -116,7 +116,7 @@ export const NewFolderDialog = ({ onCreate }: NewFolderDialogProps) => {
               onKeyDown={(e) => {
                 if (e.key === "Escape") handleClose();
               }}
-              className="shad-input"
+              className="rename-input-field"
               disabled={loading}
               aria-invalid={!!error}
               aria-describedby={error ? "folder-name-error" : undefined}
@@ -134,11 +134,15 @@ export const NewFolderDialog = ({ onCreate }: NewFolderDialogProps) => {
               variant="ghost"
               onClick={handleClose}
               disabled={loading}
-              className="modal-cancel-btn"
+              className="modal-cancel-button"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !name.trim()} className="shad-submit-btn">
+            <Button
+              type="submit"
+              disabled={loading || !name.trim()}
+              className="modal-submit-button"
+            >
               {loading ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
