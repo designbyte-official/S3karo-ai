@@ -1,12 +1,8 @@
-"use client";
-
-import { useEffect, useState } from "react";
-
-import { toast } from "sonner";
+import { useQuery } from "@tanstack/react-query";
 
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 
-interface ApiKey {
+export interface ApiKey {
   id: string;
   name: string;
   prefix: string;
@@ -17,7 +13,7 @@ interface ApiKey {
   createdAt: string;
 }
 
-interface SubscriptionData {
+export interface SubscriptionData {
   id?: string;
   plan: string;
   status: string;
@@ -32,73 +28,46 @@ interface SubscriptionData {
 
 export const useProfile = (isManagedStorage: boolean) => {
   const { user } = useAuthStore();
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  const fetchKeys = async () => {
-    if (!isManagedStorage) return;
-    try {
+  const {
+    data: keys = [],
+    isLoading: isLoadingKeys,
+    refetch: refetchKeys,
+  } = useQuery<ApiKey[]>({
+    queryKey: ["api-keys", user?.id],
+    queryFn: async () => {
       const response = await fetch("/api/v1/api-keys");
       if (!response.ok) throw new Error("Failed to fetch API keys");
       const data = await response.json();
-      setKeys(data.keys || []);
-    } catch (error: unknown) {
-      console.error("fetchKeys error:", error);
-      const message = error instanceof Error ? error.message : "Unknown error";
-      toast.error("Failed to load API keys", { description: message });
-    }
-  };
+      return data.keys || [];
+    },
+    enabled: !!user && isManagedStorage,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  const fetchSubscription = async () => {
-    if (!isManagedStorage) return;
-    try {
+  const {
+    data: subscription = null,
+    isLoading: isLoadingSubscription,
+    refetch: refetchSubscription,
+  } = useQuery<SubscriptionData | null>({
+    queryKey: ["subscription", user?.id],
+    queryFn: async () => {
       const response = await fetch("/api/subscriptions");
       if (!response.ok) throw new Error("Failed to fetch subscription");
       const data = await response.json();
-      setSubscription(data as SubscriptionData);
-    } catch (error: unknown) {
-      console.error("fetchSubscription error:", error);
-      const message = error instanceof Error ? error.message : "Unknown error";
-      toast.error("Failed to load subscription", { description: message });
-    }
-  };
+      return data as SubscriptionData;
+    },
+    enabled: !!user && isManagedStorage,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-
-      if (isManagedStorage) {
-        try {
-          // Fetch both in parallel
-          const keysPromise = fetchKeys();
-          const subscriptionPromise = fetchSubscription();
-          await Promise.all([keysPromise, subscriptionPromise]);
-        } catch (error) {
-          console.error("loadData background refresh failed:", error);
-          // Individual errors are already handled in fetch functions with toasts
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isManagedStorage]);
+  const loading = isManagedStorage && (isLoadingKeys || isLoadingSubscription);
 
   return {
     keys,
     subscription,
     loading,
-    refetchKeys: fetchKeys,
-    refetchSubscription: fetchSubscription,
+    refetchKeys,
+    refetchSubscription,
   };
 };
