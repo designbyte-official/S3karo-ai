@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   release:
@@ -24,7 +24,7 @@ jobs:
           # Extract version from tag
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
+
           # Generate changelog (simplified - can be enhanced)
           echo "## Version $VERSION" > CHANGELOG_RELEASE.md
           echo "" >> CHANGELOG_RELEASE.md
@@ -40,4 +40,3 @@ jobs:
           body_path: CHANGELOG_RELEASE.md
           draft: false
           prerelease: false
-

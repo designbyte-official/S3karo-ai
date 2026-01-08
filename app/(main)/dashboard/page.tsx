@@ -1,6 +1,6 @@
-import { getFiles } from "@/features/managed-storage/actions/file.actions";
-import { getCurrentUser, signOutUser } from "@/features/auth/actions/user.actions";
 import { DashboardLayout } from "@/components/common/DashboardLayout";
+import { getCurrentUser } from "@/features/auth/actions/user.actions";
+import { getFiles } from "@/features/managed-storage/actions/file.actions";
 import { S3File as MyFile } from "@/types/file";
 
 const Dashboard = async () => {

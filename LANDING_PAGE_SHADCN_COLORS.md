@@ -7,6 +7,7 @@ All landing page components have been converted to use **ShadCN color system** (
 ## Color Mappings Applied
 
 ### Backgrounds
+
 - `bg-white` → `bg-background`
 - `bg-light-300` → `bg-muted/50`
 - `bg-dark-200` → `bg-popover`
@@ -14,6 +15,7 @@ All landing page components have been converted to use **ShadCN color system** (
 - `bg-brand/10` → `bg-primary/10`
 
 ### Text Colors
+
 - `text-dark-200` → `text-foreground`
 - `text-light-100` → `text-muted-foreground`
 - `text-light-200` → `text-muted-foreground`
@@ -21,21 +23,25 @@ All landing page components have been converted to use **ShadCN color system** (
 - `text-white` (on primary) → `text-primary-foreground`
 
 ### Borders
+
 - `border-light-300` → `border-border`
 
 ### Cards
+
 - `bg-white` (cards) → `bg-card`
 - `text-dark-200` (on cards) → `text-card-foreground`
 
 ## Updated Components
 
 ### 1. LandingNav
+
 - ✅ `bg-background/80` - Navigation background
 - ✅ `border-border` - Border
 - ✅ `bg-primary` - Primary button
 - ✅ `text-primary-foreground` - Button text
 
 ### 2. HeroSection
+
 - ✅ `bg-primary/10` - Badge background
 - ✅ `text-primary` - Badge and accent text
 - ✅ `text-foreground` - Main heading
@@ -45,6 +51,7 @@ All landing page components have been converted to use **ShadCN color system** (
 - ✅ `text-card-foreground` - Card text
 
 ### 3. FeaturesSection
+
 - ✅ `bg-muted/50` - Section background
 - ✅ `text-foreground` - Section heading
 - ✅ `text-muted-foreground` - Section description
@@ -53,24 +60,28 @@ All landing page components have been converted to use **ShadCN color system** (
 - ✅ `text-primary` - Icons
 
 ### 4. HowItWorksSection
+
 - ✅ `text-foreground` - Section heading
 - ✅ `text-muted-foreground` - Description
 - ✅ `bg-primary` - Step circles
 - ✅ `text-primary-foreground` - Step numbers
 
 ### 5. CTASection
+
 - ✅ `bg-gradient-to-br from-primary to-primary/80` - Gradient background
 - ✅ `text-primary-foreground` - Heading and text
 - ✅ `bg-card` - Buttons
 - ✅ `text-primary` - Button text
 
 ### 6. LandingFooter
+
 - ✅ `bg-popover` - Footer background
 - ✅ `text-popover-foreground` - Footer text
 - ✅ `text-muted-foreground` - Secondary text
 - ✅ `border-border` - Border
 
 ### 7. Main Page
+
 - ✅ `bg-background` - Page background
 
 ## Benefits of ShadCN Color System
@@ -85,17 +96,17 @@ All landing page components have been converted to use **ShadCN color system** (
 
 ```css
 :root {
-  --background: 0 0% 100%;        /* White */
-  --foreground: 0 0% 3.9%;         /* Almost black */
-  --primary: 359 93% 71%;          /* #FA7275 (salmon pink) */
-  --primary-foreground: 0 0% 98%;   /* White */
-  --muted: 0 0% 96.1%;              /* Light gray */
-  --muted-foreground: 0 0% 45.1%;   /* Medium gray */
-  --card: 0 0% 100%;                /* White */
-  --card-foreground: 0 0% 3.9%;     /* Almost black */
-  --popover: 0 0% 100%;             /* White (light mode) */
-  --popover-foreground: 0 0% 3.9%;  /* Almost black */
-  --border: 0 0% 89.8%;             /* Light border */
+  --background: 0 0% 100%; /* White */
+  --foreground: 0 0% 3.9%; /* Almost black */
+  --primary: 359 93% 71%; /* #FA7275 (salmon pink) */
+  --primary-foreground: 0 0% 98%; /* White */
+  --muted: 0 0% 96.1%; /* Light gray */
+  --muted-foreground: 0 0% 45.1%; /* Medium gray */
+  --card: 0 0% 100%; /* White */
+  --card-foreground: 0 0% 3.9%; /* Almost black */
+  --popover: 0 0% 100%; /* White (light mode) */
+  --popover-foreground: 0 0% 3.9%; /* Almost black */
+  --border: 0 0% 89.8%; /* Light border */
 }
 ```
 
@@ -118,4 +129,3 @@ All landing page components have been converted to use **ShadCN color system** (
   <h2 className="text-foreground">Heading</h2>
 </section>
 ```
-

@@ -18,7 +18,9 @@ export const users = pgTable("users", {
 // Subscriptions table
 export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   plan: text("plan").notNull(), // 'free', 'basic', 'pro', 'enterprise'
   status: text("status").notNull().default("active"), // 'active', 'cancelled', 'expired', 'trial'
   // Storage limits (in bytes)
@@ -42,7 +44,9 @@ export const subscriptions = pgTable("subscriptions", {
 // Private S3 files are NOT stored here - they're managed client-side only
 export const files = pgTable("files", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   type: text("type").notNull(), // 'document', 'image', 'video', 'audio', 'other'
   extension: text("extension").notNull(),
@@ -60,7 +64,9 @@ export const files = pgTable("files", {
 // API Keys table - for external API access to managed storage
 export const apiKeys = pgTable("api_keys", {
   id: uuid("id").defaultRandom().primaryKey(),
-  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(), // User-friendly name for the API key
   keyHash: text("key_hash").notNull().unique(), // Hashed API key (never store plain text)
   prefix: text("prefix").notNull(), // First 8 chars of key for display (e.g., "sk_live_ab")
@@ -81,4 +87,3 @@ export type File = typeof files.$inferSelect;
 export type NewFile = typeof files.$inferInsert;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
-

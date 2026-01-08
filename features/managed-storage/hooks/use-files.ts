@@ -1,11 +1,12 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { useStorageStore } from "@/features/shared/stores/storage-store";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 // Get files query hook
 export function useFiles(filters?: {
@@ -37,14 +38,12 @@ export function useFiles(filters?: {
           ownerId: uid,
           accountId,
         });
-        
+
         // Filter by types if provided
         if (filters?.types && filters.types.length > 0) {
-          items.documents = items.documents.filter(file => 
-            filters.types!.includes(file.type)
-          );
+          items.documents = items.documents.filter((file) => filters.types!.includes(file.type));
         }
-        
+
         return items;
       } else {
         return await platformStorageService.getFiles({
@@ -93,7 +92,7 @@ export function useDeleteFile() {
 
   return useMutation({
     mutationFn: async ({ fileId, bucketFileId }: { fileId: string; bucketFileId: string }) => {
-      const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+      const path = typeof window !== "undefined" ? window.location.pathname : "/";
 
       if (mode === "own-s3") {
         // We need config - typically we'd get this from a store or re-fetch
@@ -138,7 +137,7 @@ export function useRenameFile() {
       bucketFileId: string;
       ownerId: string;
     }) => {
-      const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+      const path = typeof window !== "undefined" ? window.location.pathname : "/";
 
       if (mode === "own-s3") {
         const config = await s3ConfigService.getConfig(ownerId);
@@ -146,9 +145,9 @@ export function useRenameFile() {
           throw new Error("S3 configuration not found");
         }
 
-        const pathParts = bucketFileId.split('/');
+        const pathParts = bucketFileId.split("/");
         pathParts[pathParts.length - 1] = `${name}.${extension}`;
-        const newKey = pathParts.join('/');
+        const newKey = pathParts.join("/");
 
         return await s3ExplorerService.rename(config, bucketFileId, newKey);
       } else {

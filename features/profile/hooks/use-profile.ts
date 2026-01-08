@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
+
 import { toast } from "sonner";
+
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 interface ApiKey {
   id: string;
@@ -41,8 +43,10 @@ export const useProfile = (isManagedStorage: boolean) => {
       if (!response.ok) throw new Error("Failed to fetch API keys");
       const data = await response.json();
       setKeys(data.keys || []);
-    } catch (error: any) {
-      toast.error("Failed to load API keys", { description: error.message });
+    } catch (error: unknown) {
+      console.error("fetchKeys error:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Failed to load API keys", { description: message });
     }
   };
 
@@ -52,9 +56,11 @@ export const useProfile = (isManagedStorage: boolean) => {
       const response = await fetch("/api/subscriptions");
       if (!response.ok) throw new Error("Failed to fetch subscription");
       const data = await response.json();
-      setSubscription(data);
-    } catch (error: any) {
-      toast.error("Failed to load subscription", { description: error.message });
+      setSubscription(data as SubscriptionData);
+    } catch (error: unknown) {
+      console.error("fetchSubscription error:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Failed to load subscription", { description: message });
     }
   };
 
@@ -66,7 +72,7 @@ export const useProfile = (isManagedStorage: boolean) => {
       }
 
       setLoading(true);
-      
+
       if (isManagedStorage) {
         try {
           // Fetch both in parallel
@@ -74,7 +80,8 @@ export const useProfile = (isManagedStorage: boolean) => {
           const subscriptionPromise = fetchSubscription();
           await Promise.all([keysPromise, subscriptionPromise]);
         } catch (error) {
-          // Errors are already handled in individual fetch functions
+          console.error("loadData background refresh failed:", error);
+          // Individual errors are already handled in fetch functions with toasts
         } finally {
           setLoading(false);
         }
@@ -95,4 +102,3 @@ export const useProfile = (isManagedStorage: boolean) => {
     refetchSubscription: fetchSubscription,
   };
 };
-

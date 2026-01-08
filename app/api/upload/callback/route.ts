@@ -1,37 +1,36 @@
-import { NextRequest } from 'next/server';
+import { NextRequest } from "next/server";
 
-import { getCurrentUser } from '@/lib/auth/utils';
-import { isDatabaseConfigured } from '@/lib/database/db';
-import { createFile } from '@/lib/database/queries';
-import { incrementStorageUsage, checkStorageLimit } from '@/lib/database/queries-subscriptions';
-import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
-import { logger } from '@/lib/utils/logger';
-import { deleteCache } from '@/lib/redis/cache';
-
-import { getFileType } from '@/features/shared/utils';
-import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
-import { validateStorageKeyOwnership } from '@/features/managed-storage/utils/storage-key';
+import { getFileUrl } from "@/features/managed-storage/services/platform-s3.service";
+import { validateStorageKeyOwnership } from "@/features/managed-storage/utils/storage-key";
+import { getFileType } from "@/features/shared/utils";
+import { getCurrentUser } from "@/lib/auth/utils";
+import { isDatabaseConfigured } from "@/lib/database/db";
+import { createFile } from "@/lib/database/queries";
+import { incrementStorageUsage, checkStorageLimit } from "@/lib/database/queries-subscriptions";
+import { deleteCache } from "@/lib/redis/cache";
+import { apiErrors, createSuccessResponse } from "@/lib/utils/api-response";
+import { logger } from "@/lib/utils/logger";
 
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return apiErrors.unauthorized('Authentication required');
+      return apiErrors.unauthorized("Authentication required");
     }
 
     if (!isDatabaseConfigured()) {
-      return apiErrors.serviceUnavailable('Database not configured');
+      return apiErrors.serviceUnavailable("Database not configured");
     }
 
     const body = await request.json();
     const { key, fileName, fileType, fileSize, path } = body;
 
     if (!key || !fileName || !fileType || !fileSize) {
-      return apiErrors.badRequest('key, fileName, fileType, and fileSize are required');
+      return apiErrors.badRequest("key, fileName, fileType, and fileSize are required");
     }
 
     if (!validateStorageKeyOwnership(key, user.id)) {
-      return apiErrors.forbidden('Invalid storage key');
+      return apiErrors.forbidden("Invalid storage key");
     }
 
     const storageCheck = await checkStorageLimit(user.id, fileSize);
@@ -47,10 +46,10 @@ export async function POST(request: NextRequest) {
     const dbFile = await createFile({
       userId: user.id,
       name: fileName,
-      type: type,
-      extension: extension,
+      type,
+      extension,
       size: fileSize,
-      url: url,
+      url,
       storageKey: key,
     });
 
@@ -58,19 +57,20 @@ export async function POST(request: NextRequest) {
 
     await deleteCache(`storage-stats:${user.id}`);
 
-    return createSuccessResponse({
-      id: dbFile.id,
-      name: dbFile.name,
-      url: dbFile.url,
-      size: Number(dbFile.size),
-      type: dbFile.type,
-      extension: dbFile.extension,
-      createdAt: dbFile.createdAt.toISOString(),
-    }, 201);
-
+    return createSuccessResponse(
+      {
+        id: dbFile.id,
+        name: dbFile.name,
+        url: dbFile.url,
+        size: Number(dbFile.size),
+        type: dbFile.type,
+        extension: dbFile.extension,
+        createdAt: dbFile.createdAt.toISOString(),
+      },
+      201
+    );
   } catch (error: any) {
-    logger.error('S3-Karo callback error', error);
-    return apiErrors.internalServerError('Internal server error', error.message);
+    logger.error("S3-Karo callback error", error);
+    return apiErrors.internalServerError("Internal server error", error.message);
   }
 }
-

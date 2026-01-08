@@ -1,11 +1,15 @@
 "use client";
 
 import React from "react";
-import { s3ExplorerService } from "../services/s3-explorer.service";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
-import { useS3ConfigStatus } from "./use-s3-config-status";
-import { s3ConfigService } from "../services/s3-config.service";
+
 import { useQuery } from "@tanstack/react-query";
+
+import { useAuthStore } from "@/features/auth/stores/auth-store";
+
+import { s3ConfigService } from "../services/s3-config.service";
+import { s3ExplorerService } from "../services/s3-explorer.service";
+
+import { useS3ConfigStatus } from "./use-s3-config-status";
 
 export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-desc") => {
   const authUser = useAuthStore((state: any) => state.user);
@@ -16,11 +20,13 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     setHydrated(true);
   }, []);
 
-  const user = authUser ? {
-    $id: authUser.$id || authUser.id || '',
-    id: authUser.id || authUser.$id || '',
-    accountId: authUser.accountId || authUser.$id || authUser.id || '',
-  } : null;
+  const user = authUser
+    ? {
+        $id: authUser.$id || authUser.id || "",
+        id: authUser.id || authUser.$id || "",
+        accountId: authUser.accountId || authUser.$id || authUser.id || "",
+      }
+    : null;
 
   const authLoading = !hydrated;
 
@@ -30,7 +36,7 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     data: filesData,
     isLoading: loadingFiles,
     error: filesError,
-    refetch: refetchFiles
+    refetch: refetchFiles,
   } = useQuery({
     queryKey: ["s3-files", user?.$id, subPath, searchText, sort],
     queryFn: async () => {
@@ -45,7 +51,7 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
         accountId: user!.accountId,
         subPath,
         searchText,
-        sort
+        sort,
       });
       return result;
     },
@@ -60,7 +66,7 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
     data: statsData,
     isLoading: loadingStats,
     error: statsError,
-    refetch: refetchStats
+    refetch: refetchStats,
   } = useQuery({
     queryKey: ["s3-stats", user?.$id],
     queryFn: async () => {
@@ -86,9 +92,9 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
   };
 
   const navigateBack = () => {
-    const parts = subPath.split('/').filter(Boolean);
+    const parts = subPath.split("/").filter(Boolean);
     parts.pop();
-    setSubPath(parts.join('/'));
+    setSubPath(parts.join("/"));
   };
 
   return {
@@ -112,9 +118,9 @@ export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-des
         ownerId: user!.$id,
         accountId: user!.accountId,
         name,
-        path: subPath
+        path: subPath,
       });
       reload();
-    }
+    },
   };
 };

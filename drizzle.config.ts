@@ -1,5 +1,5 @@
-import { defineConfig } from "drizzle-kit";
 import * as dotenv from "dotenv";
+import { defineConfig } from "drizzle-kit";
 
 // Load environment variables from .env.local
 dotenv.config({ path: ".env.local" });
@@ -12,4 +12,3 @@ export default defineConfig({
     url: process.env.DATABASE_URL || "",
   },
 });
-

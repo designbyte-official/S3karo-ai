@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
+
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+
+import FileUploader from "@/components/common/FileUploader";
 import Search from "@/components/common/Search";
 import StorageModeToggle from "@/components/common/StorageModeToggle";
-import FileUploader from "@/components/common/FileUploader";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   userId: string;
@@ -14,11 +16,7 @@ interface Props {
   avatar?: string;
 }
 
-const Header = ({
-  userId,
-  accountId,
-  avatar,
-}: Props) => {
+const Header = ({ userId, accountId, avatar }: Props) => {
   const router = useRouter();
   const pathname = usePathname();
   const defaultAvatar = "https://ui-avatars.com/api/?name=User&background=random";
@@ -35,16 +33,13 @@ const Header = ({
 
         <FileUploader ownerId={userId} accountId={accountId} mode={mode} />
 
-        <Button
-          onClick={() => router.push("/dashboard/profile")}
-          className="sign-out-button"
-        >
+        <Button onClick={() => router.push("/dashboard/profile")} className="sign-out-button">
           <Image
             src={avatar || defaultAvatar}
             alt="Profile"
             width={24}
             height={24}
-            className="w-6 h-6 rounded-full object-cover"
+            className="size-6 rounded-full object-cover"
           />
         </Button>
       </div>

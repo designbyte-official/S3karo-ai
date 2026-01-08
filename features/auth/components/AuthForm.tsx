@@ -1,9 +1,14 @@
 "use client";
 
-import { z } from "zod";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 
+import { FormPasswordInput } from "@/components/form-inputs/FormPasswordInput";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,28 +19,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { FormPasswordInput } from "@/components/form-inputs/FormPasswordInput";
-import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useAuthForm, authFormSchema } from "@/features/auth/hooks/use-auth-form";
 
 type FormType = "sign-in" | "sign-up";
 
-const authFormSchema = (formType: FormType) => {
-  return z.object({
-    email: z.string().email(),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    fullName:
-      formType === "sign-up"
-        ? z.string().min(2).max(50)
-        : z.string().optional(),
-  });
-};
-
 const AuthForm = ({ type }: { type: FormType }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  const { isLoading, errorMessage, onSubmit } = useAuthForm(type);
   const router = useRouter();
 
   const formSchema = authFormSchema(type);
@@ -48,64 +37,11 @@ const AuthForm = ({ type }: { type: FormType }) => {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
-    setErrorMessage("");
-
-    try {
-      const endpoint = type === "sign-up" ? "/api/auth/signup" : "/api/auth/signin";
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: values.email,
-          password: values.password,
-          fullName: values.fullName,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.needsVerification) {
-          setErrorMessage(data.message || "Please verify your email address before signing in. Check your inbox for the verification email.");
-        } else {
-          setErrorMessage(data.error || "Failed to authenticate. Please try again.");
-        }
-        return;
-      }
-
-      // For signup, show success message about email verification
-      if (type === "sign-up" && data.message) {
-        setErrorMessage(""); // Clear any errors
-        // Show success message
-        alert(data.message || "Account created! Please check your email to verify your account.");
-      }
-
-      // Redirect to dashboard on success (only for sign-in, or if email is already verified)
-      if (type === "sign-in" || data.user?.emailVerified === "true") {
-        router.push("/dashboard");
-        router.refresh();
-      } else if (type === "sign-up") {
-        // For signup, redirect to sign-in with message
-        router.push("/sign-in?message=Please verify your email to continue");
-      }
-    } catch (error) {
-      setErrorMessage("An error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="auth-form">
-          <h1 className="form-title">
-            {type === "sign-in" ? "Sign In" : "Sign Up"}
-          </h1>
+          <h1 className="form-title">{type === "sign-in" ? "Sign In" : "Sign Up"}</h1>
           {type === "sign-up" && (
             <FormField
               control={form.control}
@@ -116,11 +52,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
                     <FormLabel className="shad-form-label">Full Name</FormLabel>
 
                     <FormControl>
-                      <Input
-                        placeholder="Enter your full name"
-                        className="shad-input"
-                        {...field}
-                      />
+                      <Input placeholder="Enter your full name" className="shad-input" {...field} />
                     </FormControl>
                   </div>
 
@@ -161,11 +93,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             showToggle={true}
           />
 
-          <Button
-            type="submit"
-            className="form-submit-button"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="form-submit-button" disabled={isLoading}>
             {type === "sign-in" ? "Sign In" : "Sign Up"}
 
             {isLoading && (
@@ -183,9 +111,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
           <div className="body-2 flex justify-center">
             <p className="text-light-100">
-              {type === "sign-in"
-                ? "Don't have an account?"
-                : "Already have an account?"}
+              {type === "sign-in" ? "Don't have an account?" : "Already have an account?"}
             </p>
             <Link
               href={type === "sign-in" ? "/sign-up" : "/sign-in"}

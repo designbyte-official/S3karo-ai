@@ -1,8 +1,9 @@
 "use server";
 
-import { getCurrentUser as getCurrentUserFromAuth } from "@/lib/auth/utils";
-import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { getCurrentUser as getCurrentUserFromAuth } from "@/lib/auth/utils";
 
 export const getCurrentUser = async () => {
   try {
@@ -24,15 +25,17 @@ export const getCurrentUser = async () => {
   }
 };
 
-
 export const signOutUser = async () => {
   try {
     // Call signout API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/signout`, {
-      method: 'POST',
-    });
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/signout`,
+      {
+        method: "POST",
+      }
+    );
 
-    (await cookies()).delete('auth-token');
+    (await cookies()).delete("auth-token");
   } catch (error) {
     console.error("Sign out error:", error);
   } finally {

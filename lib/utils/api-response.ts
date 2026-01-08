@@ -3,7 +3,7 @@
  * Follows DRY principle - single source of truth for API responses
  */
 
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export interface ApiErrorResponse {
   error: string;
@@ -12,10 +12,10 @@ export interface ApiErrorResponse {
   code?: string;
 }
 
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
   data?: T;
   message?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -51,13 +51,13 @@ export function createSuccessResponse<T>(
   headers?: Record<string, string>
 ): NextResponse<ApiSuccessResponse<T>> {
   const responseHeaders = headers ? new Headers(headers) : undefined;
-  
+
   return NextResponse.json(
     {
-      ...(typeof data === 'object' && data !== null && !Array.isArray(data) ? data : { data }),
+      ...(typeof data === "object" && data !== null && !Array.isArray(data) ? data : { data }),
       ...(message && { message }),
     },
-    { 
+    {
       status: statusCode,
       ...(responseHeaders && { headers: responseHeaders }),
     }
@@ -68,25 +68,23 @@ export function createSuccessResponse<T>(
  * Common error responses
  */
 export const apiErrors = {
-  unauthorized: (message: string = 'Authentication required') =>
-    createErrorResponse('Unauthorized', message, 401),
-  
-  forbidden: (message: string = 'Access denied') =>
-    createErrorResponse('Forbidden', message, 403),
-  
-  notFound: (message: string = 'Resource not found') =>
-    createErrorResponse('Not Found', message, 404),
-  
-  badRequest: (message: string = 'Invalid request') =>
-    createErrorResponse('Bad Request', message, 400),
-  
-  tooManyRequests: (message: string = 'Rate limit exceeded') =>
-    createErrorResponse('Too Many Requests', message, 429),
-  
-  internalServerError: (message: string = 'Internal server error', details?: string) =>
-    createErrorResponse('Internal Server Error', message, 500, { details }),
-  
-  serviceUnavailable: (message: string = 'Service unavailable') =>
-    createErrorResponse('Service Unavailable', message, 503),
-};
+  unauthorized: (message: string = "Authentication required") =>
+    createErrorResponse("Unauthorized", message, 401),
 
+  forbidden: (message: string = "Access denied") => createErrorResponse("Forbidden", message, 403),
+
+  notFound: (message: string = "Resource not found") =>
+    createErrorResponse("Not Found", message, 404),
+
+  badRequest: (message: string = "Invalid request") =>
+    createErrorResponse("Bad Request", message, 400),
+
+  tooManyRequests: (message: string = "Rate limit exceeded") =>
+    createErrorResponse("Too Many Requests", message, 429),
+
+  internalServerError: (message: string = "Internal server error", details?: string) =>
+    createErrorResponse("Internal Server Error", message, 500, { details }),
+
+  serviceUnavailable: (message: string = "Service unavailable") =>
+    createErrorResponse("Service Unavailable", message, 503),
+};

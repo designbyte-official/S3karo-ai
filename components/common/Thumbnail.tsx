@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+
 import Image from "next/image";
+
 import { cn, getFileIcon } from "@/features/shared/utils";
 
 interface Props {
@@ -59,12 +61,12 @@ export const Thumbnail = ({
     if (isFolder) {
       return "/assets/icons/folder.svg";
     }
-    
+
     // If thumbnails are disabled, always show file type icon
     if (!showThumbnail) {
       return getFileIcon(extension, type);
     }
-    
+
     // If thumbnails enabled and it's an image
     if (shouldShowThumbnail) {
       // Show actual image if loaded successfully, otherwise show icon
@@ -74,24 +76,25 @@ export const Thumbnail = ({
       // Show icon while loading or if error
       return getFileIcon(extension, type);
     }
-    
+
     // Default: show file type icon
     return getFileIcon(extension, type);
   };
 
   const imageSource = getImageSource();
-  const isActualImage = shouldShowThumbnail && shouldLoadImage && !imageError && url && imageSource === url;
+  const isActualImage =
+    shouldShowThumbnail && shouldLoadImage && !imageError && url && imageSource === url;
 
   // Check if this is a full-width thumbnail (when className includes full width styles)
-  const isFullWidth = className?.includes('!w-full') || className?.includes('w-full');
-  
+  const isFullWidth = className?.includes("!w-full") || className?.includes("w-full");
+
   return (
     <figure className={cn("thumbnail", className)} ref={imgRef}>
       <Image
         src={imageSource}
         alt={isFolder ? "folder" : isActualImage ? "thumbnail" : "file-icon"}
         width={isFullWidth ? 800 : 100}
-        height={isFullWidth ? 800 : 100}
+        height={isFullWidth ? 500 : 100}
         loading={isActualImage ? "lazy" : "eager"}
         onError={() => {
           if (shouldShowThumbnail) {
@@ -102,7 +105,7 @@ export const Thumbnail = ({
           !isFullWidth && "size-8 object-contain",
           imageClassName,
           isActualImage && "thumbnail-image",
-          isFullWidth && "w-full h-full",
+          isFullWidth && "w-full h-full"
         )}
       />
     </figure>

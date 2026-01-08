@@ -1,6 +1,7 @@
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-import { getRedisClient, isRedisConfigured } from './client';
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+import { getRedisClient, isRedisConfigured } from "./client";
 
 export async function checkRateLimit(
   identifier: string,
@@ -17,7 +18,7 @@ export async function checkRateLimit(
 
   const limiter = new Ratelimit({
     redis: redis as Redis,
-    limiter: Ratelimit.slidingWindow(limit, '1 h'),
+    limiter: Ratelimit.slidingWindow(limit, "1 h"),
     analytics: true,
   });
 
@@ -41,4 +42,3 @@ export async function resetRateLimit(identifier: string): Promise<void> {
   const key = `ratelimit:${identifier}`;
   await redis.del(key);
 }
-

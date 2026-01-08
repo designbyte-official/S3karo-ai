@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
+
+import { useRouter } from "next/navigation";
+
+import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
 import { UserInfo, ApiKeysSection } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
-import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 export default function ApiKeysPage() {
   const isManagedStorage = true;
@@ -24,11 +26,10 @@ export default function ApiKeysPage() {
 
   return (
     <div className="page-container">
-      <div className="w-full max-w-4xl mx-auto space-y-8">
+      <div className="mx-auto w-full max-w-4xl space-y-8">
         <UserInfo />
         <ApiKeysSection keys={keys} onRefresh={refetchKeys} />
       </div>
     </div>
   );
 }
-

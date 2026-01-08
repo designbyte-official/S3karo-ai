@@ -54,11 +54,13 @@ s3-karo/
 ## Architecture Principles
 
 ### 1. Feature-Based Organization
+
 - Each feature is self-contained in `features/`
 - Features include: components, hooks, services, stores, types
 - Promotes modularity and maintainability
 
 ### 2. Separation of Concerns
+
 - **Components**: UI presentation
 - **Services**: Business logic and API calls
 - **Hooks**: Reusable stateful logic
@@ -66,12 +68,14 @@ s3-karo/
 - **Types**: TypeScript definitions
 
 ### 3. API Organization
+
 - `/api/auth/*` - Authentication endpoints
 - `/api/files/*` - File management (internal)
 - `/api/upload/*` - Upload endpoints
 - `/api/v1/*` - Public API (versioned)
 
 ### 4. Database Layer
+
 - `schema.ts` - Drizzle ORM schema definitions
 - `queries.ts` - Database query functions
 - `db.ts` - Database connection and configuration
@@ -100,4 +104,3 @@ s3-karo/
 - Related utilities grouped in same directory
 - Shared code in `features/shared/` or `lib/`
 - Feature-specific code in respective `features/*/` directory
-

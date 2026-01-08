@@ -1,18 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
-import { getCurrentUser } from '@/lib/auth/utils';
-import { isDatabaseConfigured } from '@/lib/database/db';
-import { getFilesForUser, createFile } from '@/lib/database/queries';
-import { checkStorageLimit, incrementStorageUsage } from '@/lib/database/queries-subscriptions';
-import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
-import { logger } from '@/lib/utils/logger';
-
-import { getFileType } from '@/features/shared/utils';
-import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
-import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
-import { validateFileName } from '@/features/private-s3/utils/validation';
+import {
+  createPlatformS3Client,
+  getPlatformS3Bucket,
+  getFileUrl,
+} from "@/features/managed-storage/services/platform-s3.service";
+import { generateStorageKey } from "@/features/managed-storage/utils/storage-key";
+import { validateFileName } from "@/features/private-s3/utils/validation";
+import { getFileType } from "@/features/shared/utils";
+import { getCurrentUser } from "@/lib/auth/utils";
+import { isDatabaseConfigured } from "@/lib/database/db";
+import { getFilesForUser, createFile } from "@/lib/database/queries";
+import { checkStorageLimit, incrementStorageUsage } from "@/lib/database/queries-subscriptions";
+import { apiErrors, createSuccessResponse } from "@/lib/utils/api-response";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,16 +26,13 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const types = searchParams.get('types')?.split(',') || [];
-    const searchText = searchParams.get('searchText') || '';
-    const sort = searchParams.get('sort') || '$createdAt-desc';
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
+    const types = searchParams.get("types")?.split(",") || [];
+    const searchText = searchParams.get("searchText") || "";
+    const sort = searchParams.get("sort") || "$createdAt-desc";
+    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
 
     if (!isDatabaseConfigured()) {
-      return NextResponse.json(
-        { error: 'Database not configured' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: "Database not configured" }, { status: 503 });
     }
     const files = await getFilesForUser(user.id, {
       types: types.length > 0 ? types : undefined,
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       limit: limit || undefined,
     });
 
-    const transformedFiles = files.map(file => ({
+    const transformedFiles = files.map((file) => ({
       $id: file.id,
       id: file.id,
       name: file.name,
@@ -65,8 +65,8 @@ export async function GET(request: NextRequest) {
       total: transformedFiles.length,
     });
   } catch (error: any) {
-    logger.error('Get files error', error);
-    return apiErrors.internalServerError('Internal server error', error.message);
+    logger.error("Get files error", error);
+    return apiErrors.internalServerError("Internal server error", error.message);
   }
 }
 
@@ -79,17 +79,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isDatabaseConfigured()) {
-      return apiErrors.serviceUnavailable('Database not configured');
+      return apiErrors.serviceUnavailable("Database not configured");
     }
 
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const ownerId = formData.get('ownerId') as string;
-    const accountId = formData.get('accountId') as string;
-    const path = formData.get('path') as string;
+    const file = formData.get("file") as File;
+    const ownerId = formData.get("ownerId") as string;
+    const accountId = formData.get("accountId") as string;
+    const path = formData.get("path") as string;
 
     if (!file) {
-      return apiErrors.badRequest('No file provided');
+      return apiErrors.badRequest("No file provided");
     }
 
     try {
@@ -112,22 +112,24 @@ export async function POST(request: NextRequest) {
     const storageKey = generateStorageKey(user.id, file.name, path);
 
     try {
-      logger.info('Attempting S3 upload', { bucket, key: storageKey });
-      await client.send(new PutObjectCommand({
-        Bucket: bucket,
-        Key: storageKey,
-        Body: buffer,
-        ContentType: file.type,
-      }));
-      logger.info('S3 upload successful', { bucket, key: storageKey });
+      logger.info("Attempting S3 upload", { bucket, key: storageKey });
+      await client.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: storageKey,
+          Body: buffer,
+          ContentType: file.type,
+        })
+      );
+      logger.info("S3 upload successful", { bucket, key: storageKey });
     } catch (s3Error: any) {
-      logger.error('S3 Upload Error', s3Error, {
+      logger.error("S3 Upload Error", s3Error, {
         code: s3Error.code,
         requestId: s3Error.$metadata?.requestId,
         bucket,
-        region: process.env.AWS_REGION
+        region: process.env.AWS_REGION,
       });
-      return apiErrors.internalServerError('Failed to upload to storage', s3Error.message);
+      return apiErrors.internalServerError("Failed to upload to storage", s3Error.message);
     }
 
     const url = getFileUrl(storageKey);
@@ -136,11 +138,11 @@ export async function POST(request: NextRequest) {
     const dbFile = await createFile({
       userId: user.id,
       name: file.name,
-      type: type,
-      extension: extension,
+      type,
+      extension,
       size: file.size,
-      url: url,
-      storageKey: storageKey,
+      url,
+      storageKey,
     });
 
     await incrementStorageUsage(user.id, file.size);
@@ -165,8 +167,7 @@ export async function POST(request: NextRequest) {
 
     return createSuccessResponse(transformedFile);
   } catch (error: any) {
-    logger.error('Upload file error', error);
-    return apiErrors.internalServerError('Internal server error', error.message);
+    logger.error("Upload file error", error);
+    return apiErrors.internalServerError("Internal server error", error.message);
   }
 }
-

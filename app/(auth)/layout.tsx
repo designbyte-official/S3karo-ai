@@ -1,6 +1,8 @@
 import React from "react";
+
 import Image from "next/image";
 import { redirect } from "next/navigation";
+
 import Logo from "@/components/common/Logo";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
 
@@ -19,9 +21,7 @@ const Layout = async ({ children }: { children: React.ReactNode }) => {
 
           <div className="space-y-5 text-white">
             <h1 className="h1">Manage your files the best way</h1>
-            <p className="body-1">
-              This is a place where you can store all your documents.
-            </p>
+            <p className="body-1">This is a place where you can store all your documents.</p>
           </div>
           <Image
             src="/assets/images/files.png"

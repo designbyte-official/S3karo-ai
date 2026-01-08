@@ -1,4 +1,4 @@
-import { getRedisClient, isRedisConfigured } from './client';
+import { getRedisClient, isRedisConfigured } from "./client";
 
 export async function getCache<T>(key: string): Promise<T | null> {
   if (!isRedisConfigured()) {
@@ -74,4 +74,3 @@ export async function deleteCachePattern(pattern: string): Promise<void> {
     // Silently fail
   }
 }
-

@@ -5,6 +5,7 @@ This document outlines the DRY principles applied in S3-Karo to ensure code main
 ## Centralized Utilities
 
 ### Core Utilities (`lib/utils/`)
+
 - **`index.ts`**: Core utilities like `cn()` for class merging
 - **`errors.ts`**: Centralized error handling (`AppError`, `handleError`)
 - **`api-response.ts`**: Standardized API responses (`createErrorResponse`, `createSuccessResponse`, `apiErrors`)
@@ -12,6 +13,7 @@ This document outlines the DRY principles applied in S3-Karo to ensure code main
 - **`url.ts`**: URL construction utilities (`normalizeBaseUrl`, `encodeFileKey`, `constructFileUrl`)
 
 ### Shared Utilities (`features/shared/utils/`)
+
 - **`index.ts`**: Feature-specific utilities (file types, formatting, icons)
 - Used by both frontend and backend
 
@@ -20,15 +22,15 @@ This document outlines the DRY principles applied in S3-Karo to ensure code main
 All API routes use standardized response utilities:
 
 ```typescript
-import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { apiErrors, createSuccessResponse } from "@/lib/utils/api-response";
 
 // Error responses
-return apiErrors.unauthorized('Authentication required');
-return apiErrors.badRequest('Invalid file name');
-return apiErrors.internalServerError('Error message', errorDetails);
+return apiErrors.unauthorized("Authentication required");
+return apiErrors.badRequest("Invalid file name");
+return apiErrors.internalServerError("Error message", errorDetails);
 
 // Success responses
-return createSuccessResponse(data, 200, 'Optional message');
+return createSuccessResponse(data, 200, "Optional message");
 ```
 
 ## Logging Standards
@@ -36,11 +38,11 @@ return createSuccessResponse(data, 200, 'Optional message');
 Replace all `console.log/error/warn` with structured logging:
 
 ```typescript
-import { logger } from '@/lib/utils/logger';
+import { logger } from "@/lib/utils/logger";
 
-logger.info('Operation successful', { context });
-logger.error('Operation failed', error, { context });
-logger.warn('Warning message', { context });
+logger.info("Operation successful", { context });
+logger.error("Operation failed", error, { context });
+logger.warn("Warning message", { context });
 ```
 
 ## URL Construction
@@ -48,7 +50,7 @@ logger.warn('Warning message', { context });
 All URL construction uses centralized utilities:
 
 ```typescript
-import { normalizeBaseUrl, encodeFileKey, constructFileUrl } from '@/lib/utils/url';
+import { normalizeBaseUrl, encodeFileKey, constructFileUrl } from "@/lib/utils/url";
 
 const baseUrl = normalizeBaseUrl(config.cdnUrl);
 const encodedKey = encodeFileKey(fileKey);
@@ -60,9 +62,9 @@ const finalUrl = constructFileUrl(baseUrl, fileKey);
 All errors use centralized error classes:
 
 ```typescript
-import { AppError } from '@/lib/utils/errors';
+import { AppError } from "@/lib/utils/errors";
 
-throw new AppError('Error message', 400, 'ERROR_CODE');
+throw new AppError("Error message", 400, "ERROR_CODE");
 ```
 
 ## File Type Detection
@@ -70,7 +72,7 @@ throw new AppError('Error message', 400, 'ERROR_CODE');
 Use shared utility for consistent file type detection:
 
 ```typescript
-import { getFileType } from '@/features/shared/utils';
+import { getFileType } from "@/features/shared/utils";
 
 const { type, extension } = getFileType(fileName);
 ```
@@ -80,7 +82,7 @@ const { type, extension } = getFileType(fileName);
 Use centralized validation utilities:
 
 ```typescript
-import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
+import { validateFileName, validateFileSize } from "@/features/private-s3/utils/validation";
 
 validateFileName(fileName);
 validateFileSize(fileSize);
@@ -93,4 +95,3 @@ validateFileSize(fileSize);
 3. **Type Safety**: Centralized utilities ensure type consistency
 4. **Testing**: Easier to test and mock centralized utilities
 5. **Documentation**: Clear patterns for new developers
-

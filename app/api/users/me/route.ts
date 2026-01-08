@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth/utils';
-import { getUserById, updateUser } from '@/lib/database/queries';
-import { apiErrors } from '@/lib/utils/api-response';
-import { logger } from '@/lib/utils/logger';
+import { NextRequest, NextResponse } from "next/server";
+
+import { getCurrentUser } from "@/lib/auth/utils";
+import { getUserById, updateUser } from "@/lib/database/queries";
+import { apiErrors } from "@/lib/utils/api-response";
+import { logger } from "@/lib/utils/logger";
 
 /**
  * GET /api/users/me
@@ -11,16 +12,16 @@ import { logger } from '@/lib/utils/logger';
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
-      return apiErrors.unauthorized('Authentication required');
+      return apiErrors.unauthorized("Authentication required");
     }
 
     // Get full user from database to include isPro
     const fullUser = await getUserById(user.id);
-    
+
     if (!fullUser) {
-      return apiErrors.notFound('User not found');
+      return apiErrors.notFound("User not found");
     }
 
     return NextResponse.json({
@@ -30,16 +31,17 @@ export async function GET(request: NextRequest) {
       avatar: fullUser.avatar,
       isPro: fullUser.isPro || false,
     });
-  } catch (error: any) {
-    logger.error('Get user profile error', error);
-    return apiErrors.internalServerError('Failed to get user profile', error.message);
+  } catch (error: unknown) {
+    logger.error("Get user profile error", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return apiErrors.internalServerError("Failed to get user profile", message);
   }
 }
 
 /**
  * PATCH /api/users/me
  * Update current user profile
- * 
+ *
  * Body: {
  *   fullName?: string,
  *   avatar?: string,
@@ -50,34 +52,34 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
-      return apiErrors.unauthorized('Authentication required');
+      return apiErrors.unauthorized("Authentication required");
     }
 
     const body = await request.json();
-    
+
     // Allowed fields for update
-    const allowedFields = ['fullName', 'avatar', 'isPro'] as const;
+    const allowedFields = ["fullName", "avatar", "isPro"] as const;
 
     // Filter to only allowed fields
-    const updateData: Record<string, any> = {};
+    const updateData: Record<string, unknown> = {};
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field];
+      if ((body as Record<string, unknown>)[field] !== undefined) {
+        updateData[field] = (body as Record<string, unknown>)[field];
       }
     }
 
     // If no valid fields to update
     if (Object.keys(updateData).length === 0) {
-      return apiErrors.badRequest('No valid fields to update');
+      return apiErrors.badRequest("No valid fields to update");
     }
 
     // Update user
     const updatedUser = await updateUser(user.id, updateData);
 
     if (!updatedUser) {
-      return apiErrors.notFound('User not found');
+      return apiErrors.notFound("User not found");
     }
 
     return NextResponse.json({
@@ -87,9 +89,9 @@ export async function PATCH(request: NextRequest) {
       avatar: updatedUser.avatar,
       isPro: updatedUser.isPro || false,
     });
-  } catch (error: any) {
-    logger.error('Update user profile error', error);
-    return apiErrors.internalServerError('Failed to update user profile', error.message);
+  } catch (error: unknown) {
+    logger.error("Update user profile error", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return apiErrors.internalServerError("Failed to update user profile", message);
   }
 }
-

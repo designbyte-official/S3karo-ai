@@ -36,21 +36,24 @@
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/designbyte-official/S3karo-ai.git
    cd S3karo-ai
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Fill in your environment variables in `.env.local`:
    - `DATABASE_URL` - PostgreSQL connection string
    - `JWT_SECRET` - Secret key for JWT tokens (generate with `openssl rand -base64 32`)
@@ -58,11 +61,13 @@
    - `AWS_CDN_URL` - CDN URL for file delivery (optional)
 
 4. **Set up the database**
+
    ```bash
    pnpm db:push
    ```
 
 5. **Run the development server**
+
    ```bash
    pnpm dev
    ```
@@ -106,6 +111,7 @@ s3-karo/
 ## 🎨 Design System
 
 S3Karo features a premium "poeru" aesthetic with:
+
 - Custom icon-based logo
 - Vibrant brand colors (`#FA7275`)
 - Responsive typography system
@@ -137,6 +143,7 @@ pnpm db:studio    # Open Drizzle Studio
 ### Other Platforms
 
 The app can be deployed to any platform that supports Next.js:
+
 - Netlify
 - Railway
 - Render
