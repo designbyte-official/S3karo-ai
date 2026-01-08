@@ -94,7 +94,7 @@ export const Thumbnail = ({
         src={imageSource}
         alt={isFolder ? "folder" : isActualImage ? "thumbnail" : "file-icon"}
         width={isFullWidth ? 800 : 100}
-        height={isFullWidth ? 800 : 100}
+        height={isFullWidth ? 500 : 100}
         loading={isActualImage ? "lazy" : "eager"}
         onError={() => {
           if (shouldShowThumbnail) {

@@ -106,7 +106,7 @@ const Card = React.memo(
         {/* Full-width image thumbnail when enabled */}
         {shouldShowFullImage ? (
           <>
-            <div className="relative aspect-square w-full overflow-hidden bg-slate-100">
+            <div className="relative w-full overflow-hidden bg-slate-100">
               <Thumbnail
                 type={file.type}
                 extension={file.extension}
