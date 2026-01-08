@@ -7,6 +7,4 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // Deep clone object using JSON serialization
-export const parseStringify = (value: unknown) =>
-  JSON.parse(JSON.stringify(value));
-
+export const parseStringify = (value: unknown) => JSON.parse(JSON.stringify(value));

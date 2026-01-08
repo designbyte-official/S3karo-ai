@@ -75,8 +75,8 @@ export const SubscriptionSection = ({ subscription }: SubscriptionSectionProps) 
                 storagePercentage > 90
                   ? "bg-red"
                   : storagePercentage > 70
-                  ? "bg-orange"
-                  : "bg-brand"
+                    ? "bg-orange"
+                    : "bg-brand"
               }`}
               style={{ width: `${Math.min(storagePercentage, 100)}%` }}
             />
@@ -108,8 +108,8 @@ export const SubscriptionSection = ({ subscription }: SubscriptionSectionProps) 
                 bandwidthPercentage > 90
                   ? "bg-red"
                   : bandwidthPercentage > 70
-                  ? "bg-orange"
-                  : "bg-brand"
+                    ? "bg-orange"
+                    : "bg-brand"
               }`}
               style={{ width: `${Math.min(bandwidthPercentage, 100)}%` }}
             />
@@ -154,4 +154,3 @@ export const SubscriptionSection = ({ subscription }: SubscriptionSectionProps) 
     </div>
   );
 };
-

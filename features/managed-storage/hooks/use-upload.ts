@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 export interface UploadFile {
   name: string;
@@ -35,12 +35,9 @@ export function useUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const upload = useCallback(async (
-    file: File,
-    options: UploadOptions = {}
-  ): Promise<any> => {
+  const upload = useCallback(async (file: File, options: UploadOptions = {}): Promise<any> => {
     const {
-      path = '',
+      path = "",
       maxFileSize,
       allowedFileTypes,
       onUploadProgress,
@@ -52,14 +49,14 @@ export function useUpload() {
     setUploadProgress(0);
 
     try {
-      const presignedResponse = await fetch('/api/upload', {
-        method: 'POST',
+      const presignedResponse = await fetch("/api/upload", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           fileName: file.name,
-          fileType: file.type || 'application/octet-stream',
+          fileType: file.type || "application/octet-stream",
           fileSize: file.size,
           path,
           route: {
@@ -71,7 +68,7 @@ export function useUpload() {
 
       if (!presignedResponse.ok) {
         const error = await presignedResponse.json();
-        throw new Error(error.message || 'Failed to get presigned URL');
+        throw new Error(error.message || "Failed to get presigned URL");
       }
 
       const presignedData: UploadResponse = await presignedResponse.json();
@@ -81,7 +78,7 @@ export function useUpload() {
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
 
-        xhr.upload.addEventListener('progress', (e) => {
+        xhr.upload.addEventListener("progress", (e) => {
           if (e.lengthComputable) {
             const progress = Math.round((e.loaded / e.total) * 100);
             setUploadProgress(progress);
@@ -89,33 +86,33 @@ export function useUpload() {
           }
         });
 
-        xhr.addEventListener('load', () => {
+        xhr.addEventListener("load", () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             setUploadProgress(100);
             onUploadProgress?.(100);
             resolve();
           } else {
-            reject(new Error('Failed to upload file to S3'));
+            reject(new Error("Failed to upload file to S3"));
           }
         });
 
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
+        xhr.addEventListener("error", () => {
+          reject(new Error("Network error during upload"));
         });
 
-        xhr.addEventListener('abort', () => {
-          reject(new Error('Upload aborted'));
+        xhr.addEventListener("abort", () => {
+          reject(new Error("Upload aborted"));
         });
 
-        xhr.open('PUT', presignedUrl);
-        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+        xhr.open("PUT", presignedUrl);
+        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
         xhr.send(file);
       });
 
-      const callbackResponse = await fetch('/api/upload/callback', {
-        method: 'POST',
+      const callbackResponse = await fetch("/api/upload/callback", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           key,
@@ -128,7 +125,7 @@ export function useUpload() {
 
       if (!callbackResponse.ok) {
         const error = await callbackResponse.json();
-        throw new Error(error.message || 'Failed to save file metadata');
+        throw new Error(error.message || "Failed to save file metadata");
       }
 
       const fileData = await callbackResponse.json();
@@ -138,10 +135,9 @@ export function useUpload() {
       toast.success(`File "${file.name}" uploaded successfully`);
 
       return fileData;
-
     } catch (error: any) {
-      console.error('Upload error:', error);
-      const errorMessage = error.message || 'Upload failed';
+      console.error("Upload error:", error);
+      const errorMessage = error.message || "Upload failed";
       toast.error(errorMessage);
       onError?.(error);
       throw error;
@@ -151,28 +147,26 @@ export function useUpload() {
     }
   }, []);
 
-  const uploadMultiple = useCallback(async (
-    files: File[],
-    options: UploadOptions = {}
-  ): Promise<any[]> => {
-    const results = await Promise.allSettled(
-      files.map(file => upload(file, options))
-    );
+  const uploadMultiple = useCallback(
+    async (files: File[], options: UploadOptions = {}): Promise<any[]> => {
+      const results = await Promise.allSettled(files.map((file) => upload(file, options)));
 
-    const successful = results
-      .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
-      .map(r => r.value);
+      const successful = results
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled")
+        .map((r) => r.value);
 
-    const failed = results
-      .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-      .length;
+      const failed = results.filter(
+        (r): r is PromiseRejectedResult => r.status === "rejected"
+      ).length;
 
-    if (failed > 0) {
-      toast.warning(`${failed} file(s) failed to upload`);
-    }
+      if (failed > 0) {
+        toast.warning(`${failed} file(s) failed to upload`);
+      }
 
-    return successful;
-  }, [upload]);
+      return successful;
+    },
+    [upload]
+  );
 
   return {
     upload,
@@ -181,4 +175,3 @@ export function useUpload() {
     uploadProgress,
   };
 }
-

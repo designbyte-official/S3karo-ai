@@ -19,7 +19,7 @@ export const LandingNav = () => {
         if (currentUser) {
           setUser({
             ...currentUser,
-            avatar: currentUser.avatar || ""
+            avatar: currentUser.avatar || "",
           });
         }
       } catch (err) {
@@ -46,9 +46,7 @@ export const LandingNav = () => {
                   </Button>
                 </Link>
                 <Link href="/dashboard">
-                  <Button className="primary-btn h-[52px] px-8">
-                    Dashboard
-                  </Button>
+                  <Button className="primary-btn h-[52px] px-8">Dashboard</Button>
                 </Link>
               </>
             ) : (
@@ -59,9 +57,7 @@ export const LandingNav = () => {
                   </Button>
                 </Link>
                 <Link href="/sign-up">
-                  <Button className="primary-btn h-[52px] px-8">
-                    Get Started
-                  </Button>
+                  <Button className="primary-btn h-[52px] px-8">Get Started</Button>
                 </Link>
               </>
             )}

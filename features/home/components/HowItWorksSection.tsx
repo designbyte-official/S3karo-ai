@@ -1,9 +1,21 @@
 "use client";
 
 const steps = [
-  { step: "1", title: "Sign Up", description: "Create your free account in seconds. No credit card required." },
-  { step: "2", title: "Choose Storage", description: "Select Managed Storage or connect your own S3 bucket." },
-  { step: "3", title: "Start Uploading", description: "Upload, organize, and share your files with ease." },
+  {
+    step: "1",
+    title: "Sign Up",
+    description: "Create your free account in seconds. No credit card required.",
+  },
+  {
+    step: "2",
+    title: "Choose Storage",
+    description: "Select Managed Storage or connect your own S3 bucket.",
+  },
+  {
+    step: "3",
+    title: "Start Uploading",
+    description: "Upload, organize, and share your files with ease.",
+  },
 ];
 
 export const HowItWorksSection = () => {
@@ -11,9 +23,7 @@ export const HowItWorksSection = () => {
     <section className="bg-white px-4 py-20 sm:px-6 lg:px-8 lg:py-32">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <h2 className="h1 mb-4 text-dark-100">
-            How It Works
-          </h2>
+          <h2 className="h1 mb-4 text-dark-100">How It Works</h2>
           <p className="body-1 mx-auto max-w-2xl text-light-100">
             Get started in minutes with our simple setup process
           </p>

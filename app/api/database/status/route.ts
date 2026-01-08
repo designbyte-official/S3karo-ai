@@ -1,24 +1,23 @@
-import { NextRequest } from 'next/server';
+import { NextRequest } from "next/server";
 
-import { isDatabaseConfigured } from '@/lib/database/db';
-import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
-import { logger } from '@/lib/utils/logger';
+import { isDatabaseConfigured } from "@/lib/database/db";
+import { apiErrors, createSuccessResponse } from "@/lib/utils/api-response";
+import { logger } from "@/lib/utils/logger";
 
 export async function GET(request: NextRequest) {
   try {
     const configured = isDatabaseConfigured();
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    
+    const isDevelopment = process.env.NODE_ENV === "development";
+
     return createSuccessResponse({
       configured,
       isDevelopment,
-      message: configured 
-        ? 'Database is configured and ready' 
-        : 'Database is not configured. Add DATABASE_URL to .env.local',
+      message: configured
+        ? "Database is configured and ready"
+        : "Database is not configured. Add DATABASE_URL to .env.local",
     });
   } catch (error: any) {
-    logger.error('Database status check error', error);
-    return apiErrors.internalServerError('Internal server error', error.message);
+    logger.error("Database status check error", error);
+    return apiErrors.internalServerError("Internal server error", error.message);
   }
 }
-

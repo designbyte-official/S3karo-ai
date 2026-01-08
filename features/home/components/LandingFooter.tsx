@@ -26,19 +26,31 @@ export const LandingFooter = () => {
             </Link>
             {user ? (
               <>
-                <Link href="/dashboard" className="body-2 text-white transition-colors hover:text-brand">
+                <Link
+                  href="/dashboard"
+                  className="body-2 text-white transition-colors hover:text-brand"
+                >
                   Dashboard
                 </Link>
-                <Link href="/dashboard/profile" className="body-2 text-white transition-colors hover:text-brand">
+                <Link
+                  href="/dashboard/profile"
+                  className="body-2 text-white transition-colors hover:text-brand"
+                >
                   Profile
                 </Link>
               </>
             ) : (
               <>
-                <Link href="/sign-up" className="body-2 text-white transition-colors hover:text-brand">
+                <Link
+                  href="/sign-up"
+                  className="body-2 text-white transition-colors hover:text-brand"
+                >
                   Get Started
                 </Link>
-                <Link href="/sign-in" className="body-2 text-white transition-colors hover:text-brand">
+                <Link
+                  href="/sign-in"
+                  className="body-2 text-white transition-colors hover:text-brand"
+                >
                   Sign In
                 </Link>
               </>

@@ -39,4 +39,3 @@ export function handleError(error: unknown): {
     statusCode: 500,
   };
 }
-

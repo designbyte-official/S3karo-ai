@@ -41,9 +41,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="auth-form">
-          <h1 className="form-title">
-            {type === "sign-in" ? "Sign In" : "Sign Up"}
-          </h1>
+          <h1 className="form-title">{type === "sign-in" ? "Sign In" : "Sign Up"}</h1>
           {type === "sign-up" && (
             <FormField
               control={form.control}
@@ -54,11 +52,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
                     <FormLabel className="shad-form-label">Full Name</FormLabel>
 
                     <FormControl>
-                      <Input
-                        placeholder="Enter your full name"
-                        className="shad-input"
-                        {...field}
-                      />
+                      <Input placeholder="Enter your full name" className="shad-input" {...field} />
                     </FormControl>
                   </div>
 
@@ -99,11 +93,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             showToggle={true}
           />
 
-          <Button
-            type="submit"
-            className="form-submit-button"
-            disabled={isLoading}
-          >
+          <Button type="submit" className="form-submit-button" disabled={isLoading}>
             {type === "sign-in" ? "Sign In" : "Sign Up"}
 
             {isLoading && (
@@ -121,9 +111,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
           <div className="body-2 flex justify-center">
             <p className="text-light-100">
-              {type === "sign-in"
-                ? "Don't have an account?"
-                : "Already have an account?"}
+              {type === "sign-in" ? "Don't have an account?" : "Already have an account?"}
             </p>
             <Link
               href={type === "sign-in" ? "/sign-up" : "/sign-in"}

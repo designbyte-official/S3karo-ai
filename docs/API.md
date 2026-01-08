@@ -40,16 +40,19 @@ Upload a file to managed storage.
 **POST** `/api/v1/files`
 
 **Headers:**
+
 ```
 Authorization: Bearer sk_live_...
 Content-Type: multipart/form-data
 ```
 
 **Body (form-data):**
+
 - `file` (required): The file to upload
 - `path` (optional): Folder path (e.g., "documents/2024/")
 
 **Response (201 Created):**
+
 ```json
 {
   "id": "uuid",
@@ -63,12 +66,14 @@ Content-Type: multipart/form-data
 ```
 
 **Error Responses:**
+
 - `400 Bad Request`: Missing file or file too large (>5GB)
 - `401 Unauthorized`: Invalid or missing API key
 - `429 Too Many Requests`: Rate limit exceeded
 - `500 Internal Server Error`: Upload failed
 
 **Example (cURL):**
+
 ```bash
 curl -X POST https://your-domain.com/api/v1/files \
   -H "Authorization: Bearer sk_live_..." \
@@ -77,21 +82,22 @@ curl -X POST https://your-domain.com/api/v1/files \
 ```
 
 **Example (JavaScript):**
+
 ```javascript
 const formData = new FormData();
-formData.append('file', fileInput.files[0]);
-formData.append('path', 'documents/2024/');
+formData.append("file", fileInput.files[0]);
+formData.append("path", "documents/2024/");
 
-const response = await fetch('https://your-domain.com/api/v1/files', {
-  method: 'POST',
+const response = await fetch("https://your-domain.com/api/v1/files", {
+  method: "POST",
   headers: {
-    'Authorization': 'Bearer sk_live_...'
+    Authorization: "Bearer sk_live_...",
   },
-  body: formData
+  body: formData,
 });
 
 const data = await response.json();
-console.log('File uploaded:', data);
+console.log("File uploaded:", data);
 ```
 
 ### Delete File
@@ -101,11 +107,13 @@ Delete a file by ID.
 **DELETE** `/api/v1/files/:id`
 
 **Headers:**
+
 ```
 Authorization: Bearer sk_live_...
 ```
 
 **Response (200 OK):**
+
 ```json
 {
   "message": "File deleted successfully",
@@ -114,11 +122,13 @@ Authorization: Bearer sk_live_...
 ```
 
 **Error Responses:**
+
 - `401 Unauthorized`: Invalid API key
 - `404 Not Found`: File not found or access denied
 - `500 Internal Server Error`: Deletion failed
 
 **Example (cURL):**
+
 ```bash
 curl -X DELETE https://your-domain.com/api/v1/files/uuid \
   -H "Authorization: Bearer sk_live_..."
@@ -132,11 +142,13 @@ curl -X DELETE https://your-domain.com/api/v1/files/uuid \
 ## Storage Key Format
 
 Files are stored with the following key format:
+
 ```
 managed/{userId}/{path}/{timestamp}-{filename}
 ```
 
 Example:
+
 ```
 managed/123e4567-e89b-12d3-a456-426614174000/documents/2024/1704067200000-report.pdf
 ```
@@ -163,6 +175,7 @@ All errors follow this format:
 ```
 
 Common error codes:
+
 - `400`: Bad Request - Invalid input
 - `401`: Unauthorized - Invalid or missing API key
 - `404`: Not Found - Resource not found
@@ -183,12 +196,12 @@ BASE_URL = "https://your-domain.com/api/v1"
 def upload_file(file_path, path=""):
     url = f"{BASE_URL}/files"
     headers = {"Authorization": f"Bearer {API_KEY}"}
-    
+
     with open(file_path, 'rb') as f:
         files = {'file': f}
         data = {'path': path} if path else {}
         response = requests.post(url, headers=headers, files=files, data=data)
-    
+
     return response.json()
 
 # Usage
@@ -199,35 +212,34 @@ print(result)
 ### Node.js
 
 ```javascript
-const FormData = require('form-data');
-const fs = require('fs');
-const axios = require('axios');
+const FormData = require("form-data");
+const fs = require("fs");
+const axios = require("axios");
 
-const API_KEY = 'sk_live_...';
-const BASE_URL = 'https://your-domain.com/api/v1';
+const API_KEY = "sk_live_...";
+const BASE_URL = "https://your-domain.com/api/v1";
 
-async function uploadFile(filePath, path = '') {
+async function uploadFile(filePath, path = "") {
   const form = new FormData();
-  form.append('file', fs.createReadStream(filePath));
-  if (path) form.append('path', path);
+  form.append("file", fs.createReadStream(filePath));
+  if (path) form.append("path", path);
 
   const response = await axios.post(`${BASE_URL}/files`, form, {
     headers: {
       ...form.getHeaders(),
-      'Authorization': `Bearer ${API_KEY}`
-    }
+      Authorization: `Bearer ${API_KEY}`,
+    },
   });
 
   return response.data;
 }
 
 // Usage
-uploadFile('./example.jpg', 'photos/')
-  .then(result => console.log(result))
-  .catch(error => console.error(error));
+uploadFile("./example.jpg", "photos/")
+  .then((result) => console.log(result))
+  .catch((error) => console.error(error));
 ```
 
 ## Support
 
 For API support, contact: support@s3-karo.com
-

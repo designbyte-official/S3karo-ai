@@ -27,7 +27,7 @@ const Search = ({ mode = "managed" }: Props) => {
   const [query, setQuery] = useState(searchQuery);
   const [results, setResults] = useState<File[]>([]);
   const [open, setOpen] = useState(false);
-  const user = useAuthStore((state: any) => state.user);
+  const user = useAuthStore((state) => state.user);
   const router = useRouter();
   const path = usePathname();
   const debouncedQuery = useDebounce(query, 500);
@@ -63,8 +63,9 @@ const Search = ({ mode = "managed" }: Props) => {
 
       if (user) {
         try {
-          if (mode === 'private') {
-            const config = await s3ConfigService.getConfig(user.$id);
+          if (mode === "private") {
+            const userId = user.id;
+            const config = await s3ConfigService.getConfig(userId);
             if (!config) {
               setResults([]);
               return;
@@ -72,8 +73,8 @@ const Search = ({ mode = "managed" }: Props) => {
             const filesData = await s3ExplorerService.listItems({
               config,
               searchText: debouncedQuery,
-              ownerId: user.$id,
-              accountId: user.accountId,
+              ownerId: userId,
+              accountId: user.accountId || userId,
             });
             setResults(filesData.documents);
           } else {
@@ -96,17 +97,23 @@ const Search = ({ mode = "managed" }: Props) => {
     }
   }, [debouncedQuery, user, mode]);
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
+    setOpen(false); // Close results when typing starts
+    setResults([]); // Clear results when typing starts
+  };
+
   const handleClickItem = (file: File) => {
     setOpen(false);
     setResults([]);
 
-    if (mode === 'private') {
+    if (mode === "private") {
       router.push(`/private/explorer?query=${file.name}`);
       return;
     }
 
     router.push(
-      `/${file.type === "video" || file.type === "audio" ? "media" : file.type + "s"}?query=${debouncedQuery}`,
+      `/${file.type === "video" || file.type === "audio" ? "media" : file.type + "s"}?query=${debouncedQuery}`
     );
   };
 
@@ -118,10 +125,10 @@ const Search = ({ mode = "managed" }: Props) => {
           value={query}
           placeholder="Search..."
           className="search-input"
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={handleSearch}
         />
 
-        {open && mode !== 'private' && (
+        {open && mode !== "private" && (
           <ul className="search-result">
             {results.length > 0 ? (
               results.map((file) => (
@@ -137,9 +144,7 @@ const Search = ({ mode = "managed" }: Props) => {
                       url={file.url}
                       className="size-9 min-w-9"
                     />
-                    <p className="subtitle-2 line-clamp-1 text-light-100">
-                      {file.name}
-                    </p>
+                    <p className="subtitle-2 line-clamp-1 text-light-100">{file.name}</p>
                   </div>
 
                   <FormattedDateTime

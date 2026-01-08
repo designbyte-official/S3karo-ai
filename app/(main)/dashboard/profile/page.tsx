@@ -8,8 +8,6 @@ import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
 import { UserInfo } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 
-
-
 export default function ProfilePage() {
   const isManagedStorage = true;
   const { loading } = useProfile(isManagedStorage);
@@ -67,4 +65,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

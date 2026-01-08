@@ -7,7 +7,7 @@ import { logger } from "@/lib/utils/logger";
 /**
  * API endpoint to fix database schema issues
  * Adds missing columns to subscriptions table
- * 
+ *
  * Usage: POST /api/fix-database
  */
 export async function POST(request: NextRequest) {
@@ -20,9 +20,9 @@ export async function POST(request: NextRequest) {
 
     if (!isDatabaseConfigured() || !db) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: "Database not configured. Please set DATABASE_URL in .env.local" 
+        {
+          success: false,
+          error: "Database not configured. Please set DATABASE_URL in .env.local",
         },
         { status: 500 }
       );
@@ -44,16 +44,20 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Create subscriptions for users who don't have one
     results.push("🔍 Creating subscriptions for users without one...");
-    
+
     let subscriptionResult = { created: 0, skipped: 0 };
     try {
       subscriptionResult = await createFreeSubscriptionsForUsers();
-      results.push(`✅ Created ${subscriptionResult.created} subscription(s), skipped ${subscriptionResult.skipped}`);
+      results.push(
+        `✅ Created ${subscriptionResult.created} subscription(s), skipped ${subscriptionResult.skipped}`
+      );
     } catch (error: any) {
       results.push(`⚠️ Error creating subscriptions: ${error.message}`);
     }
 
-    logger.info("Database schema fix completed", { subscriptionsCreated: subscriptionResult.created });
+    logger.info("Database schema fix completed", {
+      subscriptionsCreated: subscriptionResult.created,
+    });
 
     return NextResponse.json({
       success: true,
@@ -77,4 +81,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

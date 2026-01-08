@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useRef } from 'react';
+import { useRef } from "react";
 
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2 } from "lucide-react";
 
-import { Button } from '@/components/ui/button';
-import { useUpload } from '@/features/managed-storage/hooks/use-upload';
+import { Button } from "@/components/ui/button";
+import { useUpload } from "@/features/managed-storage/hooks/use-upload";
 
 export interface UploadButtonProps {
   path?: string;
@@ -18,15 +18,15 @@ export interface UploadButtonProps {
 
 /**
  * S3-Karo upload button component
- * 
+ *
  * Usage:
- * <UploadButton 
+ * <UploadButton
  *   path="documents/2024/"
  *   onUploadComplete={(files) => console.log(files)}
  * />
  */
 export function UploadButton({
-  path = '',
+  path = "",
   maxFileSize,
   allowedFileTypes,
   onUploadComplete,
@@ -56,11 +56,11 @@ export function UploadButton({
 
       onUploadComplete?.(uploadedFiles);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error("Upload failed:", error);
     } finally {
       // Reset input
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -73,13 +73,9 @@ export function UploadButton({
         multiple
         className="hidden"
         onChange={handleFileChange}
-        accept={allowedFileTypes?.filter(t => t !== '*').join(',')}
+        accept={allowedFileTypes?.filter((t) => t !== "*").join(",")}
       />
-      <Button
-        onClick={handleClick}
-        disabled={isUploading}
-        className={className}
-      >
+      <Button onClick={handleClick} disabled={isUploading} className={className}>
         {isUploading ? (
           <>
             <Loader2 className="mr-2 size-4 animate-spin" />
@@ -88,11 +84,10 @@ export function UploadButton({
         ) : (
           <>
             <Upload className="mr-2 size-4" />
-            {children || 'Upload Files'}
+            {children || "Upload Files"}
           </>
         )}
       </Button>
     </>
   );
 }
-

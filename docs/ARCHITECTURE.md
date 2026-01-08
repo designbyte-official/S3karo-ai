@@ -3,22 +3,26 @@
 ## Overview
 
 S3-Karo is a dual-mode storage platform that supports:
+
 1. **Private S3**: Users connect their own S3 buckets (100% client-side, no database)
 2. **Managed Storage**: Platform-managed S3 with API access (server-side, database required)
 
 ## Architecture Principles
 
 ### 1. Separation of Concerns
+
 - **Private S3**: Zero server-side storage, all operations client-side
 - **Managed Storage**: Full server-side control with database tracking
 
 ### 2. Data Minimization
+
 - Only store what's **absolutely necessary**
 - `bucketName`: ❌ Removed (always from env var)
 - `storageType`: ❌ Removed (inferred from context)
 - `storageKey`: ✅ Required (for S3 operations)
 
 ### 3. Security First
+
 - API keys: Hashed with SHA-256 (never store plain text)
 - Rate limiting: Per API key
 - Authentication: Bearer token in Authorization header
@@ -44,11 +48,13 @@ CREATE TABLE files (
 ```
 
 **Why `storageKey` is Required:**
+
 - Delete files from S3 when user deletes them
 - Generate pre-signed URLs for secure access
 - Access files in the platform's S3 bucket
 
 **Why `bucketName` was Removed:**
+
 - Always use `getPlatformS3Bucket()` from environment variable
 - Redundant to store per file
 - Single bucket per platform instance
@@ -78,11 +84,13 @@ managed/{userId}/{path}/{timestamp}-{filename}
 ```
 
 Example:
+
 ```
 managed/123e4567-e89b-12d3-a456-426614174000/documents/2024/1704067200000-report.pdf
 ```
 
 **Benefits:**
+
 - Organized by user
 - Supports folder structure
 - Timestamp prevents collisions
@@ -93,11 +101,13 @@ managed/123e4567-e89b-12d3-a456-426614174000/documents/2024/1704067200000-report
 ### Endpoints
 
 #### Public API (`/api/v1/*`)
+
 - **POST** `/api/v1/files` - Upload file
 - **DELETE** `/api/v1/files/:id` - Delete file
 - **GET** `/api/v1/files` - List files (coming soon)
 
 #### Internal API (`/api/*`)
+
 - **POST** `/api/upload` - Request presigned URL for direct S3 upload (web UI)
 - **POST** `/api/upload/callback` - Save file metadata after upload
 - **GET** `/api/files` - Internal file listing
@@ -119,11 +129,13 @@ managed/123e4567-e89b-12d3-a456-426614174000/documents/2024/1704067200000-report
 ### Rate Limiting
 
 **Current Implementation:**
+
 - Per API key rate limit
 - Default: 1,000 requests/hour
 - Custom limits for Pro users
 
 **Future Improvements:**
+
 - Redis-based rate limiting
 - Sliding window algorithm
 - Per-endpoint limits
@@ -152,6 +164,7 @@ Return file info
 ```
 
 **Benefits:**
+
 - No server buffering (files never pass through server)
 - Faster uploads, especially for large files
 - Lower server load and memory usage
@@ -270,6 +283,7 @@ NO database interaction
 ## Monitoring & Observability
 
 **Metrics to Track:**
+
 - API request rate
 - Upload success/failure rate
 - File size distribution
@@ -278,6 +292,7 @@ NO database interaction
 - Error rates by endpoint
 
 **Logging:**
+
 - All API requests
 - S3 operation failures
 - Authentication failures
@@ -305,4 +320,3 @@ NO database interaction
    - Official JavaScript SDK
    - Official Python SDK
    - Official Go SDK
-

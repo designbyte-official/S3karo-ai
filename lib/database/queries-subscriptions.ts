@@ -1,20 +1,20 @@
-import { cache } from 'react';
+import { cache } from "react";
 
-import { eq, and , sql } from 'drizzle-orm';
+import { eq, and, sql } from "drizzle-orm";
 
-import { deleteCache } from '@/lib/redis/cache';
-import { logger } from '@/lib/utils/logger';
+import { deleteCache } from "@/lib/redis/cache";
+import { logger } from "@/lib/utils/logger";
 
-import { db, isDatabaseConfigured } from './db';
-import { subscriptions } from './schema';
-import type { Subscription, NewSubscription } from './schema';
-
-
+import { db, isDatabaseConfigured } from "./db";
+import { subscriptions } from "./schema";
+import type { Subscription, NewSubscription } from "./schema";
 
 /**
  * Get active subscription for a user
  */
-export const getActiveSubscription = cache(async function getActiveSubscription(userId: string): Promise<Subscription | null> {
+export const getActiveSubscription = cache(async function getActiveSubscription(
+  userId: string
+): Promise<Subscription | null> {
   if (!db || !isDatabaseConfigured()) {
     return null;
   }
@@ -23,24 +23,19 @@ export const getActiveSubscription = cache(async function getActiveSubscription(
     const result = await db
       .select()
       .from(subscriptions)
-      .where(
-        and(
-          eq(subscriptions.userId, userId),
-          eq(subscriptions.status, 'active')
-        )
-      )
+      .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, "active")))
       .limit(1);
 
     if (result.length === 0) return null;
 
-    const subscription = result[0] as any;
+    const subscription = result[0] as Subscription;
 
     // Check if subscription is expired
     if (subscription.currentPeriodEnd && new Date(subscription.currentPeriodEnd) < new Date()) {
       // Update status to expired
       await db
         .update(subscriptions)
-        .set({ status: 'expired' })
+        .set({ status: "expired" })
         .where(eq(subscriptions.id, subscription.id));
 
       return null;
@@ -56,11 +51,15 @@ export const getActiveSubscription = cache(async function getActiveSubscription(
     } as Subscription;
   } catch (error: any) {
     // Check if error is due to missing columns (database schema issue)
-    if (error?.message?.includes('does not exist') || error?.code === '42703' || error?.cause?.code === '42703') {
-      logger.warn('Subscription check failed (database schema may be outdated)', {
-        query: error?.query || 'N/A',
-        params: error?.params || 'N/A',
-        cause: error?.cause
+    if (
+      error?.message?.includes("does not exist") ||
+      error?.code === "42703" ||
+      error?.cause?.code === "42703"
+    ) {
+      logger.warn("Subscription check failed (database schema may be outdated)", {
+        query: error?.query || "N/A",
+        params: error?.params || "N/A",
+        cause: error?.cause,
       });
       // Try fallback query with only core columns
       try {
@@ -75,7 +74,19 @@ export const getActiveSubscription = cache(async function getActiveSubscription(
 
         if (fallbackResult.rows.length === 0) return null;
 
-        const sub = fallbackResult.rows[0] as any;
+        const sub = fallbackResult.rows[0] as unknown as {
+          id: string;
+          user_id: string;
+          plan: string;
+          status: string;
+          stripe_subscription_id?: string;
+          stripe_customer_id?: string;
+          current_period_start?: string;
+          current_period_end?: string;
+          cancel_at_period_end?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
         return {
           id: sub.id,
           userId: sub.user_id,
@@ -87,18 +98,18 @@ export const getActiveSubscription = cache(async function getActiveSubscription(
           bandwidthUsed: 0,
           stripeSubscriptionId: sub.stripe_subscription_id,
           stripeCustomerId: sub.stripe_customer_id,
-          currentPeriodStart: sub.current_period_start,
-          currentPeriodEnd: sub.current_period_end,
-          cancelAtPeriodEnd: sub.cancel_at_period_end,
-          createdAt: sub.created_at,
-          updatedAt: sub.updated_at,
+          currentPeriodStart: sub.current_period_start ? new Date(sub.current_period_start) : null,
+          currentPeriodEnd: sub.current_period_end ? new Date(sub.current_period_end) : null,
+          cancelAtPeriodEnd: sub.cancel_at_period_end || false,
+          createdAt: sub.created_at ? new Date(sub.created_at) : new Date(),
+          updatedAt: sub.updated_at ? new Date(sub.updated_at) : new Date(),
         } as Subscription;
-      } catch (fallbackError: any) {
-        logger.warn('Fallback query also failed, returning null', fallbackError);
+      } catch (fallbackError: unknown) {
+        logger.error("Fallback query also failed, returning null", fallbackError);
         return null;
       }
     }
-    logger.error('Get active subscription error', error);
+    logger.error("Get active subscription error", error);
     throw error;
   }
 });
@@ -106,7 +117,9 @@ export const getActiveSubscription = cache(async function getActiveSubscription(
 /**
  * Check if user has platform S3 access
  */
-export const hasPlatformAccess = cache(async function hasPlatformAccess(userId: string): Promise<boolean> {
+export const hasPlatformAccess = cache(async function hasPlatformAccess(
+  userId: string
+): Promise<boolean> {
   if (!isDatabaseConfigured()) {
     return false;
   }
@@ -115,11 +128,14 @@ export const hasPlatformAccess = cache(async function hasPlatformAccess(userId: 
     if (!subscription) return false;
 
     // Only paid plans have platform S3 access
-    return subscription.plan !== 'free';
-  } catch (error: any) {
+    return subscription.plan !== "free";
+  } catch (error: unknown) {
     // If database schema is missing columns, return false gracefully
-    if (error?.message?.includes('needs migration') || error?.code === '42703') {
-      logger.warn('Database schema needs migration. Returning false for platform access.');
+    if (
+      error instanceof Error &&
+      (error.message.includes("needs migration") || (error as any).code === "42703")
+    ) {
+      logger.warn("Database schema needs migration. Returning false for platform access.");
       return false;
     }
     throw error;
@@ -131,7 +147,7 @@ export const hasPlatformAccess = cache(async function hasPlatformAccess(userId: 
  */
 export async function upsertSubscription(data: NewSubscription): Promise<Subscription> {
   if (!db || !isDatabaseConfigured()) {
-    throw new Error('Database not configured');
+    throw new Error("Database not configured");
   }
 
   try {
@@ -156,15 +172,12 @@ export async function upsertSubscription(data: NewSubscription): Promise<Subscri
       return updated[0];
     } else {
       // Create new
-      const created = await db
-        .insert(subscriptions)
-        .values(data)
-        .returning();
+      const created = await db.insert(subscriptions).values(data).returning();
 
       return created[0];
     }
   } catch (error) {
-    logger.error('Upsert subscription error', error);
+    logger.error("Upsert subscription error", error);
     throw error;
   }
 }
@@ -181,7 +194,7 @@ export async function cancelSubscription(userId: string): Promise<boolean> {
     await db
       .update(subscriptions)
       .set({
-        status: 'cancelled',
+        status: "cancelled",
         cancelAtPeriodEnd: true,
         updatedAt: new Date(),
       })
@@ -189,7 +202,7 @@ export async function cancelSubscription(userId: string): Promise<boolean> {
 
     return true;
   } catch (error) {
-    logger.error('Cancel subscription error', error);
+    logger.error("Cancel subscription error", error);
     return false;
   }
 }
@@ -210,7 +223,7 @@ export async function getSubscriptionByUserId(userId: string): Promise<Subscript
 
     return result.length > 0 ? result[0] : null;
   } catch (error) {
-    logger.error('Get subscription by user ID error', error);
+    logger.error("Get subscription by user ID error", error);
     return null;
   }
 }
@@ -221,7 +234,7 @@ export async function getSubscriptionByUserId(userId: string): Promise<Subscript
  */
 export async function createFreeTierSubscription(userId: string): Promise<Subscription> {
   if (!db || !isDatabaseConfigured()) {
-    throw new Error('Database not configured');
+    throw new Error("Database not configured");
   }
 
   const FREE_STORAGE_LIMIT = 1073741824; // 1GB in bytes
@@ -229,8 +242,8 @@ export async function createFreeTierSubscription(userId: string): Promise<Subscr
 
   const subscription = await upsertSubscription({
     userId,
-    plan: 'free',
-    status: 'active',
+    plan: "free",
+    status: "active",
     storageLimit: FREE_STORAGE_LIMIT,
     storageUsed: 0,
     bandwidthLimit: FREE_BANDWIDTH_LIMIT,
@@ -243,7 +256,10 @@ export async function createFreeTierSubscription(userId: string): Promise<Subscr
 /**
  * Check if user has enough storage space
  */
-export async function checkStorageLimit(userId: string, fileSize: number): Promise<{ allowed: boolean; remaining: number; limit: number }> {
+export async function checkStorageLimit(
+  userId: string,
+  fileSize: number
+): Promise<{ allowed: boolean; remaining: number; limit: number }> {
   const subscription = await getActiveSubscription(userId);
 
   if (!subscription) {
@@ -265,7 +281,10 @@ export async function checkStorageLimit(userId: string, fileSize: number): Promi
 /**
  * Check if user has enough bandwidth
  */
-export async function checkBandwidthLimit(userId: string, transferSize: number): Promise<{ allowed: boolean; remaining: number; limit: number }> {
+export async function checkBandwidthLimit(
+  userId: string,
+  transferSize: number
+): Promise<{ allowed: boolean; remaining: number; limit: number }> {
   const subscription = await getActiveSubscription(userId);
 
   if (!subscription) {
@@ -311,7 +330,7 @@ export async function incrementStorageUsage(userId: string, fileSize: number): P
 
     return true;
   } catch (error) {
-    logger.error('Increment storage usage error', error);
+    logger.error("Increment storage usage error", error);
     return false;
   }
 }
@@ -343,7 +362,7 @@ export async function decrementStorageUsage(userId: string, fileSize: number): P
 
     return true;
   } catch (error) {
-    logger.error('Decrement storage usage error:', error);
+    logger.error("Decrement storage usage error:", error);
     return false;
   }
 }
@@ -351,7 +370,10 @@ export async function decrementStorageUsage(userId: string, fileSize: number): P
 /**
  * Update bandwidth usage (add transfer size)
  */
-export async function incrementBandwidthUsage(userId: string, transferSize: number): Promise<boolean> {
+export async function incrementBandwidthUsage(
+  userId: string,
+  transferSize: number
+): Promise<boolean> {
   if (!db || !isDatabaseConfigured()) {
     return false;
   }
@@ -375,8 +397,7 @@ export async function incrementBandwidthUsage(userId: string, transferSize: numb
 
     return true;
   } catch (error) {
-    logger.error('Increment bandwidth usage error:', error);
+    logger.error("Increment bandwidth usage error:", error);
     return false;
   }
 }
-

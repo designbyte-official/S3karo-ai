@@ -37,12 +37,12 @@ const OwnS3SetupPage = () => {
     };
 
     // Listen for both standard storage events (cross-tab) and custom events (same-tab)
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('s3-config-updated', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("s3-config-updated", handleStorageChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('s3-config-updated', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("s3-config-updated", handleStorageChange);
     };
   }, [user]);
 
@@ -60,7 +60,8 @@ const OwnS3SetupPage = () => {
         <div className="mb-10">
           <h1 className="h1 text-brand">Setup Your S3 Storage</h1>
           <p className="body-1 mt-2 max-w-2xl text-light-200">
-            Configure your AWS S3 credentials to start using Private S3 storage. <br className="hidden md:block" />
+            Configure your AWS S3 credentials to start using Private S3 storage.{" "}
+            <br className="hidden md:block" />
             These are stored locally in your browser and never sent to our servers.
           </p>
         </div>
@@ -75,7 +76,7 @@ const OwnS3SetupPage = () => {
                 onConfigSaved={async () => {
                   // Config will be reloaded automatically via storage event listener
                   // Optional: Don't auto redirect immediately if you want them to see success state
-                  // router.push('/private/explorer') 
+                  // router.push('/private/explorer')
                 }}
               />
             </div>
@@ -89,28 +90,36 @@ const OwnS3SetupPage = () => {
                 <li className="flex items-start gap-3">
                   <span className="text-lg font-bold text-brand">•</span>
                   <div>
-                    <strong className="block text-[16px] font-semibold text-brand">Secure Uploads</strong>
+                    <strong className="block text-[16px] font-semibold text-brand">
+                      Secure Uploads
+                    </strong>
                     <span className="text-sm text-brand/80">Direct to bucket</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-lg font-bold text-brand">•</span>
                   <div>
-                    <strong className="block text-[16px] font-semibold text-brand">Global Search</strong>
+                    <strong className="block text-[16px] font-semibold text-brand">
+                      Global Search
+                    </strong>
                     <span className="text-sm text-brand/80">Across all folders</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-lg font-bold text-brand">•</span>
                   <div>
-                    <strong className="block text-[16px] font-semibold text-brand">File Management</strong>
+                    <strong className="block text-[16px] font-semibold text-brand">
+                      File Management
+                    </strong>
                     <span className="text-sm text-brand/80">Rename, Delete, Share</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-lg font-bold text-brand">•</span>
                   <div>
-                    <strong className="block text-[16px] font-semibold text-brand">Zero Data Access</strong>
+                    <strong className="block text-[16px] font-semibold text-brand">
+                      Zero Data Access
+                    </strong>
                     <span className="text-sm text-brand/80">Use your own infrastructure</span>
                   </div>
                 </li>
@@ -118,7 +127,10 @@ const OwnS3SetupPage = () => {
             </div>
 
             <div className="mt-8 text-center">
-              <Link href="/private/explorer" className="flex items-center justify-center gap-2 font-medium text-light-200 transition-colors hover:text-brand">
+              <Link
+                href="/private/explorer"
+                className="flex items-center justify-center gap-2 font-medium text-light-200 transition-colors hover:text-brand"
+              >
                 <span>←</span> Back to Private S3 Explorer
               </Link>
             </div>
@@ -130,4 +142,3 @@ const OwnS3SetupPage = () => {
 };
 
 export default OwnS3SetupPage;
-

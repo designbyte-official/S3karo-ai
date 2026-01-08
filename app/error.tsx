@@ -26,17 +26,10 @@ export default function Error({
           {error.message || "An unexpected error occurred. Please try again."}
         </p>
         <div className="flex gap-4">
-          <Button
-            onClick={reset}
-            className="primary-btn flex-1"
-          >
+          <Button onClick={reset} className="primary-btn flex-1">
             Try again
           </Button>
-          <Button
-            onClick={() => window.location.href = "/"}
-            variant="outline"
-            className="flex-1"
-          >
+          <Button onClick={() => (window.location.href = "/")} variant="outline" className="flex-1">
             Go home
           </Button>
         </div>
@@ -44,4 +37,3 @@ export default function Error({
     </div>
   );
 }
-

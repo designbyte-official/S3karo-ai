@@ -61,12 +61,12 @@ export const Thumbnail = ({
     if (isFolder) {
       return "/assets/icons/folder.svg";
     }
-    
+
     // If thumbnails are disabled, always show file type icon
     if (!showThumbnail) {
       return getFileIcon(extension, type);
     }
-    
+
     // If thumbnails enabled and it's an image
     if (shouldShowThumbnail) {
       // Show actual image if loaded successfully, otherwise show icon
@@ -76,17 +76,18 @@ export const Thumbnail = ({
       // Show icon while loading or if error
       return getFileIcon(extension, type);
     }
-    
+
     // Default: show file type icon
     return getFileIcon(extension, type);
   };
 
   const imageSource = getImageSource();
-  const isActualImage = shouldShowThumbnail && shouldLoadImage && !imageError && url && imageSource === url;
+  const isActualImage =
+    shouldShowThumbnail && shouldLoadImage && !imageError && url && imageSource === url;
 
   // Check if this is a full-width thumbnail (when className includes full width styles)
-  const isFullWidth = className?.includes('!w-full') || className?.includes('w-full');
-  
+  const isFullWidth = className?.includes("!w-full") || className?.includes("w-full");
+
   return (
     <figure className={cn("thumbnail", className)} ref={imgRef}>
       <Image
@@ -104,7 +105,7 @@ export const Thumbnail = ({
           !isFullWidth && "size-8 object-contain",
           imageClassName,
           isActualImage && "thumbnail-image",
-          isFullWidth && "w-full h-full",
+          isFullWidth && "w-full h-full"
         )}
       />
     </figure>

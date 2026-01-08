@@ -5,7 +5,6 @@ import { logger } from "@/lib/utils/logger";
 
 import * as schema from "./schema";
 
-
 const connectionString = process.env.DATABASE_URL;
 
 // Check if database is configured
@@ -31,4 +30,3 @@ export const db = dbInstance;
 
 // Export schema for use in queries
 export { schema };
-

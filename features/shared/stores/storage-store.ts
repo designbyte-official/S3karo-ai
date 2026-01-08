@@ -11,4 +11,3 @@ export const useStorageStore = create<StorageState>((set) => ({
   mode: "managed",
   setMode: (mode) => set({ mode }),
 }));
-

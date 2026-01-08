@@ -8,7 +8,6 @@ import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
 import { UserInfo, SubscriptionSection } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 
-
 export default function SubscriptionPage() {
   const isManagedStorage = true;
   const { subscription, loading } = useProfile(isManagedStorage);
@@ -34,4 +33,3 @@ export default function SubscriptionPage() {
     </div>
   );
 }
-

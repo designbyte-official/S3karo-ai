@@ -31,9 +31,11 @@ export default function SubscriptionPage() {
       const response = await fetch("/api/subscriptions");
       if (!response.ok) throw new Error("Failed to fetch subscription");
       const data = await response.json();
-      setSubscription(data);
-    } catch (error: any) {
-      toast.error("Failed to load subscription", { description: error.message });
+      setSubscription(data as SubscriptionData);
+    } catch (error: unknown) {
+      console.error("fetchSubscription error:", error);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Failed to load subscription", { description: message });
     } finally {
       setLoading(false);
     }
@@ -126,13 +128,12 @@ export default function SubscriptionPage() {
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full bg-light-300">
               <div
-                className={`h-full transition-all ${
-                  storagePercentage > 90
+                className={`h-full transition-all ${storagePercentage > 90
                     ? "bg-red"
                     : storagePercentage > 70
-                    ? "bg-orange"
-                    : "bg-brand"
-                }`}
+                      ? "bg-orange"
+                      : "bg-brand"
+                  }`}
                 style={{ width: `${Math.min(storagePercentage, 100)}%` }}
               />
             </div>
@@ -154,18 +155,18 @@ export default function SubscriptionPage() {
             <div className="flex items-center justify-between">
               <span className="body-2 text-light-200">Used</span>
               <span className="subtitle-2">
-                {formatBytes(subscription.bandwidthUsed)} / {formatBytes(subscription.bandwidthLimit)}
+                {formatBytes(subscription.bandwidthUsed)} /{" "}
+                {formatBytes(subscription.bandwidthLimit)}
               </span>
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full bg-light-300">
               <div
-                className={`h-full transition-all ${
-                  bandwidthPercentage > 90
+                className={`h-full transition-all ${bandwidthPercentage > 90
                     ? "bg-red"
                     : bandwidthPercentage > 70
-                    ? "bg-orange"
-                    : "bg-brand"
-                }`}
+                      ? "bg-orange"
+                      : "bg-brand"
+                  }`}
                 style={{ width: `${Math.min(bandwidthPercentage, 100)}%` }}
               />
             </div>
@@ -210,4 +211,3 @@ export default function SubscriptionPage() {
     </div>
   );
 }
-

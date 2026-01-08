@@ -33,12 +33,14 @@ s3-karo/
 ## Development Setup
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/your-username/s3-karo.git
    cd s3-karo
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
@@ -49,6 +51,7 @@ s3-karo/
    - Validate: `pnpm validate-env`
 
 4. **Set up database**
+
    ```bash
    pnpm db:push
    ```
@@ -69,6 +72,7 @@ s3-karo/
 ## Commit Messages
 
 Use clear, descriptive commit messages:
+
 - `feat: add CDN URL support`
 - `fix: resolve database null check errors`
 - `docs: update API documentation`
@@ -76,6 +80,7 @@ Use clear, descriptive commit messages:
 ## Pull Request Process
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -86,6 +91,7 @@ Use clear, descriptive commit messages:
    - Update documentation if needed
 
 3. **Run checks**
+
    ```bash
    pnpm lint          # Check code style
    pnpm type-check    # Verify TypeScript

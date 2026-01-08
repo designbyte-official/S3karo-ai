@@ -20,11 +20,7 @@ export function validateProductionEnv(): void {
     return; // Skip validation in development
   }
 
-  const requiredVars = [
-    "DATABASE_URL",
-    "JWT_SECRET",
-    "NEXT_PUBLIC_APP_URL",
-  ];
+  const requiredVars = ["DATABASE_URL", "JWT_SECRET", "NEXT_PUBLIC_APP_URL"];
 
   const missingVars: string[] = [];
 
@@ -52,4 +48,3 @@ export function getEnvConfig() {
     enableLogging: process.env.NEXT_PUBLIC_ENABLE_LOGGING === "true",
   };
 }
-

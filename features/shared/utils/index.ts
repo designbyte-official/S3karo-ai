@@ -60,8 +60,7 @@ export const getFileType = (fileName: string) => {
   const videoExtensions = ["mp4", "avi", "mov", "mkv", "webm"];
   const audioExtensions = ["mp3", "wav", "ogg", "flac"];
 
-  if (documentExtensions.includes(extension))
-    return { type: "document", extension };
+  if (documentExtensions.includes(extension)) return { type: "document", extension };
   if (imageExtensions.includes(extension)) return { type: "image", extension };
   if (videoExtensions.includes(extension)) return { type: "video", extension };
   if (audioExtensions.includes(extension)) return { type: "audio", extension };
@@ -105,10 +104,7 @@ export const formatDateTime = (isoString: string | null | undefined) => {
   return `${time}, ${day} ${month} ${year}`;
 };
 
-export const getFileIcon = (
-  extension: string | undefined,
-  type: FileType | string,
-) => {
+export const getFileIcon = (extension: string | undefined, type: FileType | string) => {
   switch (extension) {
     // Document
     case "pdf":
@@ -220,5 +216,5 @@ export const getFileTypesParams = (type: string) => {
 };
 
 export const constructDownloadUrl = (bucketFileId: string) => {
-  return `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/download/${bucketFileId}`;
+  return `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/files/download/${bucketFileId}`;
 };

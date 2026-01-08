@@ -6,20 +6,16 @@ import { runMigrations, createFreeSubscriptionsForUsers } from "@/lib/database/m
 export async function POST() {
   try {
     await runMigrations();
-    
+
     // Create free subscriptions for users who don't have one
     const subscriptionResult = await createFreeSubscriptionsForUsers();
-    
-    return NextResponse.json({ 
-      success: true, 
+
+    return NextResponse.json({
+      success: true,
       message: "Migrations completed",
-      subscriptions: subscriptionResult
+      subscriptions: subscriptionResult,
     });
   } catch (error: any) {
-    return NextResponse.json(
-      { success: false, error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-

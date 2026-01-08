@@ -34,7 +34,7 @@ const OwnS3Page = () => {
     reload,
     navigateToFolder,
     setSubPath,
-    createFolder
+    createFolder,
   } = useOwnS3();
 
   const {
@@ -44,7 +44,7 @@ const OwnS3Page = () => {
     setShowThumbnails,
     filteredFiles,
     setFilteredFiles,
-    searchText
+    searchText,
   } = useExplorerState(files);
 
   // Show error toast when error occurs
@@ -84,10 +84,7 @@ const OwnS3Page = () => {
           <p className="body-1 max-w-md text-light-100">
             To view and manage your files, you need to configure your S3 bucket credentials first.
           </p>
-          <Button
-            onClick={() => router.push("/private/settings")}
-            className="shad-submit-btn px-8"
-          >
+          <Button onClick={() => router.push("/private/settings")} className="shad-submit-btn px-8">
             Go to Settings
           </Button>
         </div>
@@ -113,7 +110,12 @@ const OwnS3Page = () => {
           </div>
           <div className="flex items-center gap-3">
             <NewFolderDialog onCreate={createFolder} />
-            <FileUploader ownerId={user.$id} accountId={user.accountId} mode="private" path={subPath} />
+            <FileUploader
+              ownerId={user.$id}
+              accountId={user.accountId}
+              mode="private"
+              path={subPath}
+            />
           </div>
         </div>
 

@@ -1,4 +1,4 @@
-import { Redis } from '@upstash/redis';
+import { Redis } from "@upstash/redis";
 
 let redisClient: Redis | null = null;
 
@@ -25,4 +25,3 @@ export function getRedisClient(): Redis | null {
 export function isRedisConfigured(): boolean {
   return !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN;
 }
-

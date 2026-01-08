@@ -5,7 +5,7 @@ import { emailConfig } from "./config";
 // Create SMTP transporter based on provider
 async function createTransporter() {
   switch (emailConfig.provider) {
-    case "ethereal":
+    case "ethereal": {
       // Ethereal Email - FREE, no signup, generates credentials automatically
       // Perfect for testing and development
       const testAccount = await nodemailer.createTestAccount();
@@ -18,7 +18,8 @@ async function createTransporter() {
           pass: testAccount.pass,
         },
       });
-    
+    }
+
     case "brevo":
       if (!emailConfig.brevo.user || !emailConfig.brevo.password) {
         throw new Error("BREVO_SMTP_USER and BREVO_SMTP_PASSWORD must be set");
@@ -32,7 +33,7 @@ async function createTransporter() {
           pass: emailConfig.brevo.password,
         },
       });
-    
+
     case "mailgun":
       if (!emailConfig.mailgun.user || !emailConfig.mailgun.password) {
         throw new Error("MAILGUN_SMTP_USER and MAILGUN_SMTP_PASSWORD must be set");
@@ -46,7 +47,7 @@ async function createTransporter() {
           pass: emailConfig.mailgun.password,
         },
       });
-    
+
     case "gmail":
       if (!emailConfig.gmail.user || !emailConfig.gmail.password) {
         throw new Error("GMAIL_USER and GMAIL_APP_PASSWORD must be set");
@@ -60,7 +61,7 @@ async function createTransporter() {
           pass: emailConfig.gmail.password,
         },
       });
-    
+
     case "custom":
       if (!emailConfig.custom.user || !emailConfig.custom.password || !emailConfig.custom.host) {
         throw new Error("SMTP_HOST, SMTP_USER, and SMTP_PASSWORD must be set");
@@ -74,7 +75,7 @@ async function createTransporter() {
           pass: emailConfig.custom.password,
         },
       });
-    
+
     default:
       throw new Error(`Unknown email provider: ${emailConfig.provider}`);
   }
@@ -100,16 +101,17 @@ export async function sendEmail(to: string, subject: string, html: string) {
     }
 
     return info;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Email send error:", error);
-    throw new Error(`Failed to send email: ${error.message}`);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Failed to send email: ${message}`);
   }
 }
 
 // Send verification email
 export async function sendVerificationEmail(email: string, token: string, fullName: string) {
   const verificationUrl = `${emailConfig.appUrl}/api/auth/verify-email?token=${token}`;
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -140,17 +142,13 @@ export async function sendVerificationEmail(email: string, token: string, fullNa
     </html>
   `;
 
-  return await sendEmail(
-    email,
-    "Verify Your Email Address",
-    html
-  );
+  return await sendEmail(email, "Verify Your Email Address", html);
 }
 
 // Send password reset email
 export async function sendPasswordResetEmail(email: string, token: string, fullName: string) {
   const resetUrl = `${emailConfig.appUrl}/reset-password?token=${token}`;
-  
+
   const html = `
     <!DOCTYPE html>
     <html>
@@ -181,10 +179,5 @@ export async function sendPasswordResetEmail(email: string, token: string, fullN
     </html>
   `;
 
-  return await sendEmail(
-    email,
-    "Reset Your Password",
-    html
-  );
+  return await sendEmail(email, "Reset Your Password", html);
 }
-

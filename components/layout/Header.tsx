@@ -16,11 +16,7 @@ interface Props {
   avatar?: string;
 }
 
-const Header = ({
-  userId,
-  accountId,
-  avatar,
-}: Props) => {
+const Header = ({ userId, accountId, avatar }: Props) => {
   const router = useRouter();
   const pathname = usePathname();
   const defaultAvatar = "https://ui-avatars.com/api/?name=User&background=random";
@@ -37,10 +33,7 @@ const Header = ({
 
         <FileUploader ownerId={userId} accountId={accountId} mode={mode} />
 
-        <Button
-          onClick={() => router.push("/dashboard/profile")}
-          className="sign-out-button"
-        >
+        <Button onClick={() => router.push("/dashboard/profile")} className="sign-out-button">
           <Image
             src={avatar || defaultAvatar}
             alt="Profile"

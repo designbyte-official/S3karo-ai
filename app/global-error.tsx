@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 export default function GlobalError({
   error,
   reset,
@@ -7,6 +9,11 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  React.useEffect(() => {
+    // Log the error to an error reporting service
+    console.error(error);
+  }, [error]);
+
   return (
     <html>
       <body>
@@ -16,10 +23,7 @@ export default function GlobalError({
             <p className="body-2 mb-6 text-light-200">
               A critical error occurred. Please refresh the page or contact support.
             </p>
-            <button
-              onClick={reset}
-              className="primary-btn w-full"
-            >
+            <button onClick={reset} className="primary-btn w-full">
               Try again
             </button>
           </div>
@@ -28,4 +32,3 @@ export default function GlobalError({
     </html>
   );
 }
-

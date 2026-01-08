@@ -9,9 +9,6 @@ import { Button } from "@/components/ui/button";
 import { UserInfo } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 
-
-
-
 export default function ProfilePage() {
   const isManagedStorage = false; // This is in private S3 layout
   const { loading } = useProfile(isManagedStorage);
@@ -64,4 +61,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-

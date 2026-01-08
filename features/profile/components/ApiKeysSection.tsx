@@ -6,7 +6,13 @@ import { Trash2, Copy, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils/format";
 
@@ -50,14 +56,15 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
         throw new Error(error.message || "Failed to create API key");
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as { key: string };
       setNewKeyValue(data.key);
       setShowNewKey(true);
       setNewKeyName("");
       onRefresh();
       toast.success("API key created successfully");
-    } catch (error: any) {
-      toast.error("Failed to create API key", { description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Failed to create API key", { description: message });
     }
   };
 
@@ -75,8 +82,9 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
 
       toast.success("API key deleted successfully");
       onRefresh();
-    } catch (error: any) {
-      toast.error("Failed to delete API key", { description: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      toast.error("Failed to delete API key", { description: message });
     }
   };
 
@@ -110,7 +118,7 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
                 <div className="space-y-4">
                   <div className="bg-green-50 border-green-200 rounded-lg border p-4">
                     <p className="text-green-800 mb-2 text-sm font-medium">
-                      ⚠️ Save this key now! You won't be able to see it again.
+                      ⚠️ Save this key now! You won&apos;t be able to see it again.
                     </p>
                     <div className="flex items-center gap-2">
                       <code className="flex-1 break-all rounded border bg-white p-2 font-mono text-sm">
@@ -139,9 +147,7 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
               ) : (
                 <>
                   <div>
-                    <label className="mb-2 block text-sm font-medium">
-                      Key Name
-                    </label>
+                    <label className="mb-2 block text-sm font-medium">Key Name</label>
                     <Input
                       value={newKeyName}
                       onChange={(e) => setNewKeyName(e.target.value)}
@@ -149,17 +155,10 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      className="flex-1"
-                      onClick={createKey}
-                      disabled={!newKeyName.trim()}
-                    >
+                    <Button className="flex-1" onClick={createKey} disabled={!newKeyName.trim()}>
                       Create
                     </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => setNewKeyDialogOpen(false)}
-                    >
+                    <Button variant="outline" onClick={() => setNewKeyDialogOpen(false)}>
                       Cancel
                     </Button>
                   </div>
@@ -180,19 +179,14 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
       ) : (
         <div className="space-y-4">
           {keys.map((key) => (
-            <div
-              key={key.id}
-              className="rounded-lg border border-light-300 bg-light-300 p-4"
-            >
+            <div key={key.id} className="rounded-lg border border-light-300 bg-light-300 p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="mb-2 flex items-center gap-3">
                     <h3 className="h4">{key.name}</h3>
                     <span
                       className={`rounded-full px-2 py-1 text-xs font-medium ${
-                        key.isActive
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
+                        key.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       {key.isActive ? "Active" : "Inactive"}
@@ -222,7 +216,7 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
                   variant="ghost"
                   size="sm"
                   onClick={() => deleteKey(key.id)}
-                  className="hover:text-red-600 text-red"
+                  className="text-red-500 hover:text-red-600"
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -234,4 +228,3 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
     </div>
   );
 };
-

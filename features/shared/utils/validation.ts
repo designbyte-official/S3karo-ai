@@ -15,11 +15,9 @@ export const s3ConfigSchema = z.object({
   secretAccessKey: z.string().min(1, "Secret Access Key is required"),
   region: z.string().min(1, "Region is required"),
   bucket: z.string().min(1, "Bucket name is required"),
-  cdnUrl: z.union([
-    z.string().url("CDN URL must be a valid URL"),
-    z.literal(""),
-    z.undefined(),
-  ]).optional(),
+  cdnUrl: z
+    .union([z.string().url("CDN URL must be a valid URL"), z.literal(""), z.undefined()])
+    .optional(),
 });
 
 // File upload validation
@@ -34,4 +32,3 @@ export const fileRenameSchema = z.object({
   name: z.string().min(1).max(255),
   extension: z.string().max(10),
 });
-

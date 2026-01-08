@@ -2,11 +2,20 @@ import crypto from "crypto";
 
 import { eq, and, ilike, inArray, desc, asc, sql } from "drizzle-orm";
 
-import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
-import { logger } from '@/lib/utils/logger';
+import { getFileUrl } from "@/features/managed-storage/services/platform-s3.service";
+import { logger } from "@/lib/utils/logger";
 
 import { db, isDatabaseConfigured } from "./db";
-import { users, files, apiKeys, type User, type NewUser, type File, type NewFile, type ApiKey } from "./schema";
+import {
+  users,
+  files,
+  apiKeys,
+  type User,
+  type NewUser,
+  type File,
+  type NewFile,
+  type ApiKey,
+} from "./schema";
 
 const requireDatabase = () => {
   if (!db || !isDatabaseConfigured()) {
@@ -24,8 +33,8 @@ export async function getUserById(userId: string): Promise<User | null> {
     const database = requireDatabase();
     const result = await database.select().from(users).where(eq(users.id, userId)).limit(1);
     return result[0] || null;
-  } catch (error: any) {
-    logger.warn("Database query failed:", error);
+  } catch (error: unknown) {
+    logger.error("Database query failed", error);
     return null;
   }
 }
@@ -39,8 +48,8 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     const database = requireDatabase();
     const result = await database.select().from(users).where(eq(users.email, email)).limit(1);
     return result[0] || null;
-  } catch (error: any) {
-    logger.warn("Database query failed:", error);
+  } catch (error: unknown) {
+    logger.error("Database query failed", error);
     return null;
   }
 }
@@ -93,12 +102,7 @@ export async function verifyUserEmail(token: string): Promise<User | null> {
   const result = await database
     .select()
     .from(users)
-    .where(
-      and(
-        eq(users.verificationToken, token),
-        sql`${users.verificationTokenExpiry} > NOW()`
-      )
-    )
+    .where(and(eq(users.verificationToken, token), sql`${users.verificationTokenExpiry} > NOW()`))
     .limit(1);
 
   if (result.length === 0) {
@@ -110,7 +114,7 @@ export async function verifyUserEmail(token: string): Promise<User | null> {
   const updated = await database
     .update(users)
     .set({
-      emailVerified: 'true',
+      emailVerified: "true",
       verificationToken: null,
       verificationTokenExpiry: null,
       updatedAt: new Date(),
@@ -158,7 +162,10 @@ export async function getFilesForUser(
       conditions.push(ilike(files.name, `%${filters.searchText}%`));
     }
 
-    const baseQuery = database.select().from(files).where(and(...conditions));
+    const baseQuery = database
+      .select()
+      .from(files)
+      .where(and(...conditions));
 
     if (filters?.sort) {
       const [field, direction] = filters.sort.split("-");
@@ -196,8 +203,8 @@ export async function getFilesForUser(
       return await defaultSortedQuery.limit(filters.limit);
     }
     return await defaultSortedQuery;
-  } catch (error: any) {
-    logger.warn("Database query failed:", error);
+  } catch (error: unknown) {
+    logger.error("Database query failed", error);
     return [];
   }
 }
@@ -242,9 +249,7 @@ export async function deleteFile(fileId: string, userId: string): Promise<File |
     return null;
   }
 
-  await database
-    .delete(files)
-    .where(and(eq(files.id, fileId), eq(files.userId, userId)));
+  await database.delete(files).where(and(eq(files.id, fileId), eq(files.userId, userId)));
 
   return fileToDelete[0];
 }
@@ -302,15 +307,18 @@ export async function migrateFileUrlsToCdn(): Promise<{ updated: number; errors:
           })
           .where(eq(files.id, file.id));
         updated++;
-      } catch (error: any) {
-        logger.error(`Error updating file ${file.id}:`, error);
+      } catch (error: unknown) {
+        logger.error(
+          `Error updating file ${file.id}:`,
+          error instanceof Error ? error.message : "Unknown error"
+        );
         errors++;
       }
     }
 
     return { updated, errors };
-  } catch (error: any) {
-    logger.error('Migration error:', error);
+  } catch (error: unknown) {
+    logger.error("Migration error:", error instanceof Error ? error.message : "Unknown error");
     throw error;
   }
 }
@@ -414,7 +422,9 @@ export async function createApiKey(data: {
 }
 
 // Verify API key and return user info
-export async function verifyApiKey(apiKey: string): Promise<{ userId: string; apiKey: ApiKey } | null> {
+export async function verifyApiKey(
+  apiKey: string
+): Promise<{ userId: string; apiKey: ApiKey } | null> {
   const database = requireDatabase();
 
   const keyHash = crypto.createHash("sha256").update(apiKey).digest("hex");
@@ -422,10 +432,7 @@ export async function verifyApiKey(apiKey: string): Promise<{ userId: string; ap
   const result = await database
     .select()
     .from(apiKeys)
-    .where(and(
-      eq(apiKeys.keyHash, keyHash),
-      eq(apiKeys.isActive, true)
-    ))
+    .where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.isActive, true)))
     .limit(1);
 
   if (result.length === 0) {
@@ -465,10 +472,7 @@ export async function revokeApiKey(apiKeyId: string, userId: string): Promise<bo
   const result = await database
     .update(apiKeys)
     .set({ isActive: false, updatedAt: new Date() })
-    .where(and(
-      eq(apiKeys.id, apiKeyId),
-      eq(apiKeys.userId, userId)
-    ))
+    .where(and(eq(apiKeys.id, apiKeyId), eq(apiKeys.userId, userId)))
     .returning();
 
   return result.length > 0;
@@ -478,7 +482,9 @@ export async function revokeApiKey(apiKeyId: string, userId: string): Promise<bo
  * Check rate limit for an API key
  */
 // Check rate limit for API key (uses Redis if available, no middleware required)
-export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boolean; remaining: number; reset?: number }> {
+export async function checkRateLimit(
+  apiKeyId: string
+): Promise<{ allowed: boolean; remaining: number; reset?: number }> {
   const database = requireDatabase();
 
   const result = await database
@@ -493,6 +499,6 @@ export async function checkRateLimit(apiKeyId: string): Promise<{ allowed: boole
 
   const rateLimit = result[0].rateLimit || 1000;
 
-  const { checkRateLimit: checkRedisRateLimit } = await import('@/lib/redis/rate-limit');
+  const { checkRateLimit: checkRedisRateLimit } = await import("@/lib/redis/rate-limit");
   return await checkRedisRateLimit(`api-key:${apiKeyId}`, rateLimit);
 }

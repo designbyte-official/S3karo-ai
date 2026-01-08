@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Storage and bandwidth usage tracking
 - Subscription management with free tier (1GB storage, 10GB bandwidth)
 - API keys management page
@@ -18,12 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic storage usage updates on file operations
 
 ### Changed
+
 - Improved error handling across all API routes
 - Standardized API responses
 - Enhanced logging system
 - Updated authentication system with better security
 
 ### Security
+
 - Removed hardcoded default secrets
 - Enforced environment variable validation
 - Fixed SQL injection vulnerabilities
@@ -32,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2024-12-26
 
 ### Added
+
 - Initial release
 - Dual storage modes (Managed Storage & Private S3)
 - JWT-based authentication
@@ -53,4 +57,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Version History
 
 - **0.1.0** - Initial production release
-

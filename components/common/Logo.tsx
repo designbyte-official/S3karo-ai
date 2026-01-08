@@ -12,11 +12,7 @@ interface LogoProps {
   href?: string;
 }
 
-const Logo = ({
-  variant = "full",
-  className,
-  href = "/",
-}: LogoProps) => {
+const Logo = ({ variant = "full", className, href = "/" }: LogoProps) => {
   const iconSize = variant === "full" ? 40 : 32;
 
   const logoContent = (

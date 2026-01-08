@@ -29,4 +29,3 @@ export interface StorageStats {
   used: number;
   all: number;
 }
-

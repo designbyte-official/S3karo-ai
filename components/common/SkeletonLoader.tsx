@@ -23,7 +23,10 @@ export const SkeletonGrid = ({ count = 6 }: { count?: number }) => (
 export const SkeletonList = ({ count = 6 }: { count?: number }) => (
   <div className="space-y-3">
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1">
+      <div
+        key={i}
+        className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1"
+      >
         <div className="size-12 shrink-0 rounded-lg bg-light-300" />
         <div className="flex-1 space-y-2">
           <div className="h-4 w-2/3 rounded bg-light-300" />
@@ -78,7 +81,7 @@ export const ExplorerSkeleton = ({ view = "grid" }: { view?: "grid" | "list" }) 
             <div className="h-[52px] w-32 animate-pulse rounded-full bg-light-300" />
           </div>
         </div>
-        
+
         {/* Search and Sort Bar */}
         <div className="flex w-full flex-col items-stretch justify-between gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1 sm:flex-row sm:items-center">
           <div className="flex flex-1 items-center gap-3">
@@ -98,7 +101,7 @@ export const ExplorerSkeleton = ({ view = "grid" }: { view?: "grid" | "list" }) 
           </div>
         </div>
       </header>
-      
+
       {/* Files Grid/List Skeleton */}
       <div className="w-full">
         {view === "grid" ? (
@@ -110,7 +113,10 @@ export const ExplorerSkeleton = ({ view = "grid" }: { view?: "grid" | "list" }) 
         ) : (
           <div className="space-y-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1">
+              <div
+                key={i}
+                className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1"
+              >
                 <div className="size-12 shrink-0 rounded-lg bg-light-300" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-2/3 rounded bg-light-300" />
@@ -190,4 +196,3 @@ export const ProfileSkeleton = () => (
     </div>
   </div>
 );
-

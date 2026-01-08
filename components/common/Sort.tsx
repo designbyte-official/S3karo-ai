@@ -19,26 +19,29 @@ const Sort = () => {
   const sortValue = searchParams.get("sort") || "$createdAt-desc";
   const isUpdatingRef = useRef(false);
 
-  const handleSort = useCallback((value: string) => {
-    // Prevent infinite loops by checking if we're already updating
-    if (isUpdatingRef.current) return;
-    
-    // Only update if the value actually changed
-    if (value === sortValue) return;
-    
-    isUpdatingRef.current = true;
-    
-    try {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("sort", value);
-      router.replace(`${path}?${params.toString()}`, { scroll: false });
-    } finally {
-      // Reset the flag after a short delay to allow the update to complete
-      setTimeout(() => {
-        isUpdatingRef.current = false;
-      }, 100);
-    }
-  }, [searchParams, router, path, sortValue]);
+  const handleSort = useCallback(
+    (value: string) => {
+      // Prevent infinite loops by checking if we're already updating
+      if (isUpdatingRef.current) return;
+
+      // Only update if the value actually changed
+      if (value === sortValue) return;
+
+      isUpdatingRef.current = true;
+
+      try {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("sort", value);
+        router.replace(`${path}?${params.toString()}`, { scroll: false });
+      } finally {
+        // Reset the flag after a short delay to allow the update to complete
+        setTimeout(() => {
+          isUpdatingRef.current = false;
+        }, 100);
+      }
+    },
+    [searchParams, router, path, sortValue]
+  );
 
   // Memoize the sort value to prevent unnecessary re-renders
   const memoizedSortValue = useMemo(() => sortValue, [sortValue]);

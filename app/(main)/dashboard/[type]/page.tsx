@@ -30,7 +30,7 @@ const Page = async ({ searchParams, params }: SearchParamProps) => {
     files = await getFiles({
       types,
       searchText,
-      sort
+      sort,
     });
   }
 

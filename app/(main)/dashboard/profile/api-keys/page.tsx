@@ -8,7 +8,6 @@ import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
 import { UserInfo, ApiKeysSection } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
 
-
 export default function ApiKeysPage() {
   const isManagedStorage = true;
   const { keys, loading, refetchKeys } = useProfile(isManagedStorage);
@@ -34,4 +33,3 @@ export default function ApiKeysPage() {
     </div>
   );
 }
-

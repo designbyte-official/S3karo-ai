@@ -10,12 +10,7 @@ import FileUploader from "@/components/common/FileUploader";
 import Logo from "@/components/common/Logo";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { signOutUser } from "@/features/auth/actions/user.actions";
 import { navItems } from "@/features/shared/constants";
 import { cn } from "@/features/shared/utils";
@@ -28,19 +23,13 @@ interface Props {
   email: string;
 }
 
-const MobileNavigation = ({
-  $id: ownerId,
-  accountId,
-  fullName,
-  avatar,
-  email,
-}: Props) => {
+const MobileNavigation = ({ $id: ownerId, accountId, fullName, avatar, email }: Props) => {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isPrivate = pathname.startsWith("/private");
   const mode = isPrivate ? "private" : "managed";
 
-  const visibleNavItems = mode === 'private' ? [] : navItems;
+  const visibleNavItems = mode === "private" ? [] : navItems;
 
   return (
     <header className="mobile-header">
@@ -48,12 +37,7 @@ const MobileNavigation = ({
 
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger>
-          <Image
-            src="/assets/icons/menu.svg"
-            alt="Search"
-            width={30}
-            height={30}
-          />
+          <Image src="/assets/icons/menu.svg" alt="Search" width={30} height={30} />
         </SheetTrigger>
         <SheetContent className="shad-sheet h-screen px-3">
           <SheetTitle>
@@ -77,21 +61,13 @@ const MobileNavigation = ({
             <ul className="mobile-nav-list">
               {visibleNavItems.map(({ url, name, icon }) => (
                 <Link key={name} href={url} className="lg:w-full">
-                  <li
-                    className={cn(
-                      "mobile-nav-item",
-                      pathname === url && "shad-active",
-                    )}
-                  >
+                  <li className={cn("mobile-nav-item", pathname === url && "shad-active")}>
                     <Image
                       src={icon}
                       alt={name}
                       width={24}
                       height={24}
-                      className={cn(
-                        "nav-icon",
-                        pathname === url && "nav-icon-active",
-                      )}
+                      className={cn("nav-icon", pathname === url && "nav-icon-active")}
                     />
                     <p>{name}</p>
                   </li>
@@ -109,12 +85,7 @@ const MobileNavigation = ({
               className="mobile-sign-out-button"
               onClick={async () => await signOutUser()}
             >
-              <Image
-                src="/assets/icons/logout.svg"
-                alt="logo"
-                width={24}
-                height={24}
-              />
+              <Image src="/assets/icons/logout.svg" alt="logo" width={24} height={24} />
               <p>Logout</p>
             </Button>
           </div>

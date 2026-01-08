@@ -46,11 +46,12 @@ Rate limiting is implemented **directly in API routes** (no middleware):
 // In app/api/v1/files/route.ts
 const rateLimitCheck = await checkRateLimit(apiKeyRecord.id);
 if (!rateLimitCheck.allowed) {
-  return apiErrors.tooManyRequests('Rate limit exceeded');
+  return apiErrors.tooManyRequests("Rate limit exceeded");
 }
 ```
 
 **Features:**
+
 - Sliding window algorithm (more accurate than fixed window)
 - Per API key rate limiting
 - Configurable limits per key
@@ -71,10 +72,12 @@ await setCache(cacheKey, data, 60);
 ```
 
 **Cached Endpoints:**
+
 - `/api/storage/stats` - 60 seconds TTL
 - `/api/subscriptions` - 5 minutes TTL
 
 **Cache Invalidation:**
+
 - Automatically invalidated when storage/subscription data changes
 - Manual invalidation available via `deleteCache()`
 
@@ -113,6 +116,7 @@ X-RateLimit-Reset: 2024-01-01T12:00:00Z
 ## Monitoring
 
 Upstash provides built-in analytics:
+
 - Request count
 - Rate limit hits
 - Cache hit/miss ratios
@@ -137,9 +141,9 @@ Access via [Upstash Console](https://console.upstash.com/)
 ### Fallback Mode
 
 If Redis is not configured, the system:
+
 - ✅ Still works (graceful degradation)
 - ✅ Rate limiting allows all requests (no limit)
 - ✅ No caching (direct database queries)
 
 This ensures the app works even without Redis configured.
-

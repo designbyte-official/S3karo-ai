@@ -3,6 +3,7 @@
 ## Overview
 
 S3-Karo uses industry best practices for file uploads (inspired by modern upload services), providing:
+
 - **Direct client-to-S3 uploads** via presigned URLs
 - **Reduced server load** - files never pass through the server
 - **Better performance** - faster uploads, especially for large files
@@ -12,22 +13,28 @@ S3-Karo uses industry best practices for file uploads (inspired by modern upload
 ## Architecture Flow
 
 ### Traditional Upload (Old)
+
 ```
 Client → Server → S3 → Server → Database
 ```
+
 **Problems:**
+
 - Server buffers entire file
 - High memory usage
 - Slow for large files
 - Server becomes bottleneck
 
 ### S3-Karo Direct Upload (New)
+
 ```
 1. Client → Server: Request presigned URL
 2. Client → S3: Upload directly using presigned URL
 3. Client → Server: Callback to save metadata
 ```
+
 **Benefits:**
+
 - No server buffering
 - Lower memory usage
 - Faster uploads
@@ -42,6 +49,7 @@ Client → Server → S3 → Server → Database
 Request a presigned URL for direct S3 upload.
 
 **Request:**
+
 ```json
 {
   "fileName": "example.jpg",
@@ -56,6 +64,7 @@ Request a presigned URL for direct S3 upload.
 ```
 
 **Response:**
+
 ```json
 {
   "url": "https://bucket.s3.amazonaws.com/...?signature=...",
@@ -77,6 +86,7 @@ Request a presigned URL for direct S3 upload.
 Save file metadata after successful S3 upload.
 
 **Request:**
+
 ```json
 {
   "key": "managed/userId/path/timestamp-filename.jpg",
@@ -88,6 +98,7 @@ Save file metadata after successful S3 upload.
 ```
 
 **Response:**
+
 ```json
 {
   "id": "uuid",
@@ -170,9 +181,9 @@ File routes define validation rules for uploads:
 
 ```typescript
 interface FileRouteConfig {
-  maxFileSize?: number;        // Max file size in bytes
-  allowedFileTypes?: string[];  // MIME types (e.g., ['image/*', 'application/pdf'])
-  maxFileCount?: number;       // Max files per upload
+  maxFileSize?: number; // Max file size in bytes
+  allowedFileTypes?: string[]; // MIME types (e.g., ['image/*', 'application/pdf'])
+  maxFileCount?: number; // Max files per upload
 }
 ```
 
@@ -201,17 +212,20 @@ interface FileRouteConfig {
 ## Security
 
 ### Authentication
+
 - All endpoints require user authentication
 - Pro subscription required for managed storage
 - API keys supported for external access
 
 ### Validation
+
 - File size limits enforced
 - File type validation
 - Path sanitization
 - Storage key verification
 
 ### Presigned URLs
+
 - Expire after 1 hour
 - Scoped to specific S3 key
 - Include content type
@@ -220,24 +234,26 @@ interface FileRouteConfig {
 ## Migration from Old Upload
 
 ### Old Way (Server Buffering)
+
 ```typescript
 const formData = new FormData();
-formData.append('file', file);
+formData.append("file", file);
 
-const response = await fetch('/api/files', {
-  method: 'POST',
+const response = await fetch("/api/files", {
+  method: "POST",
   body: formData,
 });
 ```
 
 ### New Way (Direct Upload)
+
 ```typescript
 const { upload } = useUpload();
 
 await upload(file, {
-  path: 'documents/',
+  path: "documents/",
   onSuccess: (result) => {
-    console.log('Uploaded:', result);
+    console.log("Uploaded:", result);
   },
 });
 ```
@@ -267,16 +283,16 @@ await upload(file, {
 
 ## Features
 
-| Feature | S3-Karo |
-|---------|---------|
-| Presigned URLs | ✅ |
-| File Routes | ✅ |
-| React Hooks | ✅ |
-| Direct S3 Upload | ✅ |
-| Callback System | ✅ |
+| Feature          | S3-Karo                |
+| ---------------- | ---------------------- |
+| Presigned URLs   | ✅                     |
+| File Routes      | ✅                     |
+| React Hooks      | ✅                     |
+| Direct S3 Upload | ✅                     |
+| Callback System  | ✅                     |
 | Multiple Storage | ✅ (Private + Managed) |
-| API Keys | ✅ |
-| Rate Limiting | ✅ |
+| API Keys         | ✅                     |
+| Rate Limiting    | ✅                     |
 
 ## Next Steps
 
@@ -299,4 +315,3 @@ await upload(file, {
    - Official JavaScript SDK
    - Official React SDK
    - Official Node.js SDK
-

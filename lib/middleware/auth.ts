@@ -10,10 +10,17 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
   throw new Error(
-    '❌ SECURITY ERROR: JWT_SECRET environment variable is not set!\n' +
-    'Please set JWT_SECRET in your .env.local file.\n' +
-    'Generate a secure secret: openssl rand -base64 32'
+    "❌ SECURITY ERROR: JWT_SECRET environment variable is not set!\n" +
+    "Please set JWT_SECRET in your .env.local file.\n" +
+    "Generate a secure secret: openssl rand -base64 32"
   );
+}
+
+interface JWTPayload {
+  userId: string;
+  email: string;
+  iat: number;
+  exp: number;
 }
 
 export async function verifyAuth() {
@@ -25,11 +32,12 @@ export async function verifyAuth() {
     }
 
     // Verify token
-    let decoded: any;
+    let decoded: JWTPayload;
     try {
       // JWT_SECRET is validated at module load, so it's guaranteed to be a string here
-      decoded = jwt.verify(token, JWT_SECRET as string);
+      decoded = jwt.verify(token, JWT_SECRET as string) as unknown as JWTPayload;
     } catch (error) {
+      console.error("JWT verification failed:", error);
       return { user: null, error: "Invalid token" };
     }
 
@@ -59,11 +67,10 @@ export async function verifyAuth() {
 
 export async function requireAuth() {
   const { user, error } = await verifyAuth();
-  
+
   if (!user || error) {
     throw new Error(error || "Authentication required");
   }
-  
+
   return user;
 }
-

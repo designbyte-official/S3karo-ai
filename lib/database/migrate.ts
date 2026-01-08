@@ -264,4 +264,3 @@ export async function createFreeSubscriptionsForUsers() {
     throw error;
   }
 }
-
