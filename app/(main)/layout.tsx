@@ -24,7 +24,7 @@ const MainLayout = async ({
                 email={currentUser.email || ''}
             />
 
-            <section className="flex h-full flex-1 flex-col">
+            <section className="flex h-full min-w-0 flex-1 flex-col">
                 <MobileNavigation
                     $id={currentUser.$id || currentUser.id}
                     accountId={currentUser.accountId || currentUser.id}
@@ -37,7 +37,7 @@ const MainLayout = async ({
                     accountId={currentUser.accountId || currentUser.id}
                     avatar={currentUser.avatar || ''}
                 />
-                <div className="main-content">{children}</div>
+                <div className="main-content poeru-content-fade min-w-0">{children}</div>
             </section>
 
             <Toaster />

@@ -16,6 +16,7 @@ export const getCurrentUser = async () => {
       fullName: user.fullName,
       avatar: user.avatar,
       accountId: user.accountId,
+      isPro: user.isPro,
     };
   } catch (error) {
     console.error("Get current user error:", error);
