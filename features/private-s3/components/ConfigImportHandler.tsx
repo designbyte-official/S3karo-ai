@@ -24,12 +24,14 @@ const ConfigImportContent = () => {
     const [importData, setImportData] = useState<string | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [errorType, setErrorType] = useState<'expired' | 'invalid' | null>(null);
 
     useEffect(() => {
         const importParam = searchParams.get("import");
         if (importParam && user?.$id) {
             setImportData(importParam);
             setIsOpen(true);
+            setErrorType(null); // Reset error state
         }
     }, [searchParams, user?.$id]);
 
@@ -38,8 +40,8 @@ const ConfigImportContent = () => {
 
         setIsImporting(true);
         try {
-            const success = await s3ConfigService.importConfig(user.$id, importData);
-            if (success) {
+            const result = await s3ConfigService.importConfig(user.$id, importData);
+            if (result.success) {
                 toast({
                     className: "success-toast",
                     title: "Configuration Imported",
@@ -61,11 +63,16 @@ const ConfigImportContent = () => {
                     router.refresh();
                 }, 100);
             } else {
-                toast({
-                    className: "error-toast",
-                    title: "Import Failed",
-                    description: "The shared configuration link is invalid or corrupted.",
-                });
+                if (result.error === 'expired') {
+                    setErrorType('expired');
+                } else {
+                    toast({
+                        className: "error-toast",
+                        title: "Import Failed",
+                        description: "The shared configuration link is invalid or corrupted.",
+                    });
+                    setIsOpen(false);
+                }
             }
         } catch (error) {
             console.error("Import error:", error);
@@ -76,8 +83,6 @@ const ConfigImportContent = () => {
             });
         } finally {
             setIsImporting(false);
-            setIsOpen(false);
-            setImportData(null);
         }
     };
 
@@ -97,28 +102,37 @@ const ConfigImportContent = () => {
         }}>
             <DialogContent className="shad-dialog max-w-[480px] p-10 rounded-[32px]">
                 <DialogHeader className="space-y-4">
-                    <DialogTitle className="h2 text-brand text-center sm:text-left">Import Configuration</DialogTitle>
+                    <DialogTitle className={`h2 text-center sm:text-left ${errorType === 'expired' ? 'text-red' : 'text-brand'}`}>
+                        {errorType === 'expired' ? "Link Expired" : "Import Configuration"}
+                    </DialogTitle>
                     <DialogDescription className="body-1 text-light-100 text-center sm:text-left">
-                        A shared S3 configuration has been detected. Would you like to import it into your secure local vault? <br /><br />
-                        <span className="text-red font-medium">Warning: This will replace your current S3 settings.</span>
+                        {errorType === 'expired' ? (
+                            "This configuration link has expired for security reasons. Please ask the sender to generate a new link."
+                        ) : (
+                            <>
+                                A shared S3 configuration has been detected. Would you like to import it into your secure local vault? <br /><br />
+                                <span className="text-red font-medium">Warning: This will replace your current S3 settings.</span>
+                            </>
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-8">
                     <Button
                         variant="ghost"
                         onClick={handleCancel}
-                        disabled={isImporting}
                         className="h-12 px-8 rounded-full text-light-100 hover:bg-light-300 font-semibold"
                     >
-                        Dismiss
+                        {errorType === 'expired' ? "Close" : "Dismiss"}
                     </Button>
-                    <Button
-                        onClick={handleConfirmImport}
-                        disabled={isImporting}
-                        className="h-12 px-10 rounded-full bg-brand text-white hover:bg-brand/90 shadow-drop-2 font-bold flex-1"
-                    >
-                        {isImporting ? "Importing Settings..." : "Confirm & Import"}
-                    </Button>
+                    {errorType !== 'expired' && (
+                        <Button
+                            onClick={handleConfirmImport}
+                            disabled={isImporting}
+                            className="h-12 px-10 rounded-full bg-brand text-white hover:bg-brand/90 shadow-drop-2 font-bold flex-1"
+                        >
+                            {isImporting ? "Importing Settings..." : "Confirm & Import"}
+                        </Button>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>

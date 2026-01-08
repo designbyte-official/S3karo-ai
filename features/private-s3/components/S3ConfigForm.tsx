@@ -149,9 +149,11 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         }
     };
 
+    const [shareDuration, setShareDuration] = useState<number>(24);
+
     const handleShare = async () => {
         try {
-            const encoded = await s3ConfigService.exportConfig(userId);
+            const encoded = await s3ConfigService.exportConfig(userId, shareDuration);
             if (encoded) {
                 // Construct the full URL - we use window.location.pathname to keep it on the same page
                 const shareUrl = `${window.location.origin}${window.location.pathname}?import=${encoded}`;
@@ -159,7 +161,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 toast({
                     className: "success-toast",
                     title: "Share Link Copied",
-                    description: "Your private configuration link has been copied to clipboard.",
+                    description: `Your private configuration link (expires in ${shareDuration}h) has been copied.`,
                 });
             }
         } catch (error) {
@@ -352,23 +354,43 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         <h3 className="font-semibold text-lg">S3 Configured & Ready</h3>
                         <p className="text-sm opacity-80">All credentials are securely stored locally</p>
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-brand/20 text-brand hover:bg-brand/5 hover:text-brand h-9 px-4 rounded-full"
-                            onClick={handleShare}
-                        >
-                            Share
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-red/20 text-red hover:bg-red/5 hover:text-red h-9 px-4 rounded-full"
-                            onClick={handleReset}
-                        >
-                            Reset
-                        </Button>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="flex bg-light-300/50 p-1 rounded-full border border-light-300">
+                            {[
+                                { label: '1h', value: 1 },
+                                { label: '24h', value: 24 },
+                                { label: '7d', value: 168 }
+                            ].map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setShareDuration(opt.value)}
+                                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${shareDuration === opt.value
+                                            ? 'bg-brand text-white shadow-sm'
+                                            : 'text-light-100 hover:text-brand'
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-brand/20 text-brand hover:bg-brand/5 hover:text-brand h-9 px-4 rounded-full"
+                                onClick={handleShare}
+                            >
+                                Share
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-red/20 text-red hover:bg-red/5 hover:text-red h-9 px-4 rounded-full"
+                                onClick={handleReset}
+                            >
+                                Reset
+                            </Button>
+                        </div>
                     </div>
                 </div>
 

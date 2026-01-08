@@ -102,7 +102,7 @@ export const s3ConfigService = {
         localStorage.removeItem(`${S3_CONFIG_KEY}${userId}_meta`);
     },
 
-    async exportConfig(userId: string): Promise<string | null> {
+    async exportConfig(userId: string, expiresHours: number = 24): Promise<string | null> {
         if (typeof window === 'undefined') return null;
         const encrypted = localStorage.getItem(`${S3_CONFIG_KEY}${userId}`);
         const metadataStr = localStorage.getItem(`${S3_CONFIG_KEY}${userId}_meta`);
@@ -111,22 +111,28 @@ export const s3ConfigService = {
 
         const exportData = {
             e: encrypted,
-            m: metadataStr ? JSON.parse(metadataStr) : {}
+            m: metadataStr ? JSON.parse(metadataStr) : {},
+            t: expiresHours ? Date.now() + (expiresHours * 60 * 60 * 1000) : null
         };
 
         // Use btoa for a URL-safe-ish base64 string
         return btoa(JSON.stringify(exportData));
     },
 
-    async importConfig(userId: string, encodedData: string): Promise<boolean> {
-        if (typeof window === 'undefined') return false;
+    async importConfig(userId: string, encodedData: string): Promise<{ success: boolean; error?: 'expired' | 'invalid' }> {
+        if (typeof window === 'undefined') return { success: false, error: 'invalid' };
         try {
             const decoded = JSON.parse(atob(encodedData));
-            if (!decoded.e) return false;
+            if (!decoded.e) return { success: false, error: 'invalid' };
+
+            // Check for expiration
+            if (decoded.t && Date.now() > decoded.t) {
+                return { success: false, error: 'expired' };
+            }
 
             // Validate by attempting decryption using the current user context
             const decrypted = await decryptS3Config(decoded.e, userId);
-            if (!decrypted) return false;
+            if (!decrypted) return { success: false, error: 'invalid' };
 
             // Save to the current user's local storage
             localStorage.setItem(`${S3_CONFIG_KEY}${userId}`, decoded.e);
@@ -134,10 +140,10 @@ export const s3ConfigService = {
                 localStorage.setItem(`${S3_CONFIG_KEY}${userId}_meta`, JSON.stringify(decoded.m));
             }
 
-            return true;
+            return { success: true };
         } catch (error) {
             console.error('Failed to import config:', error);
-            return false;
+            return { success: false, error: 'invalid' };
         }
     }
 };
