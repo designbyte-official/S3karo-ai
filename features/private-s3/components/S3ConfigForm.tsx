@@ -332,23 +332,6 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         >
                             Reset
                         </Button>
-                        <Button
-                            size="sm"
-                            className="shad-submit-btn"
-                            onClick={() => {
-                                // Sync form with current config before entering edit mode
-                                form.reset({
-                                    bucket: currentConfig.bucket || "",
-                                    region: currentConfig.region || "",
-                                    accessKeyId: currentConfig.accessKeyId || "",
-                                    secretAccessKey: currentConfig.secretAccessKey || "",
-                                    endpoint: currentConfig.endpoint || "",
-                                });
-                                setIsEditMode(true);
-                            }}
-                        >
-                            Edit
-                        </Button>
                     </div>
                 </div>
 
@@ -377,7 +360,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                     <div className="shad-form-item">
                         <label className="shad-form-label">Bucket Name</label>
                         <Input
-                            value={currentConfig.bucket || ""}
+                            value="••••••••••••"
                             disabled
                             className="shad-input bg-light-300 cursor-not-allowed"
                         />
@@ -386,7 +369,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                     <div className="shad-form-item">
                         <label className="shad-form-label">Region</label>
                         <Input
-                            value={currentConfig.region || ""}
+                            value="••••••••••••"
                             disabled
                             className="shad-input bg-light-300 cursor-not-allowed"
                         />
@@ -438,6 +421,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         label="Access Key ID"
                         placeholder="AKIA..."
                         autoComplete="off"
+                        showToggle={false}
                     />
 
                     <FormPasswordInput
@@ -446,6 +430,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         label="Secret Access Key"
                         placeholder="wJalr..."
                         autoComplete="off"
+                        showToggle={false}
                     />
                 </div>
 

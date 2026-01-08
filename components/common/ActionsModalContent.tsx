@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const DetailRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex">
-    <p className="file-details-label text-left">{label}</p>
-    <p className="file-details-value text-left">{value}</p>
+  <div className="flex py-1.5 border-b border-light-300/30 last:border-none">
+    <p className="file-details-label text-left font-medium">{label}</p>
+    <p className="file-details-value text-left text-light-100">{value}</p>
   </div>
 );
 
@@ -38,7 +38,7 @@ const FileDetails = ({ file }: { file: File }) => {
               />
             </div>
           </div>
-          
+
           {/* File information */}
           <div className="w-full space-y-4 px-2 pt-4 border-t border-slate-200">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -82,13 +82,13 @@ const ShareInput = ({
 }) => {
   return (
     <>
-      <div className="share-wrapper">
-        <p className="subtitle-2 text-light-100">Share with other users</p>
+      <div className="share-wrapper pt-4">
+        <p className="subtitle-2 text-light-100 mb-2">Share with other users</p>
         <Input
           type="email"
           placeholder="Enter email address"
           onChange={(e) => onInputChange([e.target.value])}
-          className="share-input"
+          className="rename-input-field"
         />
         <div className="pt-4">
           <div className="flex justify-between">

@@ -147,8 +147,9 @@
     }
 
     .rename-input-field {
-        @apply body-2 shad-no-focus h-[52px] w-full rounded-full border px-4 shadow-drop-1 !important;
+        @apply body-2 h-[56px] w-full rounded-full border border-light-300 bg-white px-6 shadow-drop-1 transition-all focus:border-brand focus:ring-4 focus:ring-brand/5 outline-none !important;
     }
+
 
     .delete-confirmation {
         @apply text-center text-light-100 !important;

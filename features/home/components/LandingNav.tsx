@@ -38,14 +38,14 @@ export const LandingNav = () => {
           <div className="flex items-center gap-4">
             {user ? (
               <>
-                <Link href="/dashboard">
+                <Link href="/dashboard/profile">
                   <Button variant="ghost" className="h-[52px] px-6 rounded-full button">
-                    Dashboard
+                    Profile
                   </Button>
                 </Link>
-                <Link href="/dashboard/profile">
+                <Link href="/dashboard">
                   <Button className="primary-btn h-[52px] px-8">
-                    Profile
+                    Dashboard
                   </Button>
                 </Link>
               </>

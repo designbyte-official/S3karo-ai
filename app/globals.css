@@ -211,7 +211,7 @@
   }
 
   .shad-dialog {
-    @apply rounded-[26px] w-[90%] max-w-[400px] px-6 py-8 !important;
+    @apply rounded-[32px] w-[95%] max-w-[480px] p-8 md:p-10 !important;
   }
 
   .shad-chart-title {
@@ -388,11 +388,11 @@
   }
 
   .modal-cancel-button {
-    @apply h-[52px] flex-1 rounded-full bg-white text-light-100 hover:bg-transparent !important;
+    @apply h-[56px] flex-1 rounded-full bg-light-400 text-light-100 hover:bg-light-300 font-semibold transition-all !important;
   }
 
   .modal-submit-button {
-    @apply primary-btn !mx-0 h-[52px] w-full flex-1 !important;
+    @apply primary-btn !mx-0 h-[56px] w-full flex-1 shadow-drop-2 hover:shadow-drop-3 transition-all !important;
   }
 
   .file-details-thumbnail {
