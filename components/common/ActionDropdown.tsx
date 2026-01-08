@@ -333,7 +333,58 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            {renderDialogContent()}
+            {action && (
+                <DialogContent className="shad-dialog">
+                    <DialogHeader className="flex flex-col gap-3">
+                        <DialogTitle className="text-center sm:text-left">{action.label}</DialogTitle>
+                        {action.value === "rename" && (
+                            <Input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="shad-input"
+                            />
+                        )}
+                        {action.value === "details" && <ActionsModalContent.FileDetails file={file} />}
+                        {action.value === "share" && (
+                            <ActionsModalContent.ShareInput
+                                file={file}
+                                onInputChange={setEmails}
+                                onRemove={handleRemoveUser}
+                            />
+                        )}
+                        {action.value === "delete" && (
+                            <p className="delete-confirmation">
+                                Are you sure you want to delete{` `}
+                                <span className="delete-file-name">{file.name}</span>?
+                            </p>
+                        )}
+                    </DialogHeader>
+
+                    {["rename", "delete", "share"].includes(action.value) && (
+                        <DialogFooter className="flex flex-col gap-3 md:flex-row">
+                            <Button onClick={closeAllModals} className="modal-cancel-btn">
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleAction}
+                                className="shad-submit-btn"
+                            >
+                                <p className="capitalize">{action.value}</p>
+                                {isLoading && (
+                                    <Image
+                                        src="/assets/icons/loader.svg"
+                                        alt="loader"
+                                        width={24}
+                                        height={24}
+                                        className="animate-spin ml-2"
+                                    />
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    )}
+                </DialogContent>
+            )}
         </Dialog>
     );
 };

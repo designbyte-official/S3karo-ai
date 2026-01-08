@@ -100,12 +100,12 @@ const ConfigImportContent = () => {
         <Dialog open={isOpen} onOpenChange={(open) => {
             if (!open) handleCancel();
         }}>
-            <DialogContent className="shad-dialog max-w-[480px] p-10 rounded-[32px]">
-                <DialogHeader className="space-y-4">
-                    <DialogTitle className={`h2 text-center sm:text-left ${errorType === 'expired' ? 'text-red' : 'text-brand'}`}>
+            <DialogContent className="shad-dialog">
+                <DialogHeader className="flex flex-col gap-3">
+                    <DialogTitle className={`text-center sm:text-left ${errorType === 'expired' ? 'text-red' : ''}`}>
                         {errorType === 'expired' ? "Link Expired" : "Import Configuration"}
                     </DialogTitle>
-                    <DialogDescription className="body-1 text-light-100 text-center sm:text-left">
+                    <DialogDescription className="text-center sm:text-left">
                         {errorType === 'expired' ? (
                             "This configuration link has expired for security reasons. Please ask the sender to generate a new link."
                         ) : (
@@ -116,11 +116,11 @@ const ConfigImportContent = () => {
                         )}
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-8">
+                <DialogFooter className="flex flex-col gap-3 md:flex-row">
                     <Button
                         variant="ghost"
                         onClick={handleCancel}
-                        className="h-12 px-8 rounded-full text-light-100 hover:bg-light-300 font-semibold"
+                        className="modal-cancel-btn"
                     >
                         {errorType === 'expired' ? "Close" : "Dismiss"}
                     </Button>
@@ -128,7 +128,7 @@ const ConfigImportContent = () => {
                         <Button
                             onClick={handleConfirmImport}
                             disabled={isImporting}
-                            className="h-12 px-10 rounded-full bg-brand text-white hover:bg-brand/90 shadow-drop-2 font-bold flex-1"
+                            className="shad-submit-btn"
                         >
                             {isImporting ? "Importing Settings..." : "Confirm & Import"}
                         </Button>

@@ -376,11 +376,11 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
           <span className="hidden sm:block font-medium">New Folder</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="shad-dialog max-w-[480px] p-10 rounded-[32px]" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader className="space-y-4">
-          <DialogTitle className="h2 text-dark-100 text-center sm:text-left">Create New Folder</DialogTitle>
+      <DialogContent className="shad-dialog">
+        <DialogHeader className="flex flex-col gap-3">
+          <DialogTitle className="text-center sm:text-left">Create New Folder</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-8 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Input
               ref={inputRef}
@@ -396,33 +396,33 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
                   handleClose();
                 }
               }}
-              className={`shad-input w-full h-[64px] px-6 rounded-full bg-light-400/5 border-transparent focus:border-brand/20 transition-all ${error ? "border-red" : ""}`}
+              className="shad-input"
               autoFocus
               disabled={loading}
               aria-invalid={!!error}
               aria-describedby={error ? "folder-name-error" : undefined}
             />
             {error && (
-              <p id="folder-name-error" className="text-sm text-red px-4 flex items-center gap-1">
+              <p id="folder-name-error" className="text-sm text-red px-1 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </p>
             )}
           </div>
-          <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-8">
+          <DialogFooter className="flex flex-col gap-3 md:flex-row">
             <Button
               type="button"
               variant="ghost"
               onClick={handleClose}
               disabled={loading}
-              className="h-12 px-8 rounded-full text-light-100 hover:bg-light-300 font-semibold"
+              className="modal-cancel-btn"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading || !name.trim()}
-              className="h-12 px-10 rounded-full bg-brand text-white hover:bg-brand/90 shadow-drop-2 font-bold flex-1"
+              className="shad-submit-btn"
             >
               {loading ? "Creating..." : "Create"}
             </Button>
