@@ -60,20 +60,24 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             try {
                 const latestConfig = await s3ConfigService.getConfig(userId);
                 if (latestConfig) {
-                    setCurrentConfig(latestConfig);
-                    // Update form values if in edit mode
-                    if (isEditMode) {
-                        form.reset({
-                            bucket: latestConfig.bucket || "",
-                            region: latestConfig.region || "",
-                            accessKeyId: latestConfig.accessKeyId || "",
-                            secretAccessKey: latestConfig.secretAccessKey || "",
-                            endpoint: latestConfig.endpoint || "",
-                        });
+                    // CRITICAL SECURITY: We only store a flag that config exists.
+                    // We NEVER store the actual secrets in the component state anymore.
+                    setCurrentConfig({
+                        bucket: latestConfig.bucket ? "EXISTING" : "",
+                        region: "",
+                        accessKeyId: "",
+                        secretAccessKey: "",
+                        cdnUrl: latestConfig.cdnUrl
+                    } as any);
+
+                    // If we somehow ended up in edit mode while configured, kick them out
+                    // because we won't populate the form with real secrets anyway.
+                    if (latestConfig.bucket && isEditMode) {
+                        setIsEditMode(false);
                     }
                 }
             } catch (error) {
-                console.error("Failed to sync config:", error);
+                console.error("Failed to sync config flag:", error);
             }
         };
 
@@ -110,9 +114,11 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 cdnUrl: existingConfig?.cdnUrl,
             });
 
-            // Update local state
-            const updatedConfig = await s3ConfigService.getConfig(userId);
-            setCurrentConfig(updatedConfig);
+            // Update local state - only preserve the existence flag and cdnUrl
+            setCurrentConfig({
+                bucket: "EXISTING",
+                cdnUrl: values.endpoint, // Or use the dedicated cdnUrl logic
+            } as any);
 
             toast({
                 className: "success-toast",
@@ -335,44 +341,35 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                     </div>
                 </div>
 
-                {/* Readonly Credential Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="shad-form-item">
                         <label className="shad-form-label">Access Key ID</label>
-                        <Input
-                            value="••••••••••••"
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••
+                        </div>
                     </div>
 
                     <div className="shad-form-item">
                         <label className="shad-form-label">Secret Access Key</label>
-                        <Input
-                            value="••••••••••••••••••••"
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••••••••••
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="shad-form-item">
                         <label className="shad-form-label">Bucket Name</label>
-                        <Input
-                            value="••••••••••••"
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••
+                        </div>
                     </div>
 
                     <div className="shad-form-item">
                         <label className="shad-form-label">Region</label>
-                        <Input
-                            value="••••••••••••"
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••
+                        </div>
                     </div>
                 </div>
 
@@ -459,19 +456,13 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 />
 
                 <div className="flex justify-end gap-4">
+                    {/* Cancel is only useful if we previously had a way to enter edit mode, which we removed.
+                        Keeping it as a simple 'go back' if someone reset but didn't save. */}
                     {currentConfig?.bucket && (
                         <Button
                             type="button"
                             variant="ghost"
                             onClick={() => {
-                                // Reset form to current config values when canceling
-                                form.reset({
-                                    bucket: currentConfig.bucket || "",
-                                    region: currentConfig.region || "",
-                                    accessKeyId: currentConfig.accessKeyId || "",
-                                    secretAccessKey: currentConfig.secretAccessKey || "",
-                                    endpoint: currentConfig.endpoint || "",
-                                });
                                 setIsEditMode(false);
                             }}
                         >
