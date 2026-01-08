@@ -1,11 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
+
+import Link from "next/link";
+
 import Logo from "@/components/common/Logo";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 export const LandingNav = () => {
   const { user, setUser } = useAuthStore();
@@ -31,15 +33,15 @@ export const LandingNav = () => {
   }, [user, setUser]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md">
+    <nav className="fixed inset-x-0 top-0 z-50 bg-white/95 backdrop-blur-md">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className="flex h-16 items-center justify-between lg:h-20">
           <Logo variant="full" href="/" />
           <div className="flex items-center gap-4">
             {user ? (
               <>
                 <Link href="/dashboard/profile">
-                  <Button variant="ghost" className="h-[52px] px-6 rounded-full button">
+                  <Button variant="ghost" className="button h-[52px] rounded-full px-6">
                     Profile
                   </Button>
                 </Link>
@@ -52,7 +54,7 @@ export const LandingNav = () => {
             ) : (
               <>
                 <Link href="/sign-in">
-                  <Button variant="ghost" className="h-[52px] px-6 rounded-full button">
+                  <Button variant="ghost" className="button h-[52px] rounded-full px-6">
                     Sign In
                   </Button>
                 </Link>

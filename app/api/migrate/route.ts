@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { runMigrations, createFreeSubscriptionsForUsers } from "@/lib/database/migrate";
 
 // Run migrations endpoint (for initial setup)

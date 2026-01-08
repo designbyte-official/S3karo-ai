@@ -1,6 +1,8 @@
 import React from "react";
+
 import Image from "next/image";
 import { redirect } from "next/navigation";
+
 import Logo from "@/components/common/Logo";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
 

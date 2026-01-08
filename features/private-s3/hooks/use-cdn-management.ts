@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { s3ConfigService, S3Config } from "../services/s3-config.service";
+
 import { useRouter } from "next/navigation";
+
+import { useToast } from "@/hooks/use-toast";
+
+import { s3ConfigService, S3Config } from "../services/s3-config.service";
 
 export const useCdnManagement = (userId: string, currentConfig: S3Config | null, onUpdate?: () => void) => {
     const { toast } = useToast();

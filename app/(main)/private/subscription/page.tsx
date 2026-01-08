@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+
 import { Check, X, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 interface SubscriptionData {
   id?: string;
@@ -76,26 +78,26 @@ export default function SubscriptionPage() {
 
   return (
     <div className="page-container">
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="mx-auto w-full max-w-4xl">
         <div className="mb-8">
           <h1 className="h1 text-brand">Subscription</h1>
-          <p className="body-2 text-light-200 mt-2">
+          <p className="body-2 mt-2 text-light-200">
             Manage your subscription and view usage statistics
           </p>
         </div>
 
         {/* Plan Info */}
-        <div className="p-6 bg-white rounded-[18px] shadow-sm border border-light-300 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="h3 capitalize">{subscription.plan} Plan</h2>
-              <p className="body-2 text-light-200 mt-1">
-                Status: <span className="capitalize font-medium">{subscription.status}</span>
+              <p className="body-2 mt-1 text-light-200">
+                Status: <span className="font-medium capitalize">{subscription.status}</span>
               </p>
             </div>
             {subscription.plan === "free" ? (
               <Button className="primary-btn">
-                <TrendingUp className="w-4 h-4 mr-2" />
+                <TrendingUp className="mr-2 size-4" />
                 Upgrade to Pro
               </Button>
             ) : (
@@ -113,7 +115,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Storage Usage */}
-        <div className="p-6 bg-white rounded-[18px] shadow-sm border border-light-300 mb-6">
+        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
           <h3 className="h4 mb-4">Storage Usage</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -122,7 +124,7 @@ export default function SubscriptionPage() {
                 {formatBytes(subscription.storageUsed)} / {formatBytes(subscription.storageLimit)}
               </span>
             </div>
-            <div className="w-full bg-light-300 rounded-full h-3 overflow-hidden">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-light-300">
               <div
                 className={`h-full transition-all ${
                   storagePercentage > 90
@@ -146,7 +148,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Bandwidth Usage */}
-        <div className="p-6 bg-white rounded-[18px] shadow-sm border border-light-300 mb-6">
+        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
           <h3 className="h4 mb-4">Bandwidth Usage</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -155,7 +157,7 @@ export default function SubscriptionPage() {
                 {formatBytes(subscription.bandwidthUsed)} / {formatBytes(subscription.bandwidthLimit)}
               </span>
             </div>
-            <div className="w-full bg-light-300 rounded-full h-3 overflow-hidden">
+            <div className="h-3 w-full overflow-hidden rounded-full bg-light-300">
               <div
                 className={`h-full transition-all ${
                   bandwidthPercentage > 90
@@ -179,26 +181,26 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Plan Features */}
-        <div className="p-6 bg-white rounded-[18px] shadow-sm border border-light-300">
+        <div className="rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
           <h3 className="h4 mb-4">Plan Features</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex items-center gap-3">
-              <Check className="w-5 h-5 text-green" />
+              <Check className="size-5 text-green" />
               <span className="body-2">Managed Storage Access</span>
             </div>
             <div className="flex items-center gap-3">
-              <Check className="w-5 h-5 text-green" />
+              <Check className="size-5 text-green" />
               <span className="body-2">API Access</span>
             </div>
             <div className="flex items-center gap-3">
-              <Check className="w-5 h-5 text-green" />
+              <Check className="size-5 text-green" />
               <span className="body-2">File Sharing</span>
             </div>
             <div className="flex items-center gap-3">
               {subscription.plan === "free" ? (
-                <X className="w-5 h-5 text-light-200" />
+                <X className="size-5 text-light-200" />
               ) : (
-                <Check className="w-5 h-5 text-green" />
+                <Check className="size-5 text-green" />
               )}
               <span className="body-2">Priority Support</span>
             </div>

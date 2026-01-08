@@ -1,7 +1,7 @@
 "use server";
 
-import { getFilesForUser } from "@/lib/database/queries";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
+import { getFilesForUser } from "@/lib/database/queries";
 import { S3File } from "@/types/file";
 
 export const getFiles = async (params: {

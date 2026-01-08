@@ -1,17 +1,17 @@
 import { NextRequest } from 'next/server';
 
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
+import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
-import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
-import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
-import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
 
 export interface FileRouteConfig {
   maxFileSize?: number;
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     return createSuccessResponse({
       url: presignedUrl,
       key: storageKey,
-      expiresIn: expiresIn,
+      expiresIn,
       metadata: {
         fileName,
         fileType,

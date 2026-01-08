@@ -1,6 +1,3 @@
-import { S3File as File } from "@/types/file";
-import { S3Config, S3_CONFIG_KEY } from "./s3-config.service";
-import { getFileType } from "@/features/shared/utils";
 import {
     S3Client,
     ListObjectsV2Command,
@@ -8,19 +5,21 @@ import {
     DeleteObjectCommand,
     HeadObjectCommand,
     GetObjectCommand,
-    CreateMultipartUploadCommand,
-    UploadPartCommand,
-    CompleteMultipartUploadCommand,
-    AbortMultipartUploadCommand,
-    ListPartsCommand,
     ListObjectsV2CommandOutput
 } from "@aws-sdk/client-s3";
+
+import { getFileType } from "@/features/shared/utils";
+import { normalizeBaseUrl, constructFileUrl } from '@/lib/utils/url';
+import { S3File as File } from "@/types/file";
+
+
 import { handleS3Error, S3Error } from "../utils/errors";
-import { validateFileName, validatePath, validateFileSize, validateS3Config, sanitizeFileName, normalizePath } from "../utils/validation";
 import { withRetry } from "../utils/retry";
+import { validateFileName, validatePath, validateFileSize, validateS3Config, sanitizeFileName, normalizePath } from "../utils/validation";
+
+import { S3Config } from "./s3-config.service";
 
 // Import URL utilities from shared location
-import { normalizeBaseUrl, encodeFileKey, constructFileUrl } from '@/lib/utils/url';
 
 // Check if endpoint is a CloudFront/CDN URL (not suitable for S3 API operations)
 const isCloudFrontUrl = (url?: string): boolean => {
@@ -47,7 +46,7 @@ const getS3Client = (config: S3Config): S3Client => {
             accessKeyId: config.accessKeyId,
             secretAccessKey: config.secretAccessKey,
         },
-        endpoint: endpoint,
+        endpoint,
         forcePathStyle: !!endpoint,
         requestHandler: {
             requestTimeout: 30000,
@@ -99,7 +98,7 @@ export const s3ExplorerService = {
                     files.push({
                         $id: p.Prefix!,
                         bucketFileId: p.Prefix!,
-                        name: name,
+                        name,
                         type: "folder",
                         size: 0,
                         extension: "folder",
@@ -139,11 +138,11 @@ export const s3ExplorerService = {
                     files.push({
                         $id: item.Key!,
                         bucketFileId: item.Key!,
-                        name: name,
-                        type: type,
+                        name,
+                        type,
                         size: item.Size || 0,
-                        extension: extension,
-                        url: url,
+                        extension,
+                        url,
                         users: [],
                         accountId: params.accountId,
                         owner: {
@@ -378,7 +377,7 @@ export const s3ExplorerService = {
         let uploadId: string;
         let parts: Array<{ partNumber: number; etag: string }> = [];
         let uploadedBytes = 0;
-        let existingState = params.resume ? params.getUploadState(fileId) : null;
+        const existingState = params.resume ? params.getUploadState(fileId) : null;
         if (existingState && existingState.key === params.key && existingState.bucket === params.config.bucket) {
             uploadId = existingState.uploadId;
             parts = existingState.parts;

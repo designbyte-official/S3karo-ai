@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
+
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -10,10 +13,10 @@ import {
     DialogDescription,
     DialogFooter
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { s3ConfigService } from "../services/s3-config.service";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { useToast } from "@/hooks/use-toast";
+
+import { s3ConfigService } from "../services/s3-config.service";
 
 const ConfigImportContent = () => {
     const searchParams = useSearchParams();
@@ -111,7 +114,7 @@ const ConfigImportContent = () => {
                         ) : (
                             <>
                                 A shared S3 configuration has been detected. Would you like to import it into your secure local vault? <br /><br />
-                                <span className="text-red font-medium">Warning: This will replace your current S3 settings.</span>
+                                <span className="font-medium text-red">Warning: This will replace your current S3 settings.</span>
                             </>
                         )}
                     </DialogDescription>

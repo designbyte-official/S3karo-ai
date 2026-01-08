@@ -1,16 +1,19 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
-import { useDropzone } from "react-dropzone";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/features/shared/utils";
+
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
-import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
-import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+
+import { useDropzone } from "react-dropzone";
+
+import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { useUpload } from "@/features/managed-storage/hooks/use-upload";
+import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+import { cn } from "@/features/shared/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
     ownerId: string;

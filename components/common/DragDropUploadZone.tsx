@@ -1,18 +1,19 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+
+import { Upload, X, File, CheckCircle2 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useDropzone } from "react-dropzone";
-import { cn } from "@/features/shared/utils";
-import { Upload, X, File, CheckCircle2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
-import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
-import { useUpload } from "@/features/managed-storage/hooks/use-upload";
-import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
+
 import { Button } from "@/components/ui/button";
-import { convertFileSize } from "@/features/shared/utils";
+import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
+import { useUpload } from "@/features/managed-storage/hooks/use-upload";
+import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+import { convertFileSize } from "@/features/shared/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
     ownerId: string;
@@ -400,14 +401,14 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
         <>
             {/* Full-page drag overlay - shows when dragging */}
             {isDragActive && typeof document !== 'undefined' && createPortal(
-                <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center">
-                    <div className="bg-white rounded-3xl p-12 shadow-2xl border-4 border-dashed border-brand max-w-2xl mx-4 animate-pulse">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="mx-4 max-w-2xl animate-pulse rounded-3xl border-4 border-dashed border-brand bg-white p-12 shadow-2xl">
                         <div className="flex flex-col items-center gap-6 text-center">
-                            <div className="p-6 bg-brand/10 rounded-full">
+                            <div className="rounded-full bg-brand/10 p-6">
                                 <Upload size={64} className="text-brand" />
                             </div>
                             <div>
-                                <h3 className="text-3xl font-bold text-dark-100 mb-2">Drop files here</h3>
+                                <h3 className="mb-2 text-3xl font-bold text-dark-100">Drop files here</h3>
                                 <p className="text-lg text-light-100">
                                     Upload to: <span className="font-semibold text-brand">{subPath || "Root"}</span>
                                 </p>
@@ -424,9 +425,9 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                 onOpenChange={handleCloseDialog}
                 title={`Upload Files${filesToUpload.length > 0 ? ` (${filesToUpload.length})` : ''}`}
                 fullScreen={false}
-                className="!max-w-[700px] !w-[95%] !h-[95vh] !max-h-[95vh] !m-0"
+                className="!m-0 !h-[95vh] !max-h-[95vh] !w-[95%] !max-w-[700px]"
                 footer={
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex w-full items-center justify-between">
                         <div className="text-sm text-slate-600">
                             {pendingFiles.length > pausedFiles.length && <span className="text-blue-600">{pendingFiles.length - pausedFiles.length} pending</span>}
                             {pausedFiles.length > 0 && <span className="text-orange-600 ml-2">{pausedFiles.length} paused</span>}
@@ -446,7 +447,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                                 <Button
                                     onClick={handleUpload}
                                     disabled={isUploading}
-                                    className="bg-brand hover:bg-brand/90 text-white"
+                                    className="bg-brand text-white hover:bg-brand/90"
                                 >
                                     {isUploading ? 'Uploading...' : `Upload ${pendingFiles.length} File${pendingFiles.length > 1 ? 's' : ''}`}
                                 </Button>
@@ -468,20 +469,20 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                     {/* Drop zone inside dialog */}
                     <div
                         {...getRootProps()}
-                        className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center hover:border-brand/50 transition-colors cursor-pointer bg-slate-50"
+                        className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-12 text-center transition-colors hover:border-brand/50"
                         onClick={(e) => {
                             // Allow clicking to open file picker
                             e.stopPropagation();
                         }}
                     >
                         <input {...getInputProps()} />
-                        <div className="flex flex-col items-center gap-4 pointer-events-none">
-                            <div className="p-4 bg-brand/10 rounded-full">
+                        <div className="pointer-events-none flex flex-col items-center gap-4">
+                            <div className="rounded-full bg-brand/10 p-4">
                                 <Upload size={32} className="text-brand" />
                             </div>
                             <div>
                                 <p className="text-lg font-semibold text-slate-800">Drag & drop files here</p>
-                                <p className="text-sm text-slate-500 mt-1">or click to browse</p>
+                                <p className="mt-1 text-sm text-slate-500">or click to browse</p>
                             </div>
                             <p className="text-xs text-slate-400">
                                 Upload to: <span className="font-semibold text-brand">{subPath || "Root"}</span>
@@ -493,27 +494,27 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                     {filesToUpload.length > 0 && (
                         <div className="space-y-2">
                             <h3 className="text-lg font-semibold text-slate-800">Files to Upload</h3>
-                            <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-2">
+                            <div className="max-h-[50vh] space-y-2 overflow-y-auto pr-2">
                                 {filesToUpload.map((fileWithStatus, index) => (
                                     <div
                                         key={index}
-                                        className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors"
+                                        className="flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-slate-300"
                                     >
-                                        <div className="p-2 bg-slate-100 rounded-lg">
+                                        <div className="rounded-lg bg-slate-100 p-2">
                                             <File size={20} className="text-slate-600" />
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium text-slate-800 truncate">{fileWithStatus.file.name}</p>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate font-medium text-slate-800">{fileWithStatus.file.name}</p>
                                             <p className="text-sm text-slate-500">{convertFileSize(fileWithStatus.file.size)}</p>
                                             {fileWithStatus.status === 'uploading' && fileWithStatus.progress !== undefined && (
                                                 <div className="mt-2">
-                                                    <div className="w-full bg-slate-200 rounded-full h-2">
+                                                    <div className="h-2 w-full rounded-full bg-slate-200">
                                                         <div
-                                                            className="bg-brand h-2 rounded-full transition-all duration-300"
+                                                            className="h-2 rounded-full bg-brand transition-all duration-300"
                                                             style={{ width: `${fileWithStatus.progress}%` }}
                                                         />
                                                     </div>
-                                                    <div className="flex items-center justify-between mt-1">
+                                                    <div className="mt-1 flex items-center justify-between">
                                                         <p className="text-xs text-slate-500">{fileWithStatus.progress}%</p>
                                                         {fileWithStatus.chunkInfo && (
                                                             <p className="text-xs text-slate-400">
@@ -554,7 +555,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                                                     variant="ghost"
                                                     size="icon"
                                                     onClick={() => handleRemoveFile(index)}
-                                                    className="h-8 w-8"
+                                                    className="size-8"
                                                 >
                                                     <X size={16} />
                                                 </Button>
@@ -571,7 +572,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
             {/* Visible dropzone hint in bottom-right corner - clickable to open file picker */}
             {typeof document !== 'undefined' && createPortal(
                 <div
-                    className="fixed bottom-6 right-6 z-[9998] bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border-2 border-dashed border-brand/30 hover:border-brand/60 transition-all cursor-pointer group pointer-events-auto"
+                    className="group pointer-events-auto fixed bottom-6 right-6 z-[9998] cursor-pointer rounded-2xl border-2 border-dashed border-brand/30 bg-white/90 p-4 shadow-lg backdrop-blur-sm transition-all hover:border-brand/60"
                     title="Click to select files or drag and drop files anywhere on the page"
                     onClick={(e) => {
                         e.stopPropagation();
@@ -579,7 +580,7 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                     }}
                 >
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-brand/10 rounded-lg group-hover:bg-brand/20 transition-colors">
+                        <div className="rounded-lg bg-brand/10 p-2 transition-colors group-hover:bg-brand/20">
                             <Upload size={20} className="text-brand" />
                         </div>
                         <div className="hidden sm:block">

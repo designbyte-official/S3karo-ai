@@ -1,9 +1,12 @@
-import type { Metadata } from "next";
 import { Poppins } from 'next/font/google';
-import { Providers } from "./providers";
+
+import type { Metadata } from "next";
 import NextTopLoader from 'nextjs-toploader';
-import { validateProductionEnv } from '@/lib/utils/production-check';
+
 import { ConfigImportHandler } from "@/features/private-s3/components/ConfigImportHandler";
+import { validateProductionEnv } from '@/lib/utils/production-check';
+
+import { Providers } from "./providers";
 
 import "./globals.css";
 

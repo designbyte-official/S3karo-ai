@@ -2,16 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 
+import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
+import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
+import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
+import { getFileType } from '@/features/shared/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { verifyApiKey, checkRateLimit, createFile, getFilesForUser } from '@/lib/database/queries';
 import { checkStorageLimit, incrementStorageUsage } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
-import { getFileType } from '@/features/shared/utils';
-import { createPlatformS3Client, getPlatformS3Bucket, getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
-import { generateStorageKey } from '@/features/managed-storage/utils/storage-key';
-import { validateFileName, validateFileSize } from '@/features/private-s3/utils/validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -114,13 +114,13 @@ export async function POST(request: NextRequest) {
     const { type, extension } = getFileType(file.name);
 
     const dbFile = await createFile({
-      userId: userId,
+      userId,
       name: file.name,
-      type: type,
-      extension: extension,
+      type,
+      extension,
       size: file.size,
-      url: url,
-      storageKey: storageKey,
+      url,
+      storageKey,
     });
 
     await incrementStorageUsage(userId, file.size);

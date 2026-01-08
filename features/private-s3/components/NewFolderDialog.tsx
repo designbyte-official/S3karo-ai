@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
+
 import { FolderPlus, AlertCircle } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -9,7 +12,6 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
 interface NewFolderDialogProps {
@@ -91,9 +93,9 @@ export const NewFolderDialog = ({ onCreate }: NewFolderDialogProps) => {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="shad-button-primary h-[52px] gap-2 px-6 bg-dark-100 hover:bg-dark-200 text-white rounded-full transition-all shadow-drop-1">
+                <Button className="shad-button-primary h-[52px] gap-2 rounded-full bg-dark-100 px-6 text-white shadow-drop-1 transition-all hover:bg-dark-200">
                     <FolderPlus size={20} />
-                    <span className="hidden sm:block font-medium">New Folder</span>
+                    <span className="hidden font-medium sm:block">New Folder</span>
                 </Button>
             </DialogTrigger>
             <DialogContent className="shad-dialog">
@@ -120,8 +122,8 @@ export const NewFolderDialog = ({ onCreate }: NewFolderDialogProps) => {
                             aria-describedby={error ? "folder-name-error" : undefined}
                         />
                         {error && (
-                            <p id="folder-name-error" className="text-sm text-red px-1 flex items-center gap-1">
-                                <AlertCircle className="h-4 w-4" />
+                            <p id="folder-name-error" className="flex items-center gap-1 px-1 text-sm text-red">
+                                <AlertCircle className="size-4" />
                                 {error}
                             </p>
                         )}

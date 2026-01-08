@@ -1,8 +1,11 @@
+import { cache } from 'react';
+
 import { cookies } from 'next/headers';
+
 import jwt from 'jsonwebtoken';
+
 import { getUserById } from '@/lib/database/queries';
 import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
-import { cache } from 'react';
 
 // SECURITY: JWT_SECRET must be set in environment variables
 // Never use default secrets in production

@@ -1,13 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
-import { navItems } from "@/constants";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+
 import Logo from "@/components/common/Logo";
+import { navItems } from "@/constants";
+import { cn } from "@/lib/utils";
 
 interface Props {
     fullName: string;
@@ -48,11 +47,11 @@ const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNa
         <aside className="sidebar">
             <Logo
                 variant="full"
-                className="hidden lg:flex mb-2"
+                className="mb-2 hidden lg:flex"
             />
             <Logo
                 variant="icon"
-                className="lg:hidden mb-2"
+                className="mb-2 lg:hidden"
             />
 
             <nav className="sidebar-nav">

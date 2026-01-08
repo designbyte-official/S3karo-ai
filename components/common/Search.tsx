@@ -2,18 +2,20 @@
 
 import React, { useEffect, useState } from "react";
 
-import Image from "next/image";
-import { Search as SearchIcon } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+
+import { Search as SearchIcon } from "lucide-react";
+
+import { Input } from "@/components/ui/input";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
-import Thumbnail from "./Thumbnail";
-import FormattedDateTime from "./FormattedDateTime";
+import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { useDebounce } from "@/hooks/useDebounce";
 import { S3File as File } from "@/types/file";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
+
+import FormattedDateTime from "./FormattedDateTime";
+import Thumbnail from "./Thumbnail";
 
 interface Props {
   mode?: "managed" | "private";

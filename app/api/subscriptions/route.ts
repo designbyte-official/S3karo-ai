@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
 import { getCurrentUser } from '@/lib/auth/utils';
-import { getActiveSubscription, getSubscriptionByUserId } from '@/lib/database/queries-subscriptions';
+import { getActiveSubscription } from '@/lib/database/queries-subscriptions';
+import { getCache, setCache } from '@/lib/redis/cache';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
-import { getCache, setCache } from '@/lib/redis/cache';
 
 /**
  * GET /api/subscriptions

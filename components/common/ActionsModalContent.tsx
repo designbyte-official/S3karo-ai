@@ -1,14 +1,16 @@
 "use client";
 
 import React from "react";
+
 import Image from "next/image";
-import { S3File as File } from "@/types/file";
-import { convertFileSize, formatDateTime } from "@/features/shared/utils";
-import { Input } from "@/components/ui/input";
+
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { convertFileSize, formatDateTime } from "@/features/shared/utils";
+import { S3File as File } from "@/types/file";
 
 const DetailRow = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex py-1.5 border-b border-light-300/30 last:border-none">
+  <div className="flex border-b border-light-300/30 py-1.5 last:border-none">
     <p className="file-details-label text-left font-medium">{label}</p>
     <p className="file-details-value text-left text-light-100">{value}</p>
   </div>
@@ -23,16 +25,16 @@ const FileDetails = ({ file }: { file: File }) => {
     <>
       {isImage ? (
         // Full-size image view for images
-        <div className="w-full flex flex-col items-center gap-6">
+        <div className="flex w-full flex-col items-center gap-6">
           {/* Large image display - full width, no height restrictions */}
-          <div className="relative w-full bg-slate-50 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200">
-            <div className="flex items-center justify-center w-full p-4 sm:p-6">
+          <div className="relative w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:bg-slate-900">
+            <div className="flex w-full items-center justify-center p-4 sm:p-6">
               <Image
                 src={cleanUrl}
                 alt={file.name}
                 width={2400}
                 height={2400}
-                className="w-full h-auto max-w-full object-contain rounded-lg"
+                className="h-auto w-full max-w-full rounded-lg object-contain"
                 unoptimized
                 priority
               />
@@ -40,8 +42,8 @@ const FileDetails = ({ file }: { file: File }) => {
           </div>
 
           {/* File information */}
-          <div className="w-full space-y-4 px-2 pt-4 border-t border-slate-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="w-full space-y-4 border-t border-slate-200 px-2 pt-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <DetailRow label="Format:" value={file.extension.toUpperCase()} />
               <DetailRow label="Size:" value={convertFileSize(file.size)} />
               <DetailRow label="Owner:" value={file.owner?.fullName || "Unknown"} />
@@ -83,7 +85,7 @@ const ShareInput = ({
   return (
     <>
       <div className="share-wrapper pt-4">
-        <p className="subtitle-2 text-light-100 mb-2">Share with other users</p>
+        <p className="subtitle-2 mb-2 text-light-100">Share with other users</p>
         <Input
           type="email"
           placeholder="Enter email address"

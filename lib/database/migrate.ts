@@ -1,8 +1,10 @@
-import { db, isDatabaseConfigured } from "./db";
 import { sql, eq } from "drizzle-orm";
+
 import { logger } from "@/lib/utils/logger";
-import { users, subscriptions } from "./schema";
+
+import { db, isDatabaseConfigured } from "./db";
 import { createFreeTierSubscription } from "./queries-subscriptions";
+import { users, subscriptions } from "./schema";
 
 // Run this to create tables if they don't exist
 export async function runMigrations() {

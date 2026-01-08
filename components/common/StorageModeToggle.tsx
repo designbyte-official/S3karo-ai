@@ -1,16 +1,19 @@
 "use client";
 
 import React from "react";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+
+import { Shield, HardDrive } from "lucide-react";
+
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Shield, HardDrive } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const StorageModeToggle = () => {
     const pathname = usePathname();
@@ -20,7 +23,7 @@ const StorageModeToggle = () => {
 
     return (
         <TooltipProvider>
-            <div className="flex items-center bg-light-400 p-1 rounded-full border border-light-300 shadow-drop-1">
+            <div className="flex items-center rounded-full border border-light-300 bg-light-400 p-1 shadow-drop-1">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link
@@ -32,7 +35,7 @@ const StorageModeToggle = () => {
                                     : "text-light-100 hover:bg-light-300"
                             )}
                         >
-                            <Shield className="w-4 h-4" />
+                            <Shield className="size-4" />
                             <span className="text-sm font-medium">Managed</span>
                         </Link>
                     </TooltipTrigger>
@@ -52,7 +55,7 @@ const StorageModeToggle = () => {
                                     : "text-light-100 hover:bg-light-300"
                             )}
                         >
-                            <HardDrive className="w-4 h-4" />
+                            <HardDrive className="size-4" />
                             <span className="text-sm font-medium">Private S3</span>
                         </Link>
                     </TooltipTrigger>

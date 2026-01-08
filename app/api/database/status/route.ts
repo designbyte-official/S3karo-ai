@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
 import { isDatabaseConfigured } from '@/lib/database/db';
-import { logger } from '@/lib/utils/logger';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 export async function GET(request: NextRequest) {
   try {

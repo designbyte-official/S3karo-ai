@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
+
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
+
+import FileUploader from "@/components/common/FileUploader";
 import Search from "@/components/common/Search";
 import StorageModeToggle from "@/components/common/StorageModeToggle";
-import FileUploader from "@/components/common/FileUploader";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   userId: string;
@@ -44,7 +46,7 @@ const Header = ({
             alt="Profile"
             width={24}
             height={24}
-            className="w-6 h-6 rounded-full object-cover"
+            className="size-6 rounded-full object-cover"
           />
         </Button>
       </div>

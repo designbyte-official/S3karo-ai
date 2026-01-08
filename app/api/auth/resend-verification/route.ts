@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
 import { getUserByEmail, updateVerificationToken } from '@/lib/database/queries';
 import { sendVerificationEmail } from '@/lib/email/sender';
-import { generateVerificationToken, getVerificationTokenExpiry } from '@/lib/utils/tokens';
-import { logger } from '@/lib/utils/logger';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
+import { generateVerificationToken, getVerificationTokenExpiry } from '@/lib/utils/tokens';
 
 export async function POST(request: NextRequest) {
   try {

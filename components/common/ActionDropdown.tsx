@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+
 import Image from "next/image";
-import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+
+import { Button } from "@/components/ui/button";
 import {
     Dialog,
     DialogContent,
@@ -20,16 +22,13 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
-import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
-import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
-import { S3File } from "@/types/file";
-import { getCurrentUser } from "@/features/auth/actions/user.actions";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { actionsDropdownItems } from "@/features/shared/constants";
-import { ActionsModalContent } from "./ActionsModalContent";
 import { useFileActions } from "@/features/shared/hooks/use-file-actions";
+import { S3File } from "@/types/file";
+
+import { ActionsModalContent } from "./ActionsModalContent";
+
 
 const ActionDropdown = ({ file }: { file: S3File }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -164,7 +163,7 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                                         alt="loader"
                                         width={24}
                                         height={24}
-                                        className="animate-spin ml-2"
+                                        className="ml-2 animate-spin"
                                     />
                                 )}
                             </Button>

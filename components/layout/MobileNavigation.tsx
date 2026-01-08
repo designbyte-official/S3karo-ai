@@ -1,24 +1,24 @@
 "use client";
 
+import React, { useState } from "react";
+
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+import FileUploader from "@/components/common/FileUploader";
+import Logo from "@/components/common/Logo";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import Image from "next/image";
-import React, { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import { Separator } from "@/components/ui/separator";
-import { navItems } from "@/features/shared/constants";
-import Link from "next/link";
-import { cn } from "@/features/shared/utils";
-import { Button } from "@/components/ui/button";
-import FileUploader from "@/components/common/FileUploader";
 import { signOutUser } from "@/features/auth/actions/user.actions";
-import Logo from "@/components/common/Logo";
-
-import { s3ConfigService, StorageMode } from "@/features/private-s3/services/s3-config.service";
+import { navItems } from "@/features/shared/constants";
+import { cn } from "@/features/shared/utils";
 
 interface Props {
   $id: string;

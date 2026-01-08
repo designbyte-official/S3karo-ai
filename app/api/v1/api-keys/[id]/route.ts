@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
 import { getCurrentUser } from '@/lib/auth/utils';
 import { revokeApiKey } from '@/lib/database/queries';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';

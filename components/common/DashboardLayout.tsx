@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
-import { S3File } from "@/types/file";
-import { StorageChart } from "./StorageChart";
-import { convertFileSize, getUsageSummary } from "@/features/shared/utils";
-import FileList from "@/features/managed-storage/components/FileList";
-import { S3Config } from "@/features/private-s3/services/s3-config.service";
+
 import Image from "next/image";
+
+import FileList from "@/features/managed-storage/components/FileList";
+import { convertFileSize, getUsageSummary } from "@/features/shared/utils";
+import { S3File } from "@/types/file";
+
 import { SkeletonGrid, SkeletonList, SkeletonStorageChart, SkeletonSummaryCard } from "./SkeletonLoader";
+import { StorageChart } from "./StorageChart";
+
 
 interface DashboardLayoutProps {
     files: S3File[];
@@ -105,13 +108,13 @@ export const DashboardLayout = ({
                 ) : files.length > 0 ? (
                     <FileList files={files} currentUser={currentUser} onFolderClick={onFolderClick} view={view} showThumbnails={showThumbnails} hideOwner={hideOwner} />
                 ) : (
-                    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-                        <div className="mb-4 p-4 bg-light-300 rounded-full">
-                            <svg className="w-12 h-12 text-light-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <div className="flex flex-col items-center justify-center px-4 py-16 text-center">
+                        <div className="mb-4 rounded-full bg-light-300 p-4">
+                            <svg className="size-12 text-light-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                             </svg>
                         </div>
-                        <p className="body-1 text-light-200 mb-2">{emptyMessage}</p>
+                        <p className="body-1 mb-2 text-light-200">{emptyMessage}</p>
                         <p className="caption text-light-200/70">Drag and drop files here or use the upload button</p>
                     </div>
                 )}

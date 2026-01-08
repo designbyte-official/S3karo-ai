@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
+import { Trash2, Copy, Plus } from "lucide-react";
 import { toast } from "sonner";
-import { Trash2, Copy, Eye, EyeOff, Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
+
 
 interface ApiKey {
   id: string;
@@ -115,18 +118,18 @@ export default function ApiKeysPage() {
 
   return (
     <div className="page-container">
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
+      <div className="mx-auto w-full max-w-4xl">
+        <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="h1 text-brand">API Keys</h1>
-            <p className="body-2 text-light-200 mt-2">
+            <p className="body-2 mt-2 text-light-200">
               Manage API keys for programmatic access to your files
             </p>
           </div>
           <Dialog open={newKeyDialogOpen} onOpenChange={setNewKeyDialogOpen}>
             <DialogTrigger asChild>
               <Button className="primary-btn">
-                <Plus className="w-4 h-4 mr-2" />
+                <Plus className="mr-2 size-4" />
                 Create API Key
               </Button>
             </DialogTrigger>
@@ -137,12 +140,12 @@ export default function ApiKeysPage() {
               <div className="space-y-4">
                 {newKeyValue && showNewKey ? (
                   <div className="space-y-4">
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-sm font-medium text-green-800 mb-2">
+                    <div className="bg-green-50 border-green-200 rounded-lg border p-4">
+                      <p className="text-green-800 mb-2 text-sm font-medium">
                         ⚠️ Save this key now! You won't be able to see it again.
                       </p>
                       <div className="flex items-center gap-2">
-                        <code className="flex-1 p-2 bg-white border rounded text-sm font-mono break-all">
+                        <code className="flex-1 break-all rounded border bg-white p-2 font-mono text-sm">
                           {newKeyValue}
                         </code>
                         <Button
@@ -150,7 +153,7 @@ export default function ApiKeysPage() {
                           variant="outline"
                           onClick={() => copyToClipboard(newKeyValue)}
                         >
-                          <Copy className="w-4 h-4" />
+                          <Copy className="size-4" />
                         </Button>
                       </div>
                     </div>
@@ -168,7 +171,7 @@ export default function ApiKeysPage() {
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-medium mb-2">
+                      <label className="mb-2 block text-sm font-medium">
                         Key Name
                       </label>
                       <Input
@@ -200,8 +203,8 @@ export default function ApiKeysPage() {
         </div>
 
         {keys.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="body-2 text-light-200 mb-4">No API keys yet</p>
+          <div className="py-12 text-center">
+            <p className="body-2 mb-4 text-light-200">No API keys yet</p>
             <p className="caption text-light-200">
               Create your first API key to start using the S3-Karo API
             </p>
@@ -211,14 +214,14 @@ export default function ApiKeysPage() {
             {keys.map((key) => (
               <div
                 key={key.id}
-                className="p-6 bg-white rounded-[18px] shadow-sm border border-light-300"
+                className="rounded-[18px] border border-light-300 bg-white p-6 shadow-sm"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="mb-2 flex items-center gap-3">
                       <h3 className="h4">{key.name}</h3>
                       <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${
                           key.isActive
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-100 text-gray-800"
@@ -251,9 +254,9 @@ export default function ApiKeysPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteKey(key.id)}
-                    className="text-red hover:text-red-600"
+                    className="hover:text-red-600 text-red"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="size-4" />
                   </Button>
                 </div>
               </div>
@@ -261,16 +264,16 @@ export default function ApiKeysPage() {
           </div>
         )}
 
-        <div className="mt-8 p-6 bg-light-300 rounded-[18px]">
+        <div className="mt-8 rounded-[18px] bg-light-300 p-6">
           <h3 className="h4 mb-3">API Documentation</h3>
-          <p className="body-2 text-light-200 mb-4">
+          <p className="body-2 mb-4 text-light-200">
             Learn how to use your API keys to integrate S3-Karo into your applications.
           </p>
           <a
             href="/docs/API.md"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-brand hover:underline font-medium"
+            className="font-medium text-brand hover:underline"
           >
             View API Documentation →
           </a>

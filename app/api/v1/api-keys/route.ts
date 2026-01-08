@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
 import { getCurrentUser } from '@/lib/auth/utils';
-import { createApiKey, getApiKeysForUser, revokeApiKey } from '@/lib/database/queries';
 import { isDatabaseConfigured } from '@/lib/database/db';
+import { createApiKey, getApiKeysForUser } from '@/lib/database/queries';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
 
     const result = await createApiKey({
       userId: user.id,
-      name: name,
+      name,
       expiresAt: expiresAt ? new Date(expiresAt) : undefined,
       rateLimit: rateLimit || 1000,
     });

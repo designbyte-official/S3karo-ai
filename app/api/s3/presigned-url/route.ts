@@ -1,11 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+
+import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
 import { createPlatformS3Client, getPlatformS3Bucket } from "@/features/managed-storage/services/platform-s3.service";
 import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
-import { logger } from '@/lib/utils/logger';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { logger } from '@/lib/utils/logger';
 
 
 /**

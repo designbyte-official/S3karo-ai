@@ -2,14 +2,14 @@ import { NextRequest } from 'next/server';
 
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 
+import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { deleteFile, updateFile } from '@/lib/database/queries';
 import { decrementStorageUsage } from '@/lib/database/queries-subscriptions';
+import { deleteCache } from '@/lib/redis/cache';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
-import { deleteCache } from '@/lib/redis/cache';
 
-import { createPlatformS3Client, getPlatformS3Bucket } from '@/features/managed-storage/services/platform-s3.service';
 
 export async function DELETE(
   request: NextRequest,

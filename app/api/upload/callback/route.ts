@@ -1,16 +1,16 @@
 import { NextRequest } from 'next/server';
 
+import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
+import { validateStorageKeyOwnership } from '@/features/managed-storage/utils/storage-key';
+import { getFileType } from '@/features/shared/utils';
 import { getCurrentUser } from '@/lib/auth/utils';
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { createFile } from '@/lib/database/queries';
 import { incrementStorageUsage, checkStorageLimit } from '@/lib/database/queries-subscriptions';
+import { deleteCache } from '@/lib/redis/cache';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
-import { deleteCache } from '@/lib/redis/cache';
 
-import { getFileType } from '@/features/shared/utils';
-import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
-import { validateStorageKeyOwnership } from '@/features/managed-storage/utils/storage-key';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,10 +47,10 @@ export async function POST(request: NextRequest) {
     const dbFile = await createFile({
       userId: user.id,
       name: fileName,
-      type: type,
-      extension: extension,
+      type,
+      extension,
       size: fileSize,
-      url: url,
+      url,
       storageKey: key,
     });
 

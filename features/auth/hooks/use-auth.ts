@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from 'react';
-import { useAuthStore } from '@/features/auth/stores/auth-store';
+
 import { getCurrentUser } from '@/features/auth/actions/user.actions';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 // Sync auth state with server
 export function useAuthSync() {

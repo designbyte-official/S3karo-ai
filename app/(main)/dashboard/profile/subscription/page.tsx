@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
+
+import { useRouter } from "next/navigation";
+
+import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
 import { UserInfo, SubscriptionSection } from "@/features/profile/components";
 import { useProfile } from "@/features/profile/hooks/use-profile";
-import { ProfileSkeleton } from "@/components/common/SkeletonLoader";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+
 
 export default function SubscriptionPage() {
   const isManagedStorage = true;
@@ -24,7 +27,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="page-container">
-      <div className="w-full max-w-4xl mx-auto space-y-8">
+      <div className="mx-auto w-full max-w-4xl space-y-8">
         <UserInfo />
         {subscription && <SubscriptionSection subscription={subscription} />}
       </div>

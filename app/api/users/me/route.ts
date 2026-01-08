@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { getCurrentUser } from '@/lib/auth/utils';
 import { getUserById, updateUser } from '@/lib/database/queries';
 import { apiErrors } from '@/lib/utils/api-response';

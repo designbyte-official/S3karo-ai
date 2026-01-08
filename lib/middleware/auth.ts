@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
+
 import jwt from "jsonwebtoken";
+
 import { getUserById } from "@/lib/database/queries";
 
 // SECURITY: JWT_SECRET must be set in environment variables

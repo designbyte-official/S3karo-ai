@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
-import { getTotalSpaceUsed } from '@/lib/database/queries';
+
 import { getCurrentUser } from '@/lib/auth/utils';
+import { getTotalSpaceUsed } from '@/lib/database/queries';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 

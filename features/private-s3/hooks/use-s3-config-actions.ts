@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { s3ConfigService } from "../services/s3-config.service";
+
 import { useRouter } from "next/navigation";
+
+import { useToast } from "@/hooks/use-toast";
+
+import { s3ConfigService } from "../services/s3-config.service";
 
 export const useS3ConfigActions = (userId: string) => {
     const [shareDuration, setShareDuration] = useState(24);

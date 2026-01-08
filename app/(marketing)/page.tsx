@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { generateMetadata } from "@/lib/seo/metadata";
+
 import {
     LandingNav,
     HeroSection,
@@ -8,6 +8,7 @@ import {
     CTASection,
     LandingFooter,
 } from "@/features/home/components";
+import { generateMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
 

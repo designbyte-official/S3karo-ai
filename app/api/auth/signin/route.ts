@@ -1,10 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail } from '@/lib/database/queries';
-import { logger } from '@/lib/utils/logger';
-import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
-import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
+
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+
+import { getUserByEmail } from '@/lib/database/queries';
+import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 // SECURITY: JWT_SECRET must be set in environment variables
 // Never use default secrets in production - this will throw an error if not set

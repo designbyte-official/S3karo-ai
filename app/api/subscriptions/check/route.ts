@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
+
 import { getCurrentUser } from '@/lib/auth/utils';
-import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
 import { isDatabaseConfigured } from '@/lib/database/db';
+import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
 import { apiErrors, createSuccessResponse } from '@/lib/utils/api-response';
 import { logger } from '@/lib/utils/logger';
 

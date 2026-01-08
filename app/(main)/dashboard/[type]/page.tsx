@@ -1,11 +1,13 @@
 import React from "react";
+
+import { notFound } from "next/navigation";
+
 import Sort from "@/components/common/Sort";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
 import { getFiles } from "@/features/managed-storage/actions/file.actions";
-import { getFileTypesParams } from "@/features/shared/utils";
 import FileList from "@/features/managed-storage/components/FileList";
+import { getFileTypesParams } from "@/features/shared/utils";
 import { S3File as MyFile } from "@/types/file";
-import { notFound } from "next/navigation";
 
 const Page = async ({ searchParams, params }: SearchParamProps) => {
   const type = ((await params)?.type as string) || "";

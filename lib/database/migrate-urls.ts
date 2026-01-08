@@ -5,8 +5,8 @@
  * Usage: npx tsx lib/database/migrate-urls.ts
  */
 
-import { migrateFileUrlsToCdn } from './queries';
 import { isDatabaseConfigured } from './db';
+import { migrateFileUrlsToCdn } from './queries';
 
 async function main() {
   console.log('Starting file URL migration to CDN...');

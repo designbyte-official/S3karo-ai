@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
+
 import Link from "next/link";
+
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
@@ -20,7 +22,7 @@ const Logo = ({
   const logoContent = (
     <div className={cn("flex items-center gap-3 group", className)}>
       {/* Premium S3Karo Icon - Cloud with Hexagonal Bucket */}
-      <div className="flex-shrink-0 relative">
+      <div className="relative shrink-0">
         <svg
           width={iconSize}
           height={iconSize}
@@ -94,7 +96,7 @@ const Logo = ({
       </div>
 
       {variant === "full" && (
-        <span className="font-bold text-xl lg:text-2xl tracking-tight text-brand transition-colors duration-300 group-hover:text-brand-100">
+        <span className="text-xl font-bold tracking-tight text-brand transition-colors duration-300 group-hover:text-brand-100 lg:text-2xl">
           S3Karo
         </span>
       )}

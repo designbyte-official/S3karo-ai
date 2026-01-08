@@ -1,5 +1,6 @@
-import { emailConfig } from "./config";
 import nodemailer from "nodemailer";
+
+import { emailConfig } from "./config";
 
 // Create SMTP transporter based on provider
 async function createTransporter() {

@@ -1,9 +1,11 @@
 import { useState } from "react";
+
 import { useRouter, usePathname } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+
 import { platformStorageService } from "@/features/managed-storage/services/managed-storage.service";
-import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
+import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+import { useToast } from "@/hooks/use-toast";
 import { S3File } from "@/types/file";
 
 export const useFileActions = (file: S3File, user: any) => {

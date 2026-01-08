@@ -1,5 +1,6 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+
 import { getRedisClient, isRedisConfigured } from './client';
 
 export async function checkRateLimit(

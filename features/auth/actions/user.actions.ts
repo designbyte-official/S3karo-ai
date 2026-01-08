@@ -1,8 +1,9 @@
 "use server";
 
-import { getCurrentUser as getCurrentUserFromAuth } from "@/lib/auth/utils";
-import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { getCurrentUser as getCurrentUserFromAuth } from "@/lib/auth/utils";
 
 export const getCurrentUser = async () => {
   try {

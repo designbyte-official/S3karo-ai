@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+
 import { isDatabaseConfigured } from '@/lib/database/db';
 import { createSuccessResponse } from '@/lib/utils/api-response';
 

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { db, isDatabaseConfigured } from "@/lib/database/db";
-import { logger } from "@/lib/utils/logger";
 import { runMigrations, createFreeSubscriptionsForUsers } from "@/lib/database/migrate";
+import { logger } from "@/lib/utils/logger";
 
 /**
  * API endpoint to fix database schema issues

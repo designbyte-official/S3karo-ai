@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { verifyUserEmail } from '@/lib/database/queries';
-import { logger } from '@/lib/utils/logger';
 import { apiErrors } from '@/lib/utils/api-response';
+import { logger } from '@/lib/utils/logger';
 
 export async function GET(request: NextRequest) {
   try {

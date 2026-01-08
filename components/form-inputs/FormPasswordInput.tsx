@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
+
+import { Eye, EyeOff } from "lucide-react";
 import { FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
+
+import { Button } from "@/components/ui/button";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface FormPasswordInputProps<
     TFieldValues extends FieldValues = FieldValues,
@@ -69,15 +71,15 @@ export function FormPasswordInput<
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-brand/10 text-light-200 hover:text-brand"
+                                    className="absolute right-2 top-1/2 size-8 -translate-y-1/2 rounded-full text-light-200 hover:bg-brand/10 hover:text-brand"
                                     onClick={() => setShowPassword(!showPassword)}
                                     disabled={disabled}
                                     aria-label={showPassword ? "Hide password" : "Show password"}
                                 >
                                     {showPassword ? (
-                                        <EyeOff className="h-5 w-5" />
+                                        <EyeOff className="size-5" />
                                     ) : (
-                                        <Eye className="h-5 w-5" />
+                                        <Eye className="size-5" />
                                     )}
                                 </Button>
                             )}

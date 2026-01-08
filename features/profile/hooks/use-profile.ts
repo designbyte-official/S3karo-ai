@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
+
 import { toast } from "sonner";
+
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 interface ApiKey {
   id: string;

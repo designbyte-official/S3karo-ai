@@ -1,9 +1,12 @@
-import { eq, and, ilike, inArray, desc, asc, sql } from "drizzle-orm";
-import { db, isDatabaseConfigured } from "./db";
-import { users, files, apiKeys, type User, type NewUser, type File, type NewFile, type ApiKey, type NewApiKey } from "./schema";
 import crypto from "crypto";
+
+import { eq, and, ilike, inArray, desc, asc, sql } from "drizzle-orm";
+
 import { getFileUrl } from '@/features/managed-storage/services/platform-s3.service';
 import { logger } from '@/lib/utils/logger';
+
+import { db, isDatabaseConfigured } from "./db";
+import { users, files, apiKeys, type User, type NewUser, type File, type NewFile, type ApiKey } from "./schema";
 
 const requireDatabase = () => {
   if (!db || !isDatabaseConfigured()) {
@@ -395,8 +398,8 @@ export async function createApiKey(data: {
     .values({
       userId: data.userId,
       name: data.name,
-      keyHash: keyHash,
-      prefix: prefix,
+      keyHash,
+      prefix,
       expiresAt: data.expiresAt || null,
       rateLimit: data.rateLimit || 1000,
       isActive: true,
@@ -405,7 +408,7 @@ export async function createApiKey(data: {
 
   return {
     key: fullKey,
-    prefix: prefix,
+    prefix,
     apiKey: result[0],
   };
 }

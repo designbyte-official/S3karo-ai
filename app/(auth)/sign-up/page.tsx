@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+
 import AuthForm from "@/features/auth/components/AuthForm";
 
 const SignUp = () => (

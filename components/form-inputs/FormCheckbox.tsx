@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
+
 import { FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
-import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+
 import { Checkbox } from "@/components/ui/checkbox";
+import { FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
 
 interface FormCheckboxProps<

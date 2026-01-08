@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+
 import { toast } from 'sonner';
 
 export interface UploadFile {
@@ -60,7 +61,7 @@ export function useUpload() {
           fileName: file.name,
           fileType: file.type || 'application/octet-stream',
           fileSize: file.size,
-          path: path,
+          path,
           route: {
             maxFileSize,
             allowedFileTypes,
@@ -117,7 +118,7 @@ export function useUpload() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          key: key,
+          key,
           fileName: metadata.fileName,
           fileType: metadata.fileType,
           fileSize: metadata.fileSize,

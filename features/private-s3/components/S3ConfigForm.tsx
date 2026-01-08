@@ -1,19 +1,23 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Form } from "@/components/ui/form";
+
 import { FormTextInput, FormPasswordInput } from "@/components/form-inputs";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { s3ConfigService, S3Config } from "@/features/private-s3/services/s3-config.service";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
+import { Form } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import { useToast } from "@/hooks/use-toast";
-import { MaskedField } from "./MaskedField";
+
+import { useCdnManagement } from "../hooks/use-cdn-management";
 import { useS3ConfigActions } from "../hooks/use-s3-config-actions";
 import { useS3ConfigSync } from "../hooks/use-s3-config-sync";
-import { useCdnManagement } from "../hooks/use-cdn-management";
+
+import { MaskedField } from "./MaskedField";
 
 // URL validation helper
 const urlOrEmpty = z.union([
@@ -135,7 +139,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
     } = useCdnManagement(userId, currentConfig, () => router.refresh());
 
     const ExpirationSelector = () => (
-        <div className="flex bg-light-300/50 p-1 rounded-full border border-light-300">
+        <div className="flex rounded-full border border-light-300 bg-light-300/50 p-1">
             {[
                 { label: '1h', value: 1 },
                 { label: '24h', value: 24 },
@@ -144,7 +148,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 <button
                     key={opt.value}
                     onClick={() => setShareDuration(opt.value)}
-                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${shareDuration === opt.value
+                    className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-all ${shareDuration === opt.value
                         ? 'bg-brand text-white'
                         : 'text-light-100 hover:text-brand'
                         }`}
@@ -159,9 +163,9 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
     if (!isEditMode && currentConfig?.bucket) {
         return (
             <div className="space-y-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-6 rounded-xl bg-light-400/5 border border-light-300/20">
+                <div className="flex flex-col items-center justify-between gap-4 rounded-xl border border-light-300/20 bg-light-400/5 p-6 md:flex-row">
                     <div className="space-y-1">
-                        <h3 className="font-semibold text-lg">S3 Configured</h3>
+                        <h3 className="text-lg font-semibold">S3 Configured</h3>
                         <p className="text-sm text-light-100">Your credentials are stored locally</p>
                     </div>
 
@@ -172,12 +176,12 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <MaskedField label="Access Key ID" />
                     <MaskedField label="Secret Access Key" value="••••••••••••••••••••" />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <MaskedField label="Bucket Name" />
                     <MaskedField label="Region" />
                 </div>
@@ -200,7 +204,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                                 className={`shad-input flex-1 ${cdnError ? "border-red-500" : ""}`}
                             />
                             {cdnError && (
-                                <p className="text-sm text-red-500 mt-1">{cdnError}</p>
+                                <p className="text-red-500 mt-1 text-sm">{cdnError}</p>
                             )}
                         </div>
                         <Button
@@ -219,8 +223,8 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <FormPasswordInput
                         control={form.control}
                         name="accessKeyId"
@@ -240,7 +244,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                     />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     <FormTextInput
                         control={form.control}
                         name="bucket"
@@ -276,7 +280,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                             Cancel
                         </Button>
                     )}
-                    <Button type="submit" className="shad-submit-btn w-full md:w-auto px-8" disabled={isLoading}>
+                    <Button type="submit" className="shad-submit-btn w-full px-8 md:w-auto" disabled={isLoading}>
                         {isLoading ? "Saving..." : "Save Configuration"}
                     </Button>
                 </div>

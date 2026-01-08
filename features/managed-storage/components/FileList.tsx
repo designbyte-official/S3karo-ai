@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-import { S3File as File } from "@/types/file";
+
+import { ActionsModalContent } from "@/components/common/ActionsModalContent";
 import Card from "@/components/common/Card";
 import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
-import { ActionsModalContent } from "@/components/common/ActionsModalContent";
+import { S3File as File } from "@/types/file";
 
 interface Props {
     files?: File[];

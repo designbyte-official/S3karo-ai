@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+
 import { Search as SearchIcon, X } from "lucide-react";
+
 import { Input } from "@/components/ui/input";
-import { S3File as File } from "@/types/file";
 import { useDebounce } from "@/hooks/useDebounce";
+import { S3File as File } from "@/types/file";
 
 interface LocalSearchProps {
     files: File[];
@@ -42,8 +44,8 @@ const LocalSearch = ({ files, onFilteredFilesChange }: LocalSearchProps) => {
     };
 
     return (
-        <div className="relative w-full sm:flex-1 sm:max-w-md">
-            <div className="search-input-wrapper !bg-light-300 relative">
+        <div className="relative w-full sm:max-w-md sm:flex-1">
+            <div className="search-input-wrapper relative !bg-light-300">
                 <SearchIcon size={20} className="text-light-200" />
                 <Input
                     value={query}
@@ -54,7 +56,7 @@ const LocalSearch = ({ files, onFilteredFilesChange }: LocalSearchProps) => {
                 {query && (
                     <button
                         onClick={handleClear}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-light-200 hover:text-light-100 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-light-200 transition-colors hover:text-light-100"
                     >
                         <X size={16} />
                     </button>
