@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { cn } from "@/features/shared/utils";
 import { Upload, X, File, CheckCircle2 } from "lucide-react";
@@ -398,8 +399,8 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
     return (
         <>
             {/* Full-page drag overlay - shows when dragging */}
-            {isDragActive && (
-                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+            {isDragActive && typeof document !== 'undefined' && createPortal(
+                <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center">
                     <div className="bg-white rounded-3xl p-12 shadow-2xl border-4 border-dashed border-brand max-w-2xl mx-4 animate-pulse">
                         <div className="flex flex-col items-center gap-6 text-center">
                             <div className="p-6 bg-brand/10 rounded-full">
@@ -413,7 +414,8 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* Upload Dialog */}
@@ -567,24 +569,27 @@ const DragDropUploadZone = ({ ownerId, accountId, subPath = "", onUploadComplete
             </ScrollableDialog>
 
             {/* Visible dropzone hint in bottom-right corner - clickable to open file picker */}
-            <div
-                className="fixed bottom-6 right-6 z-40 bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border-2 border-dashed border-brand/30 hover:border-brand/60 transition-all cursor-pointer group pointer-events-auto"
-                title="Click to select files or drag and drop files anywhere on the page"
-                onClick={(e) => {
-                    e.stopPropagation();
-                    open();
-                }}
-            >
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-brand/10 rounded-lg group-hover:bg-brand/20 transition-colors">
-                        <Upload size={20} className="text-brand" />
+            {typeof document !== 'undefined' && createPortal(
+                <div
+                    className="fixed bottom-6 right-6 z-[9998] bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-lg border-2 border-dashed border-brand/30 hover:border-brand/60 transition-all cursor-pointer group pointer-events-auto"
+                    title="Click to select files or drag and drop files anywhere on the page"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        open();
+                    }}
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-brand/10 rounded-lg group-hover:bg-brand/20 transition-colors">
+                            <Upload size={20} className="text-brand" />
+                        </div>
+                        <div className="hidden sm:block">
+                            <p className="text-sm font-semibold text-dark-100">Drag & Drop</p>
+                            <p className="text-xs text-light-200">Files anywhere</p>
+                        </div>
                     </div>
-                    <div className="hidden sm:block">
-                        <p className="text-sm font-semibold text-dark-100">Drag & Drop</p>
-                        <p className="text-xs text-light-200">Files anywhere</p>
-                    </div>
-                </div>
-            </div>
+                </div>,
+                document.body
+            )}
 
             {/* Hidden dropzone for file picker functionality (when clicking the button) */}
             <div {...getRootProps()} style={{ display: 'none' }}>
