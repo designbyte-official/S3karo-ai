@@ -71,7 +71,7 @@ const OwnS3Client = () => {
 
   // LocalSearch manages filteredFiles - we just provide the setter
   const [filteredFiles, setFilteredFiles] = React.useState<any[]>([]);
-  
+
   // Update filteredFiles when files actually change (using file IDs for comparison)
   // Memoize the file IDs to prevent unnecessary updates
   const filesIdsRef = React.useRef<string>('');
@@ -280,11 +280,11 @@ const OwnS3Client = () => {
         showThumbnails={showThumbnails}
         hideOwner={true}
         emptyMessage={
-          searchText 
-            ? `No files found matching "${searchText}"` 
-            : subPath 
-            ? `This folder is empty. Upload files or create subfolders to get started.`
-            : "No files yet. Upload your first file to get started!"
+          searchText
+            ? `No files found matching "${searchText}"`
+            : subPath
+              ? `This folder is empty. Upload files or create subfolders to get started.`
+              : "No files yet. Upload your first file to get started!"
         }
       />
     </div>
@@ -327,13 +327,13 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
       setError("Folder name is required");
       return;
     }
-    
+
     // Validate folder name
     if (trimmedName.includes('/') || trimmedName.includes('\\')) {
       setError("Folder name cannot contain slashes");
       return;
     }
-    
+
     if (trimmedName.length > 255) {
       setError("Folder name is too long (max 255 characters)");
       return;
@@ -376,11 +376,11 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
           <span className="hidden sm:block font-medium">New Folder</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="shad-dialog button" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle className="capitalize">Create New Folder</DialogTitle>
+      <DialogContent className="shad-dialog max-w-[480px] p-10 rounded-[32px]" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader className="space-y-4">
+          <DialogTitle className="h2 text-dark-100 text-center sm:text-left">Create New Folder</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-8 mt-4">
           <div className="space-y-2">
             <Input
               ref={inputRef}
@@ -396,22 +396,34 @@ const NewFolderDialog = ({ onCreate }: { onCreate: (name: string) => Promise<voi
                   handleClose();
                 }
               }}
-              className={`shad-input w-full ${error ? "border-red-500" : ""}`}
+              className={`shad-input w-full h-[64px] px-6 rounded-full bg-light-400/5 border-transparent focus:border-brand/20 transition-all ${error ? "border-red" : ""}`}
               autoFocus
               disabled={loading}
               aria-invalid={!!error}
               aria-describedby={error ? "folder-name-error" : undefined}
             />
             {error && (
-              <p id="folder-name-error" className="text-sm text-red-500 flex items-center gap-1">
+              <p id="folder-name-error" className="text-sm text-red px-4 flex items-center gap-1">
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </p>
             )}
           </div>
-          <DialogFooter>
-            <Button type="button" variant="ghost" onClick={handleClose} disabled={loading}>Cancel</Button>
-            <Button type="submit" disabled={loading || !name.trim()} className="shad-submit-btn">
+          <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-8">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleClose}
+              disabled={loading}
+              className="h-12 px-8 rounded-full text-light-100 hover:bg-light-300 font-semibold"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={loading || !name.trim()}
+              className="h-12 px-10 rounded-full bg-brand text-white hover:bg-brand/90 shadow-drop-2 font-bold flex-1"
+            >
               {loading ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>

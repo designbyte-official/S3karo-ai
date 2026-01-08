@@ -346,10 +346,8 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         return (
             <div className="space-y-6">
                 {/* Status Banner */}
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600">
-                    <div className="h-10 w-10 rounded-full bg-green-500/20 flex items-center justify-center text-xl">
-                        ✓
-                    </div>
+                <div className="flex flex-col items-start gap-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600">
+
                     <div className="flex-1">
                         <h3 className="font-semibold text-lg">S3 Configured & Ready</h3>
                         <p className="text-sm opacity-80">All credentials are securely stored locally</p>
@@ -365,8 +363,8 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                                     key={opt.value}
                                     onClick={() => setShareDuration(opt.value)}
                                     className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${shareDuration === opt.value
-                                            ? 'bg-brand text-white shadow-sm'
-                                            : 'text-light-100 hover:text-brand'
+                                        ? 'bg-brand text-white shadow-sm'
+                                        : 'text-light-100 hover:text-brand'
                                         }`}
                                 >
                                     {opt.label}

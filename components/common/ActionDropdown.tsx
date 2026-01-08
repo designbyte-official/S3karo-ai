@@ -169,9 +169,9 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
         const isDetailsForImage = value === "details" && isImage;
 
         return (
-            <DialogContent className={`shad-dialog button ${isDetailsForImage ? 'max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto' : ''}`}>
-                <DialogHeader className="flex flex-col gap-3">
-                    <DialogTitle className="text-center text-light-100">
+            <DialogContent className={`shad-dialog p-10 rounded-[32px] ${isDetailsForImage ? 'max-w-6xl w-[95vw] max-h-[95vh] overflow-y-auto' : 'max-w-[480px]'}`}>
+                <DialogHeader className="space-y-4">
+                    <DialogTitle className="h2 text-dark-100 text-center sm:text-left">
                         {label}
                     </DialogTitle>
                     {value === "rename" && (
@@ -180,7 +180,7 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                                 type="text"
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
-                                className="rename-input-field"
+                                className="shad-input w-full h-[64px] px-6 rounded-full bg-light-400/5 border-transparent focus:border-brand/20 transition-all font-semibold"
                                 placeholder="Enter new name"
                             />
                         </div>
@@ -195,26 +195,35 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                     )}
                     {value === "delete" && (
                         <div className="py-6">
-                            <p className="delete-confirmation !text-lg !font-normal">
+                            <p className="body-1 text-light-100 text-center sm:text-left leading-relaxed">
                                 Are you sure you want to delete{` `}
-                                <span className="delete-file-name font-bold text-brand">{file.name}</span>?
+                                <span className="font-bold text-brand">{file.name}</span>?
+                                <br />
+                                <span className="text-sm opacity-70">This action cannot be undone.</span>
                             </p>
                         </div>
                     )}
                 </DialogHeader>
                 {["rename", "delete", "share"].includes(value) && (
-                    <DialogFooter className="flex-row gap-4 mt-6">
-                        <Button onClick={closeAllModals} className="modal-cancel-button">
+                    <DialogFooter className="flex flex-col sm:flex-row gap-4 mt-8">
+                        <Button
+                            onClick={closeAllModals}
+                            className="h-12 px-8 rounded-full text-light-100 hover:bg-light-300 font-semibold transition-all"
+                            variant="ghost"
+                        >
                             Cancel
                         </Button>
-                        <Button onClick={handleAction} className="modal-submit-button">
+                        <Button
+                            onClick={handleAction}
+                            className={`h-12 px-10 rounded-full text-white shadow-drop-2 font-bold flex-1 transition-all ${value === 'delete' ? 'bg-red hover:bg-red/90' : 'bg-brand hover:bg-brand/90'}`}
+                        >
                             {isLoading ? (
                                 <Image
                                     src="/assets/icons/loader.svg"
                                     alt="loader"
                                     width={24}
                                     height={24}
-                                    className="animate-spin"
+                                    className="animate-spin brightness-0 invert"
                                 />
                             ) : (
                                 <p className="capitalize">{value}</p>
