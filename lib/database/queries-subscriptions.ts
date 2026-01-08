@@ -3,13 +3,14 @@ import { subscriptions } from './schema';
 import { eq, and, gte } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import type { Subscription, NewSubscription } from './schema';
+import { cache } from 'react';
 import { deleteCache } from '@/lib/redis/cache';
 import { logger } from '@/lib/utils/logger';
 
 /**
  * Get active subscription for a user
  */
-export async function getActiveSubscription(userId: string): Promise<Subscription | null> {
+export const getActiveSubscription = cache(async function getActiveSubscription(userId: string): Promise<Subscription | null> {
   if (!db || !isDatabaseConfigured()) {
     return null;
   }
@@ -96,12 +97,12 @@ export async function getActiveSubscription(userId: string): Promise<Subscriptio
     logger.error('Get active subscription error', error);
     throw error;
   }
-}
+});
 
 /**
  * Check if user has platform S3 access
  */
-export async function hasPlatformAccess(userId: string): Promise<boolean> {
+export const hasPlatformAccess = cache(async function hasPlatformAccess(userId: string): Promise<boolean> {
   if (!isDatabaseConfigured()) {
     return false;
   }
@@ -119,7 +120,7 @@ export async function hasPlatformAccess(userId: string): Promise<boolean> {
     }
     throw error;
   }
-}
+});
 
 /**
  * Create or update subscription

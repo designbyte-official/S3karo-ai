@@ -37,13 +37,10 @@ const MobileNavigation = ({
 }: Props) => {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const [storageMode, setStorageMode] = useState<StorageMode>('managed-storage');
+  const isPrivate = pathname.startsWith("/private");
+  const mode = isPrivate ? "private" : "managed";
 
-  useEffect(() => {
-    setStorageMode(s3ConfigService.getMode());
-  }, []);
-
-  const visibleNavItems = storageMode === 'own-s3' ? [] : navItems;
+  const visibleNavItems = mode === 'private' ? [] : navItems;
 
   return (
     <header className="mobile-header">
@@ -106,7 +103,7 @@ const MobileNavigation = ({
           <Separator className="my-5 bg-light-200/20" />
 
           <div className="flex flex-col justify-between gap-5 pb-5">
-            <FileUploader ownerId={ownerId} accountId={accountId} />
+            <FileUploader ownerId={ownerId} accountId={accountId} mode={mode} />
             <Button
               type="submit"
               className="mobile-sign-out-button"
