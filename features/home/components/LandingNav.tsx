@@ -11,8 +11,8 @@ export const LandingNav = () => {
   const { user, setUser } = useAuthStore();
 
   useEffect(() => {
-    if (!user) {
-      const fetchUser = async () => {
+    const fetchUser = async () => {
+      try {
         const currentUser = await getCurrentUser();
         if (currentUser) {
           setUser({
@@ -20,7 +20,12 @@ export const LandingNav = () => {
             avatar: currentUser.avatar || ""
           });
         }
-      };
+      } catch (err) {
+        console.error("Failed to fetch user in LandingNav:", err);
+      }
+    };
+
+    if (!user) {
       fetchUser();
     }
   }, [user, setUser]);

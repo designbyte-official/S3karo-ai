@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 export const CTASection = () => {
+  const user = useAuthStore((state) => state.user);
   return (
     <section className="relative py-20 lg:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-brand to-brand-100 overflow-hidden">
       {/* Decorative Elements */}
@@ -18,16 +20,33 @@ export const CTASection = () => {
           Join thousands of users who trust S3Karo for their file storage needs.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/sign-up">
-            <Button className="h-[60px] px-12 rounded-full bg-white text-brand hover:bg-white/90 text-lg font-bold transition-all duration-300 hover:scale-105">
-              Start Free Trial
-            </Button>
-          </Link>
-          <Link href="/sign-in">
-            <Button className="h-[60px] px-12 rounded-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-brand text-lg font-semibold transition-all duration-300">
-              Sign In
-            </Button>
-          </Link>
+          {user ? (
+            <>
+              <Link href="/dashboard">
+                <Button className="h-[60px] px-12 rounded-full bg-white text-brand hover:bg-white/90 text-lg font-bold transition-all duration-300 hover:scale-105">
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href="/dashboard/profile">
+                <Button className="h-[60px] px-12 rounded-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-brand text-lg font-semibold transition-all duration-300">
+                  View Profile
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/sign-up">
+                <Button className="h-[60px] px-12 rounded-full bg-white text-brand hover:bg-white/90 text-lg font-bold transition-all duration-300 hover:scale-105">
+                  Start Free Trial
+                </Button>
+              </Link>
+              <Link href="/sign-in">
+                <Button className="h-[60px] px-12 rounded-full bg-transparent border-2 border-white text-white hover:bg-white hover:text-brand text-lg font-semibold transition-all duration-300">
+                  Sign In
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </section>

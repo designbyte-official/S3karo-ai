@@ -32,6 +32,7 @@ const Header = ({
 
       <div className="header-wrapper">
         <StorageModeToggle />
+
         <FileUploader ownerId={userId} accountId={accountId} mode={mode} />
 
         <Button

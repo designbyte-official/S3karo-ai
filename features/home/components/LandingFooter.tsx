@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import Logo from "@/components/common/Logo";
+import { useAuthStore } from "@/features/auth/stores/auth-store";
 
 export const LandingFooter = () => {
+  const user = useAuthStore((state) => state.user);
   return (
     <footer className="bg-dark-200 text-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto max-w-6xl">
@@ -21,12 +23,25 @@ export const LandingFooter = () => {
             <Link href="#features" className="body-2 text-white hover:text-brand transition-colors">
               Features
             </Link>
-            <Link href="/sign-up" className="body-2 text-white hover:text-brand transition-colors">
-              Get Started
-            </Link>
-            <Link href="/sign-in" className="body-2 text-white hover:text-brand transition-colors">
-              Sign In
-            </Link>
+            {user ? (
+              <>
+                <Link href="/dashboard" className="body-2 text-white hover:text-brand transition-colors">
+                  Dashboard
+                </Link>
+                <Link href="/dashboard/profile" className="body-2 text-white hover:text-brand transition-colors">
+                  Profile
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/sign-up" className="body-2 text-white hover:text-brand transition-colors">
+                  Get Started
+                </Link>
+                <Link href="/sign-in" className="body-2 text-white hover:text-brand transition-colors">
+                  Sign In
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
