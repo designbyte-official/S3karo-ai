@@ -10,6 +10,8 @@ import { S3File } from "@/types/file";
 
 import { SkeletonGrid, SkeletonList, SkeletonStorageChart, SkeletonSummaryCard } from "./SkeletonLoader";
 import { StorageChart } from "./StorageChart";
+import { UsageSummaryCard } from "./UsageSummaryCard";
+import { useDashboardUsage } from "@/hooks/use-dashboard-usage";
 
 
 interface DashboardLayoutProps {
@@ -47,7 +49,7 @@ export const DashboardLayout = ({
     hideOwner = false,
     emptyMessage = "No files uploaded yet"
 }: DashboardLayoutProps) => {
-    const usageSummary = totalSpace.document ? getUsageSummary(totalSpace) : [];
+    const { usageSummary } = useDashboardUsage(totalSpace);
 
     return (
         <div className={totalSpace?.all !== undefined ? "dashboard-container" : "w-full"}>
@@ -70,30 +72,10 @@ export const DashboardLayout = ({
                             {usageSummary.length > 0 && (
                                 <ul className="dashboard-summary-list">
                                     {usageSummary.map((summary) => (
-                                        <li key={summary.title} className="dashboard-summary-card">
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between gap-3">
-                                                    <Image
-                                                        src={summary.icon}
-                                                        width={100}
-                                                        height={100}
-                                                        alt="uploaded image"
-                                                        className="summary-type-icon"
-                                                    />
-                                                    <h4 className="summary-type-size">
-                                                        {convertFileSize(summary.size) || "0 Bytes"}
-                                                    </h4>
-                                                </div>
-
-                                                <h5 className="summary-type-title">{summary.title}</h5>
-                                                <div className="separator" />
-                                                <p className="caption text-center text-light-200">
-                                                    {summary.latestDate
-                                                        ? new Date(summary.latestDate).toLocaleString()
-                                                        : "No files"}
-                                                </p>
-                                            </div>
-                                        </li>
+                                        <UsageSummaryCard
+                                            key={summary.title}
+                                            {...summary}
+                                        />
                                     ))}
                                 </ul>
                             )}
