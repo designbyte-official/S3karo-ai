@@ -37,7 +37,7 @@ export const s3ConfigService = {
                 this.clearConfig(userId);
                 return null;
             }
-            
+
             // Get metadata (endpoint, cdnUrl) if exists
             let metadata: { endpoint?: string; cdnUrl?: string } = {};
             const metadataStr = localStorage.getItem(`${S3_CONFIG_KEY}${userId}_meta`);
@@ -50,7 +50,7 @@ export const s3ConfigService = {
                     metadata = {};
                 }
             }
-            
+
             return {
                 bucket: decrypted.bucket,
                 region: decrypted.region,
@@ -77,7 +77,7 @@ export const s3ConfigService = {
                 secretAccessKey: config.secretAccessKey,
             }, userId);
             localStorage.setItem(`${S3_CONFIG_KEY}${userId}`, encryptedConfig);
-            
+
             // Also store endpoint and cdnUrl separately (not encrypted, they're not sensitive)
             if (config.endpoint || config.cdnUrl) {
                 const metadata = { endpoint: config.endpoint, cdnUrl: config.cdnUrl };
@@ -100,5 +100,44 @@ export const s3ConfigService = {
         if (typeof window === 'undefined') return;
         localStorage.removeItem(`${S3_CONFIG_KEY}${userId}`);
         localStorage.removeItem(`${S3_CONFIG_KEY}${userId}_meta`);
+    },
+
+    async exportConfig(userId: string): Promise<string | null> {
+        if (typeof window === 'undefined') return null;
+        const encrypted = localStorage.getItem(`${S3_CONFIG_KEY}${userId}`);
+        const metadataStr = localStorage.getItem(`${S3_CONFIG_KEY}${userId}_meta`);
+
+        if (!encrypted) return null;
+
+        const exportData = {
+            e: encrypted,
+            m: metadataStr ? JSON.parse(metadataStr) : {}
+        };
+
+        // Use btoa for a URL-safe-ish base64 string
+        return btoa(JSON.stringify(exportData));
+    },
+
+    async importConfig(userId: string, encodedData: string): Promise<boolean> {
+        if (typeof window === 'undefined') return false;
+        try {
+            const decoded = JSON.parse(atob(encodedData));
+            if (!decoded.e) return false;
+
+            // Validate by attempting decryption using the current user context
+            const decrypted = await decryptS3Config(decoded.e, userId);
+            if (!decrypted) return false;
+
+            // Save to the current user's local storage
+            localStorage.setItem(`${S3_CONFIG_KEY}${userId}`, decoded.e);
+            if (decoded.m) {
+                localStorage.setItem(`${S3_CONFIG_KEY}${userId}_meta`, JSON.stringify(decoded.m));
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Failed to import config:', error);
+            return false;
+        }
     }
 };

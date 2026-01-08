@@ -3,6 +3,7 @@ import { Poppins } from 'next/font/google';
 import { Providers } from "./providers";
 import NextTopLoader from 'nextjs-toploader';
 import { validateProductionEnv } from '@/lib/utils/production-check';
+import { ConfigImportHandler } from "@/features/private-s3/components/ConfigImportHandler";
 
 import "./globals.css";
 
@@ -108,7 +109,10 @@ export default function RootLayout({
         className={`${poppins.variable} font-poppins antialiased`}
       >
         <NextTopLoader color="#FA7275" showSpinner={false} />
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <ConfigImportHandler />
+        </Providers>
       </body>
     </html>
   );

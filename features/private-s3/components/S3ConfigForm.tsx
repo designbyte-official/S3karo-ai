@@ -149,6 +149,29 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
         }
     };
 
+    const handleShare = async () => {
+        try {
+            const encoded = await s3ConfigService.exportConfig(userId);
+            if (encoded) {
+                // Construct the full URL - we use window.location.pathname to keep it on the same page
+                const shareUrl = `${window.location.origin}${window.location.pathname}?import=${encoded}`;
+                await navigator.clipboard.writeText(shareUrl);
+                toast({
+                    className: "success-toast",
+                    title: "Share Link Copied",
+                    description: "Your private configuration link has been copied to clipboard.",
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                className: "error-toast",
+                title: "Error",
+                description: "Failed to generate share link.",
+            });
+        }
+    };
+
     const handleReset = async () => {
         if (confirm("Are you sure you want to remove your S3 configuration? This will clear the details from your browser.")) {
             await s3ConfigService.clearConfig(userId);
@@ -333,7 +356,15 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         <Button
                             variant="outline"
                             size="sm"
-                            className="border-red/20 text-red hover:bg-red/5 hover:text-red"
+                            className="border-brand/20 text-brand hover:bg-brand/5 hover:text-brand h-9 px-4 rounded-full"
+                            onClick={handleShare}
+                        >
+                            Share
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-red/20 text-red hover:bg-red/5 hover:text-red h-9 px-4 rounded-full"
                             onClick={handleReset}
                         >
                             Reset
