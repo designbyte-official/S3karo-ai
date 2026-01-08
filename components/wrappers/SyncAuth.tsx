@@ -11,14 +11,7 @@ export const SyncAuth = ({ user }: { user: any }) => {
     useEffect(() => {
         if (user) {
             setUser(user);
-
-            // Fetch Pro status after mount
-            const checkPro = async () => {
-                const access = await platformStorageService.checkPlatformAccess(user.id || user.$id);
-                setProStatus(access.isPro);
-            };
-
-            checkPro();
+            setProStatus(!!user.isPro);
         }
     }, [user, setUser, setProStatus]);
 

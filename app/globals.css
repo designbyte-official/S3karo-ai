@@ -211,7 +211,7 @@
   }
 
   .shad-dialog {
-    @apply rounded-[26px] w-[90%] max-w-[400px] px-6 py-8 !important;
+    @apply rounded-[32px] w-[95%] max-w-[480px] p-8 md:p-10 !important;
   }
 
   .shad-chart-title {
@@ -388,11 +388,11 @@
   }
 
   .modal-cancel-button {
-    @apply h-[52px] flex-1 rounded-full bg-white text-light-100 hover:bg-transparent !important;
+    @apply h-[56px] flex-1 rounded-full bg-light-400 text-light-100 hover:bg-light-300 font-semibold transition-all !important;
   }
 
   .modal-submit-button {
-    @apply primary-btn !mx-0 h-[52px] w-full flex-1 !important;
+    @apply primary-btn !mx-0 h-[56px] w-full flex-1 shadow-drop-2 hover:shadow-drop-3 transition-all !important;
   }
 
   .file-details-thumbnail {
@@ -435,11 +435,11 @@
      DASHBOARD SPECIFIC
      ========================================================================== */
   .dashboard-container {
-    @apply mx-auto flex max-w-7xl flex-col gap-6 px-4 md:flex-row md:gap-8 xl:gap-10 !important;
+    @apply mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 lg:flex-row lg:gap-8 xl:gap-10 !important;
   }
 
   .dashboard-left-sidebar {
-    @apply w-full md:w-[40%] md:max-w-[480px] flex-shrink-0 !important;
+    @apply w-full lg:w-[320px] xl:w-[400px] flex-shrink-0 !important;
   }
 
   .dashboard-right-content {
@@ -535,6 +535,25 @@
 
   .error-message {
     @apply body-2 mx-auto w-fit rounded-xl bg-error/5 px-8 py-4 text-center text-error !important;
+  }
+
+  /* ==========================================================================
+     PREMIUM ANIMATIONS (POERU)
+     ========================================================================== */
+  @keyframes poeruEntrance {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .poeru-content-fade {
+    animation: poeruEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 }
 

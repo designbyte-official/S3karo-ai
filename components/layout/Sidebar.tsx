@@ -26,10 +26,19 @@ const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNa
         { name: "Subscription", url: "/dashboard/profile/subscription", icon: "/assets/icons/others.svg" },
     ];
 
-    // If on profile page or sub-routes, show profile nav items instead
-    let displayNavItems;
+    // Private S3 navigation items
+    const privateNavItems = [
+        { name: "S3 Explorer", url: "/private/explorer", icon: "/assets/icons/dashboard.svg" },
+        { name: "S3 Settings", url: "/private/settings", icon: "/assets/icons/others.svg" },
+        { name: "Profile", url: "/dashboard/profile", icon: "/assets/icons/others.svg" },
+    ];
+
+    // Determine which nav items to display
+    let displayNavItems: any[];
     if (pathname === "/dashboard/profile" || pathname.startsWith("/dashboard/profile/")) {
         displayNavItems = profileNavItems;
+    } else if (pathname.startsWith("/private")) {
+        displayNavItems = privateNavItems;
     } else {
         // Use custom nav items if provided, otherwise default to context-aware items
         displayNavItems = customNavItems || navItems;
@@ -37,12 +46,12 @@ const Sidebar = ({ fullName, avatar, email, mode = 'managed', navItems: customNa
 
     return (
         <aside className="sidebar">
-            <Logo 
-                variant="full" 
+            <Logo
+                variant="full"
                 className="hidden lg:flex mb-2"
             />
-            <Logo 
-                variant="icon" 
+            <Logo
+                variant="icon"
                 className="lg:hidden mb-2"
             />
 

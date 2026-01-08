@@ -52,6 +52,7 @@ const Dashboard = async () => {
       totalSpace={totalSpace}
       currentUser={currentUser}
       variant="brand"
+      view="list"
     />
   );
 };

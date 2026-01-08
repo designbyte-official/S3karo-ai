@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getUserById } from '@/lib/database/queries';
+import { hasPlatformAccess } from '@/lib/database/queries-subscriptions';
+import { cache } from 'react';
 
 // SECURITY: JWT_SECRET must be set in environment variables
 // Never use default secrets in production
@@ -14,7 +16,7 @@ if (!JWT_SECRET) {
   );
 }
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async function getCurrentUser() {
   try {
     const token = (await cookies()).get('auth-token')?.value;
 
@@ -37,6 +39,9 @@ export async function getCurrentUser() {
       return null;
     }
 
+    // Get Pro status
+    const isPro = await hasPlatformAccess(user.id);
+
     return {
       id: user.id,
       email: user.email,
@@ -44,10 +49,11 @@ export async function getCurrentUser() {
       avatar: user.avatar,
       accountId: user.id,
       $id: user.id, // For compatibility
+      isPro,
     };
   } catch (error) {
     console.error('Get current user error:', error);
     return null;
   }
-}
+});
 

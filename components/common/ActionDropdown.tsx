@@ -175,11 +175,15 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                         {label}
                     </DialogTitle>
                     {value === "rename" && (
-                        <Input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                        />
+                        <div className="pt-4">
+                            <Input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="rename-input-field"
+                                placeholder="Enter new name"
+                            />
+                        </div>
                     )}
                     {value === "details" && <ActionsModalContent.FileDetails file={file} />}
                     {value === "share" && (
@@ -190,20 +194,21 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                         />
                     )}
                     {value === "delete" && (
-                        <p className="delete-confirmation">
-                            Are you sure you want to delete{` `}
-                            <span className="delete-file-name">{file.name}</span>?
-                        </p>
+                        <div className="py-6">
+                            <p className="delete-confirmation !text-lg !font-normal">
+                                Are you sure you want to delete{` `}
+                                <span className="delete-file-name font-bold text-brand">{file.name}</span>?
+                            </p>
+                        </div>
                     )}
                 </DialogHeader>
                 {["rename", "delete", "share"].includes(value) && (
-                    <DialogFooter className="flex flex-col gap-3 md:flex-row">
+                    <DialogFooter className="flex-row gap-4 mt-6">
                         <Button onClick={closeAllModals} className="modal-cancel-button">
                             Cancel
                         </Button>
                         <Button onClick={handleAction} className="modal-submit-button">
-                            <p className="capitalize">{value}</p>
-                            {isLoading && (
+                            {isLoading ? (
                                 <Image
                                     src="/assets/icons/loader.svg"
                                     alt="loader"
@@ -211,6 +216,8 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
                                     height={24}
                                     className="animate-spin"
                                 />
+                            ) : (
+                                <p className="capitalize">{value}</p>
                             )}
                         </Button>
                     </DialogFooter>

@@ -3,37 +3,39 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import Search from "@/components/common/Search";
+import StorageModeToggle from "@/components/common/StorageModeToggle";
+import FileUploader from "@/components/common/FileUploader";
 
 interface Props {
   userId: string;
   accountId: string;
   avatar?: string;
-  searchSlot?: React.ReactNode;
-  toggleSlot?: React.ReactNode;
-  actionsSlot?: React.ReactNode;
 }
 
 const Header = ({
   userId,
   accountId,
   avatar,
-  searchSlot,
-  toggleSlot,
-  actionsSlot,
 }: Props) => {
   const router = useRouter();
+  const pathname = usePathname();
   const defaultAvatar = "https://ui-avatars.com/api/?name=User&background=random";
+
+  const isPrivate = pathname.startsWith("/private");
+  const mode = isPrivate ? "private" : "managed";
 
   return (
     <header className="header">
-      {searchSlot || <div className="flex-1" />}
+      <Search mode={mode} />
 
       <div className="header-wrapper">
-        {toggleSlot}
-        {actionsSlot}
+        <StorageModeToggle />
 
-        <Button 
+        <FileUploader ownerId={userId} accountId={accountId} mode={mode} />
+
+        <Button
           onClick={() => router.push("/dashboard/profile")}
           className="sign-out-button"
         >
@@ -49,4 +51,5 @@ const Header = ({
     </header>
   );
 };
+
 export default Header;

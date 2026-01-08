@@ -26,7 +26,7 @@ const StorageModeToggle = () => {
                         <Link
                             href="/dashboard"
                             className={cn(
-                                "flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300",
+                                "flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300 active:scale-95 hover:scale-105",
                                 mode === "managed"
                                     ? "bg-brand text-white shadow-sm"
                                     : "text-light-100 hover:bg-light-300"
@@ -46,7 +46,7 @@ const StorageModeToggle = () => {
                         <Link
                             href="/private/explorer"
                             className={cn(
-                                "flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300",
+                                "flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300 active:scale-95 hover:scale-105",
                                 mode === "private"
                                     ? "bg-brand text-white shadow-sm"
                                     : "text-light-100 hover:bg-light-300"

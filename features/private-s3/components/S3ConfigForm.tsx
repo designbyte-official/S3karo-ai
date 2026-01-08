@@ -60,20 +60,24 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             try {
                 const latestConfig = await s3ConfigService.getConfig(userId);
                 if (latestConfig) {
-                    setCurrentConfig(latestConfig);
-                    // Update form values if in edit mode
-                    if (isEditMode) {
-                        form.reset({
-                            bucket: latestConfig.bucket || "",
-                            region: latestConfig.region || "",
-                            accessKeyId: latestConfig.accessKeyId || "",
-                            secretAccessKey: latestConfig.secretAccessKey || "",
-                            endpoint: latestConfig.endpoint || "",
-                        });
+                    // CRITICAL SECURITY: We only store a flag that config exists.
+                    // We NEVER store the actual secrets in the component state anymore.
+                    setCurrentConfig({
+                        bucket: latestConfig.bucket ? "EXISTING" : "",
+                        region: "",
+                        accessKeyId: "",
+                        secretAccessKey: "",
+                        cdnUrl: latestConfig.cdnUrl
+                    } as any);
+
+                    // If we somehow ended up in edit mode while configured, kick them out
+                    // because we won't populate the form with real secrets anyway.
+                    if (latestConfig.bucket && isEditMode) {
+                        setIsEditMode(false);
                     }
                 }
             } catch (error) {
-                console.error("Failed to sync config:", error);
+                console.error("Failed to sync config flag:", error);
             }
         };
 
@@ -110,9 +114,11 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 cdnUrl: existingConfig?.cdnUrl,
             });
 
-            // Update local state
-            const updatedConfig = await s3ConfigService.getConfig(userId);
-            setCurrentConfig(updatedConfig);
+            // Update local state - only preserve the existence flag and cdnUrl
+            setCurrentConfig({
+                bucket: "EXISTING",
+                cdnUrl: values.endpoint, // Or use the dedicated cdnUrl logic
+            } as any);
 
             toast({
                 className: "success-toast",
@@ -140,6 +146,31 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
             });
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const [shareDuration, setShareDuration] = useState<number>(24);
+
+    const handleShare = async () => {
+        try {
+            const encoded = await s3ConfigService.exportConfig(userId, shareDuration);
+            if (encoded) {
+                // Construct the full URL - we use window.location.pathname to keep it on the same page
+                const shareUrl = `${window.location.origin}${window.location.pathname}?import=${encoded}`;
+                await navigator.clipboard.writeText(shareUrl);
+                toast({
+                    className: "success-toast",
+                    title: "Share Link Copied",
+                    description: `Your private configuration link (expires in ${shareDuration}h) has been copied.`,
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                className: "error-toast",
+                title: "Error",
+                description: "Failed to generate share link.",
+            });
         }
     };
 
@@ -323,73 +354,75 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         <h3 className="font-semibold text-lg">S3 Configured & Ready</h3>
                         <p className="text-sm opacity-80">All credentials are securely stored locally</p>
                     </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-red/20 text-red hover:bg-red/5 hover:text-red"
-                            onClick={handleReset}
-                        >
-                            Reset
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="shad-submit-btn"
-                            onClick={() => {
-                                // Sync form with current config before entering edit mode
-                                form.reset({
-                                    bucket: currentConfig.bucket || "",
-                                    region: currentConfig.region || "",
-                                    accessKeyId: currentConfig.accessKeyId || "",
-                                    secretAccessKey: currentConfig.secretAccessKey || "",
-                                    endpoint: currentConfig.endpoint || "",
-                                });
-                                setIsEditMode(true);
-                            }}
-                        >
-                            Edit
-                        </Button>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                        <div className="flex bg-light-300/50 p-1 rounded-full border border-light-300">
+                            {[
+                                { label: '1h', value: 1 },
+                                { label: '24h', value: 24 },
+                                { label: '7d', value: 168 }
+                            ].map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setShareDuration(opt.value)}
+                                    className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${shareDuration === opt.value
+                                            ? 'bg-brand text-white shadow-sm'
+                                            : 'text-light-100 hover:text-brand'
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-brand/20 text-brand hover:bg-brand/5 hover:text-brand h-9 px-4 rounded-full"
+                                onClick={handleShare}
+                            >
+                                Share
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-red/20 text-red hover:bg-red/5 hover:text-red h-9 px-4 rounded-full"
+                                onClick={handleReset}
+                            >
+                                Reset
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Readonly Credential Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="shad-form-item">
                         <label className="shad-form-label">Access Key ID</label>
-                        <Input
-                            value="••••••••••••"
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••
+                        </div>
                     </div>
 
                     <div className="shad-form-item">
                         <label className="shad-form-label">Secret Access Key</label>
-                        <Input
-                            value="••••••••••••••••••••"
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••••••••••
+                        </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="shad-form-item">
                         <label className="shad-form-label">Bucket Name</label>
-                        <Input
-                            value={currentConfig.bucket || ""}
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••
+                        </div>
                     </div>
 
                     <div className="shad-form-item">
                         <label className="shad-form-label">Region</label>
-                        <Input
-                            value={currentConfig.region || ""}
-                            disabled
-                            className="shad-input bg-light-300 cursor-not-allowed"
-                        />
+                        <div className="shad-input cursor-not-allowed flex items-center px-4 h-[56px] rounded-full text-light-100">
+                            ••••••••••••
+                        </div>
                     </div>
                 </div>
 
@@ -438,6 +471,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         label="Access Key ID"
                         placeholder="AKIA..."
                         autoComplete="off"
+                        showToggle={false}
                     />
 
                     <FormPasswordInput
@@ -446,6 +480,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                         label="Secret Access Key"
                         placeholder="wJalr..."
                         autoComplete="off"
+                        showToggle={false}
                     />
                 </div>
 
@@ -474,19 +509,13 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 />
 
                 <div className="flex justify-end gap-4">
+                    {/* Cancel is only useful if we previously had a way to enter edit mode, which we removed.
+                        Keeping it as a simple 'go back' if someone reset but didn't save. */}
                     {currentConfig?.bucket && (
                         <Button
                             type="button"
                             variant="ghost"
                             onClick={() => {
-                                // Reset form to current config values when canceling
-                                form.reset({
-                                    bucket: currentConfig.bucket || "",
-                                    region: currentConfig.region || "",
-                                    accessKeyId: currentConfig.accessKeyId || "",
-                                    secretAccessKey: currentConfig.secretAccessKey || "",
-                                    endpoint: currentConfig.endpoint || "",
-                                });
                                 setIsEditMode(false);
                             }}
                         >
