@@ -1,4 +1,4 @@
-"use client";
+import React, { memo } from "react";
 
 import Image from "next/image";
 
@@ -9,27 +9,29 @@ import { cn } from "@/features/shared/utils";
 
 import { ProfileSection } from "./ProfileSection";
 
-const UserDetailItem = ({
-  icon: Icon,
-  label,
-  value,
-  valueClass = "",
-}: {
-  icon: any;
-  label: string;
-  value: string;
-  valueClass?: string;
-}) => (
-  <div className="flex items-center justify-between py-2">
-    <div className="flex items-center gap-2">
-      <Icon className="size-4 text-light-200" />
-      <span className="body-2 text-light-200">{label}</span>
+const UserDetailItem = memo(
+  ({
+    icon: Icon,
+    label,
+    value,
+    valueClass = "",
+  }: {
+    icon: any;
+    label: string;
+    value: string;
+    valueClass?: string;
+  }) => (
+    <div className="flex items-center justify-between py-2">
+      <div className="flex items-center gap-2">
+        <Icon className="size-4 text-light-200" />
+        <span className="body-2 text-light-200">{label}</span>
+      </div>
+      <span className={cn("subtitle-2 text-right", valueClass)}>{value}</span>
     </div>
-    <span className={cn("subtitle-2 text-right", valueClass)}>{value}</span>
-  </div>
+  )
 );
 
-export const UserInfo = () => {
+export const UserInfo = memo(() => {
   const { user } = useAuthStore();
 
   if (!user) {
@@ -87,4 +89,4 @@ export const UserInfo = () => {
       )}
     </ProfileSection>
   );
-};
+});

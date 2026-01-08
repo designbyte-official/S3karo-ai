@@ -1,3 +1,7 @@
+// Cache for imported CryptoKey to avoid redundant imports
+let cachedCryptoKey: CryptoKey | null = null;
+let lastKeyBase64: string | null = null;
+
 // Get encryption keys from environment
 export const getKeys = async () => {
   const aesKeyBase64 = process.env.NEXT_PUBLIC_AES_KEY || process.env.NEXT_PUBLIC_ENCRYPTION_SECRET;
@@ -15,7 +19,7 @@ export const getKeys = async () => {
     const defaultKey = "dev-fallback-key-change-in-production-32bytes";
     const encryptionKey = Buffer.from(defaultKey.padEnd(32, "0").slice(0, 32));
     const initVector = Buffer.from("dev-iv-12bytes".padEnd(12, "0").slice(0, 12));
-    return { encryptionKey, initVector };
+    return { encryptionKey, initVector, aesKeyBase64: defaultKey };
   }
 
   const encryptionKey = Buffer.from(aesKeyBase64, "base64");
@@ -37,7 +41,27 @@ export const getKeys = async () => {
     throw new Error("AES IV must be 12 bytes");
   }
 
-  return { encryptionKey, initVector };
+  return { encryptionKey, initVector, aesKeyBase64 };
+};
+
+// Internal helper to get/cache the CryptoKey
+const getCryptoKey = async (encryptionKey: Buffer, aesKeyBase64: string) => {
+  if (cachedCryptoKey && lastKeyBase64 === aesKeyBase64) {
+    return cachedCryptoKey;
+  }
+
+  cachedCryptoKey = await crypto.subtle.importKey(
+    "raw",
+    new Uint8Array(encryptionKey),
+    {
+      name: "AES-GCM",
+      length: 256,
+    },
+    true,
+    ["encrypt", "decrypt"]
+  );
+  lastKeyBase64 = aesKeyBase64;
+  return cachedCryptoKey;
 };
 
 // Encrypt text using AES-256-GCM
@@ -47,18 +71,8 @@ export const encrypt = async (text: string, userId?: string): Promise<string> =>
   }
 
   try {
-    const { encryptionKey, initVector } = await getKeys();
-
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      new Uint8Array(encryptionKey),
-      {
-        name: "AES-GCM",
-        length: 256,
-      },
-      true,
-      ["encrypt", "decrypt"]
-    );
+    const { encryptionKey, initVector, aesKeyBase64 } = await getKeys();
+    const cryptoKey = await getCryptoKey(encryptionKey, aesKeyBase64);
 
     const encodedData = new TextEncoder().encode(text);
     const encryptedData = await crypto.subtle.encrypt(
@@ -91,18 +105,8 @@ export const decrypt = async (encryptedText: string, userId?: string): Promise<s
       throw new Error("Invalid base64 format");
     }
 
-    const { encryptionKey, initVector } = await getKeys();
-
-    const cryptoKey = await crypto.subtle.importKey(
-      "raw",
-      new Uint8Array(encryptionKey),
-      {
-        name: "AES-GCM",
-        length: 256,
-      },
-      true,
-      ["encrypt", "decrypt"]
-    );
+    const { encryptionKey, initVector, aesKeyBase64 } = await getKeys();
+    const cryptoKey = await getCryptoKey(encryptionKey, aesKeyBase64);
 
     const encryptedBuffer = Buffer.from(encryptedText, "base64");
 
