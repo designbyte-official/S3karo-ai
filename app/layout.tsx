@@ -31,11 +31,11 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://s3karo.com";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "S3Karo - Privacy-First File Storage & Management Platform",
+    default: "A Better Way to Manage and Share S3 Storage | S3Karo",
     template: "%s | S3Karo",
   },
   description:
-    "A powerful, privacy-first file management platform. Use our Managed Storage tier or bring your Own S3 bucket. Secure, fast, and fully encrypted.",
+    "Bring your own AWS S3 bucket or use managed storage. Multipart uploads, encrypted share links, built-in viewer, and image compression—without the usual S3 complexity.",
   keywords: [
     "file storage",
     "S3 storage",
@@ -60,24 +60,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: siteUrl,
-    title: "S3Karo - Privacy-First File Storage & Management",
+    title: "A Better Way to Manage and Share S3 Storage | S3Karo",
     description:
-      "Store, share & manage your files securely. Privacy-first platform with dual storage modes - use our Managed Storage or bring your Own S3 bucket.",
+      "Bring your own AWS S3 bucket or use managed storage. Multipart uploads, encrypted share links, and full control—without the usual S3 complexity.",
     siteName: "S3Karo",
     images: [
       {
         url: "/thumbnail.webp",
         width: 1200,
         height: 630,
-        alt: "S3Karo - Privacy-First File Storage Platform",
+        alt: "S3Karo - A Better Way to Manage and Share S3 Storage",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "S3Karo - Privacy-First File Storage & Management",
+    title: "A Better Way to Manage and Share S3 Storage | S3Karo",
     description:
-      "Store, share & manage your files securely. Privacy-first platform with dual storage modes.",
+      "Bring your own AWS S3 bucket or use managed storage. Multipart uploads, encrypted share links, full control.",
     images: ["/thumbnail.webp"],
     creator: "@designbyte",
   },

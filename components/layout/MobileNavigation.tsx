@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { signOutUser } from "@/features/auth/actions/user.actions";
 import { navItems } from "@/features/shared/constants";
-import { cn } from "@/features/shared/utils";
+import { cn, getAvatarUrl } from "@/features/shared/utils";
 
 interface Props {
   $id: string;
@@ -43,15 +43,15 @@ const MobileNavigation = ({ $id: ownerId, accountId, fullName, avatar, email }: 
           <SheetTitle>
             <div className="header-user">
               <Image
-                src={avatar}
-                alt="avatar"
+                src={getAvatarUrl(avatar, fullName)}
+                alt=""
                 width={44}
                 height={44}
                 className="header-user-avatar"
               />
-              <div className="sm:hidden lg:block">
-                <p className="subtitle-2 capitalize">{fullName}</p>
-                <p className="caption">{email}</p>
+              <div className="sm:hidden lg:block min-w-0">
+                <p className="subtitle-2 truncate capitalize">{fullName || "Account"}</p>
+                <p className="caption text-light-200">Profile</p>
               </div>
             </div>
             <Separator className="mb-4 bg-light-200/20" />
@@ -60,8 +60,13 @@ const MobileNavigation = ({ $id: ownerId, accountId, fullName, avatar, email }: 
           <nav className="mobile-nav">
             <ul className="mobile-nav-list">
               {visibleNavItems.map(({ url, name, icon }) => (
-                <Link key={name} href={url} className="lg:w-full">
-                  <li className={cn("mobile-nav-item", pathname === url && "shad-active")}>
+                <li key={name} className="list-none">
+                  <Link
+                    href={url}
+                    className={cn("mobile-nav-item lg:w-full", pathname === url && "shad-active")}
+                    prefetch
+                    onClick={() => setOpen(false)}
+                  >
                     <Image
                       src={icon}
                       alt={name}
@@ -70,8 +75,8 @@ const MobileNavigation = ({ $id: ownerId, accountId, fullName, avatar, email }: 
                       className={cn("nav-icon", pathname === url && "nav-icon-active")}
                     />
                     <p>{name}</p>
-                  </li>
-                </Link>
+                  </Link>
+                </li>
               ))}
             </ul>
           </nav>

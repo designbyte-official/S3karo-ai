@@ -12,8 +12,10 @@ import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { useUpload } from "@/features/managed-storage/hooks/use-upload";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.service";
+import { maybeCompressImage } from "@/features/shared/compression";
 import { convertFileSize } from "@/features/shared/utils";
 import { useToast } from "@/hooks/use-toast";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   ownerId: string;
@@ -43,6 +45,7 @@ const DragDropUploadZone = ({
   const [isDragActive, setIsDragActive] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filesToUpload, setFilesToUpload] = useState<FileWithStatus[]>([]);
+  const [compressImages, setCompressImages] = useState(false);
   const { toast } = useToast();
   const isPro = useAuthStore((state) => state.isPro);
   const { upload: uploadFile } = useUpload(); // For managed storage direct uploads
@@ -245,6 +248,9 @@ const DragDropUploadZone = ({
 
     for (const { file: fileWithStatus, index } of filesToProcess) {
       try {
+        const fileToUpload = await maybeCompressImage(fileWithStatus.file, {
+          compress: compressImages,
+        });
         let result;
 
         if (mode === "private") {
@@ -255,7 +261,7 @@ const DragDropUploadZone = ({
 
           result = await s3ExplorerService.uploadFile({
             config,
-            file: fileWithStatus.file,
+            file: fileToUpload,
             ownerId,
             accountId,
             path: subPath,
@@ -280,7 +286,7 @@ const DragDropUploadZone = ({
           });
         } else {
           // Managed storage upload - use direct S3 upload with presigned URLs
-          result = await uploadFile(fileWithStatus.file, {
+          result = await uploadFile(fileToUpload, {
             path: subPath,
             onUploadProgress: (progress) => {
               setFilesToUpload((prev) => {
@@ -309,7 +315,7 @@ const DragDropUploadZone = ({
         });
 
         toast({
-          description: `${fileWithStatus.file.name} uploaded successfully`,
+          description: `${fileToUpload.name} uploaded successfully`,
           className: "success-toast",
         });
       } catch (error) {
@@ -360,7 +366,7 @@ const DragDropUploadZone = ({
     setIsUploading(false);
 
     onUploadComplete?.();
-  }, [filesToUpload, ownerId, accountId, subPath, toast, onUploadComplete, mode, isPro]);
+  }, [filesToUpload, ownerId, accountId, subPath, toast, onUploadComplete, mode, isPro, compressImages]);
 
   const handleRemoveFile = (index: number) => {
     setFilesToUpload((prev) => prev.filter((_, i) => i !== index));
@@ -523,6 +529,16 @@ const DragDropUploadZone = ({
               </p>
             </div>
           </div>
+
+          {/* Compression option - user can choose to compress images before upload */}
+          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
+            <Checkbox
+              checked={compressImages}
+              onCheckedChange={(checked) => setCompressImages(checked === true)}
+              className="border-slate-400"
+            />
+            <span className="text-sm text-slate-700">Compress images before upload</span>
+          </label>
 
           {/* Files list */}
           {filesToUpload.length > 0 && (

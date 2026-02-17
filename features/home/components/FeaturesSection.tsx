@@ -12,9 +12,9 @@ const features = [
         />
       </svg>
     ),
-    title: "Privacy-First",
+    title: "Your Keys, Your Control",
     description:
-      "Your S3 credentials are encrypted with AES-256-CBC in the browser. We never see or store your credentials.",
+      "S3 credentials are encrypted in your browser with AES-256. We never see or store them. Share access via encrypted links—no exposing AWS keys.",
   },
   {
     icon: (
@@ -27,9 +27,24 @@ const features = [
         />
       </svg>
     ),
-    title: "Dual Storage Modes",
+    title: "Your Bucket or Ours",
     description:
-      "Switch between Managed Storage and your Own S3 instance seamlessly. Full control, maximum flexibility.",
+      "Connect your own AWS S3 bucket or use our managed storage. Switch anytime. Full control when you want it, zero ops when you don’t.",
+  },
+  {
+    icon: (
+      <svg className="size-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+        />
+      </svg>
+    ),
+    title: "Multipart Uploads",
+    description:
+      "Large files upload reliably with automatic multipart uploads. No more timeouts or failed transfers—just drag, drop, and go.",
   },
   {
     icon: (
@@ -42,60 +57,55 @@ const features = [
         />
       </svg>
     ),
-    title: "Global Search",
+    title: "Smart Filtering & Search",
     description:
-      "Find files instantly across all storage tiers with advanced sorting and filtering options.",
+      "Find files instantly with advanced filters, sorting, and search across all your storage. No more digging through buckets.",
   },
   {
     icon: (
       <svg className="size-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-        />
-      </svg>
-    ),
-    title: "Analytics Dashboard",
-    description:
-      "Interactive charts showing storage usage, recent uploads, and file-type summaries.",
-  },
-  {
-    icon: (
-      <svg className="size-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
-        />
-      </svg>
-    ),
-    title: "Mobile Responsive",
-    description:
-      "A pixel-perfect, mobile-friendly UI built with modern aesthetics. Access your files anywhere.",
-  },
-  {
-    icon: (
-      <svg className="size-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-        />
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth={2}
           d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
         />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+        />
       </svg>
     ),
-    title: "Advanced Actions",
-    description: "Rename, share, delete, and download files with a modern, intuitive interface.",
+    title: "Built-in File Viewer",
+    description:
+      "Preview images and documents in the app. Rename, download, share, or delete with one click—no need to leave the dashboard.",
   },
+  {
+    icon: (
+      <svg className="size-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+        />
+      </svg>
+    ),
+    title: "Image Compression",
+    description:
+      "Optimize images before upload. Resize, compress, and convert formats to save space and bandwidth without leaving the app.",
+  },
+];
+
+const iconGradients = [
+  "from-brand to-brand-100",
+  "from-blue to-brand-100/80",
+  "from-green to-blue/80",
+  "from-orange to-brand-100/80",
+  "from-brand to-brand-100",
+  "from-pink to-brand-100/80",
 ];
 
 export const FeaturesSection = () => {
@@ -103,9 +113,9 @@ export const FeaturesSection = () => {
     <section id="features" className="bg-light-300 px-4 py-20 sm:px-6 lg:px-8 lg:py-32">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-16 text-center">
-          <h2 className="h1 mb-4 text-dark-100">Everything You Need</h2>
+          <h2 className="h1 mb-4 text-dark-100">S3 Without the Friction</h2>
           <p className="body-1 mx-auto max-w-2xl text-light-100">
-            Powerful features designed for modern file management
+            Everything you need to manage and share files—clean UI, strong security, and no lock-in.
           </p>
         </div>
 
@@ -113,9 +123,11 @@ export const FeaturesSection = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="group rounded-[20px] bg-white p-8 transition-all duration-300 hover:scale-105"
+              className="group rounded-[20px] bg-white p-8 transition-all duration-300 hover:scale-[1.02]"
             >
-              <div className="mb-6 flex size-14 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-100 transition-transform duration-300 group-hover:scale-110">
+              <div
+                className={`mb-6 flex size-14 items-center justify-center rounded-xl bg-gradient-to-br transition-transform duration-300 group-hover:scale-110 ${iconGradients[index] ?? "from-brand to-brand-100"}`}
+              >
                 {feature.icon}
               </div>
               <h3 className="h3 mb-3 text-dark-100">{feature.title}</h3>

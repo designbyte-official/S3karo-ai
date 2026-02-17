@@ -8,14 +8,14 @@ import { useAuthStore } from "@/features/auth/stores/auth-store";
 export const LandingFooter = () => {
   const user = useAuthStore((state) => state.user);
   return (
-    <footer className="bg-dark-200 px-4 py-12 text-white sm:px-6 lg:px-8">
+    <footer className="border-t border-white/10 bg-dark-200 px-4 py-12 text-white sm:px-6 lg:px-8">
       <div className="container mx-auto max-w-6xl">
         <div className="mb-8 flex flex-col items-center justify-between gap-8 md:flex-row">
           {/* Logo and Description */}
           <div className="text-center md:text-left">
             <Logo variant="full" href="/" />
             <p className="body-2 mt-4 max-w-sm text-white/70">
-              Privacy-first file storage and sharing platform.
+              A better way to manage and share S3 storage—your bucket or ours, you stay in control.
             </p>
           </div>
 

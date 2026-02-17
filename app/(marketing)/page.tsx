@@ -13,15 +13,17 @@ import { generateMetadata } from "@/lib/seo/metadata";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = generateMetadata({
-  title: "Home",
+  title: "A Better Way to Manage and Share S3 Storage",
   description:
-    "Store, Share & Manage Your Files Securely - Privacy-first file management platform with dual storage modes.",
+    "Bring your own AWS S3 bucket or use managed storage. Multipart uploads, encrypted share links, built-in viewer, and image compression—without the usual S3 complexity.",
   keywords: [
-    "privacy-first storage",
+    "S3 storage",
+    "AWS S3 management",
+    "file storage",
     "secure file sharing",
-    "dual storage modes",
     "managed storage",
     "private S3",
+    "multipart upload",
   ],
 });
 

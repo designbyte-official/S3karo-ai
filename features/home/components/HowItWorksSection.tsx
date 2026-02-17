@@ -8,13 +8,13 @@ const steps = [
   },
   {
     step: "2",
-    title: "Choose Storage",
-    description: "Select Managed Storage or connect your own S3 bucket.",
+    title: "Choose Your Storage",
+    description: "Use our managed storage or connect your own AWS S3 bucket—you’re in control.",
   },
   {
     step: "3",
-    title: "Start Uploading",
-    description: "Upload, organize, and share your files with ease.",
+    title: "Upload & Share",
+    description: "Drag and drop files, generate encrypted share links, and manage everything from one place.",
   },
 ];
 
@@ -25,12 +25,12 @@ export const HowItWorksSection = () => {
         <div className="mb-16 text-center">
           <h2 className="h1 mb-4 text-dark-100">How It Works</h2>
           <p className="body-1 mx-auto max-w-2xl text-light-100">
-            Get started in minutes with our simple setup process
+            From signup to your first upload in minutes—no AWS console required.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3 lg:gap-12">
-          {steps.map((item, index) => (
+          {steps.map((item) => (
             <div key={item.step} className="group text-center">
               <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-100 text-3xl font-bold text-white transition-all duration-300 group-hover:scale-110">
                 {item.step}

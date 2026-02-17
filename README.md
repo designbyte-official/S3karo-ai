@@ -151,6 +151,18 @@ The app can be deployed to any platform that supports Next.js:
 
 Make sure to set all environment variables from `.env.example`.
 
+## 📚 Documentation
+
+Detailed documentation is in the [`docs/`](./docs) folder:
+
+- [**Architecture**](./docs/ARCHITECTURE.md) – System design, security, and database
+- [**API reference**](./docs/API.md) – Managed storage API (auth, endpoints, examples)
+- [**Project structure**](./docs/PROJECT_STRUCTURE.md) – Directory layout
+- [**Upload architecture**](./docs/UPLOAD_ARCHITECTURE.md) – Presigned URLs and upload flow
+- [**Redis setup**](./docs/REDIS_SETUP.md) – Optional rate limiting with Upstash
+
+See [docs/README.md](./docs/README.md) for the full index. For local/internal docs, see [local-docs/](./local-docs).
+
 ## 📄 License
 
 This project is private and proprietary.

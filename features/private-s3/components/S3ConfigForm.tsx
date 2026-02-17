@@ -200,7 +200,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                   }
                 }}
                 placeholder="https://assets.yourdomain.com/"
-                className={`shad-input flex-1 ${cdnError ? "border-red-500" : ""}`}
+                className={`shad-input min-h-12 flex-1 py-3 text-base font-mono break-all ${cdnError ? "border-red-500" : ""}`}
               />
               {cdnError && <p className="text-red-500 mt-1 text-sm">{cdnError}</p>}
             </div>
@@ -262,6 +262,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
           label="CloudFront URL / CDN URL (Optional)"
           placeholder="https://d1234567890.cloudfront.net"
           description="CDN URL for directly accessing S3 files. For S3 API operations (MinIO, etc.), use a proper S3 endpoint."
+          inputClassName="min-h-12 py-3 text-base font-mono break-all"
         />
 
         <div className="flex justify-end gap-4">

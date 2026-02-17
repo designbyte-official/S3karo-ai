@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Mail, UserCircle, Hash } from "lucide-react";
 
 import { useAuthStore } from "@/features/auth/stores/auth-store";
-import { cn } from "@/features/shared/utils";
+import { cn, getAvatarUrl } from "@/features/shared/utils";
 
 import { ProfileSection } from "./ProfileSection";
 
@@ -47,13 +47,12 @@ export const UserInfo = memo(() => {
       {/* Header section moved inside children for custom layout */}
       <div className="mb-6 flex items-center gap-4 border-b border-light-300 pb-6">
         <div className="relative size-20 shrink-0 overflow-hidden rounded-full bg-light-300">
-          {user?.avatar ? (
-            <Image src={user.avatar} alt={user.fullName || "User"} fill className="object-cover" />
-          ) : (
-            <div className="flex size-full items-center justify-center">
-              <UserCircle className="size-10 text-light-200" />
-            </div>
-          )}
+          <Image
+            src={getAvatarUrl(user?.avatar, user?.fullName)}
+            alt={user?.fullName || "User"}
+            fill
+            className="object-cover"
+          />
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="h1 mb-1 truncate text-brand">{user?.fullName || "User"}</h1>
