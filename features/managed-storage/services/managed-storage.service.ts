@@ -29,7 +29,7 @@ export const platformStorageService = {
     }
   },
 
-  async getStorageStats(userId?: string) {
+  async getStorageStats(_userId?: string) {
     try {
       const baseUrl =
         typeof window === "undefined"
@@ -65,7 +65,7 @@ export const platformStorageService = {
     }
   },
 
-  async uploadFile(params: { file: File; ownerId: string; accountId: string; path: string }) {
+  async uploadFile(_params: { file: File; ownerId: string; accountId: string; path: string }) {
     // Use useUpload() hook instead for direct S3 uploads
     throw new Error("Use useUpload() hook for file uploads.");
   },
@@ -142,7 +142,7 @@ export const platformStorageService = {
     }
   },
 
-  async checkPlatformAccess(userId: string) {
+  async checkPlatformAccess(_userId: string) {
     try {
       const baseUrl =
         typeof window === "undefined"

@@ -31,7 +31,10 @@ const config: Config = {
           200: "#a7f3d0",
           800: "#166534",
         },
-        blue: "#56B8FF",
+        blue: {
+          DEFAULT: "#56B8FF",
+          600: "#2563eb",
+        },
         pink: "#EEA8FD",
         orange: {
           DEFAULT: "#F9AB72",

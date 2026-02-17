@@ -16,7 +16,7 @@ export class ImageOptimizerService {
     static async processImage(
         file: File,
         settings: CompressionSettings,
-        originalUrl: string
+        _originalUrl: string
     ): Promise<ProcessingResult> {
         try {
             const result = await compressImage(file, settings);
@@ -41,7 +41,7 @@ export class ImageOptimizerService {
                 // But usually, resizing down should make it smaller. Resizing UP is rare.
                 // Let's assume if size increased, it's a regression in compression efficiency.
 
-                const dimsChanged = result.width !== 0 && result.height !== 0 && // 0 means not tracked? No, result.width usually populated
+                const _dimsChanged = result.width !== 0 && result.height !== 0 && // 0 means not tracked? No, result.width usually populated
                     (settings.maxWidth > 0 || settings.maxHeight > 0);
 
                 // Note: compressImage returns actual width/height of result.

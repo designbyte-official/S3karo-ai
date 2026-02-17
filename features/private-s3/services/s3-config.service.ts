@@ -44,7 +44,7 @@ export const s3ConfigService = {
       if (metadataStr) {
         try {
           metadata = JSON.parse(metadataStr);
-        } catch (parseError) {
+        } catch {
           // If metadata is corrupted, just use empty metadata
           console.warn("Failed to parse S3 config metadata, using defaults");
           metadata = {};
@@ -92,7 +92,7 @@ export const s3ConfigService = {
           })
         );
       }
-    } catch (error) {
+    } catch {
       throw new Error("Failed to save S3 config");
     }
   },

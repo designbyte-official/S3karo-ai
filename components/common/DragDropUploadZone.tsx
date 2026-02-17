@@ -264,15 +264,13 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
         const fileToUpload = await maybeCompressImage(fileWithStatus.file, {
           compress: compressImages,
         });
-        let result;
-
         if (mode === "private") {
           const config = await s3ConfigService.getConfig(ownerId);
           if (!config) {
             throw new Error("S3 not configured. Please configure your bucket first.");
           }
 
-          result = await s3ExplorerService.uploadFile({
+          const _result = await s3ExplorerService.uploadFile({
             config,
             file: fileToUpload,
             ownerId,
@@ -410,7 +408,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
     onDrop,
     maxSize: 50 * 1024 * 1024,
     noClick: true, // Don't open file dialog on click - we'll handle it manually
-    onDragEnter: (e) => {
+    onDragEnter: (_e) => {
       setIsDragActive(true);
     },
     onDragOver: (e) => {
@@ -477,16 +475,16 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
                 </span>
               )}
               {pausedFiles.length > 0 && (
-                <span className="text-orange-600 ml-2">{pausedFiles.length} paused</span>
+                <span className="ml-2 text-orange-600">{pausedFiles.length} paused</span>
               )}
               {uploadingFiles.length > 0 && (
-                <span className="text-orange-600 ml-2">{uploadingFiles.length} uploading</span>
+                <span className="ml-2 text-orange-600">{uploadingFiles.length} uploading</span>
               )}
               {successFiles.length > 0 && (
-                <span className="text-green-600 ml-2">{successFiles.length} success</span>
+                <span className="ml-2 text-green-600">{successFiles.length} success</span>
               )}
               {errorFiles.length > 0 && (
-                <span className="text-red-600 ml-2">{errorFiles.length} failed</span>
+                <span className="ml-2 text-red-600">{errorFiles.length} failed</span>
               )}
             </div>
             <div className="flex gap-2">

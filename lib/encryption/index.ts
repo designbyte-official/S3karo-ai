@@ -65,7 +65,7 @@ const getCryptoKey = async (encryptionKey: Buffer, aesKeyBase64: string) => {
 };
 
 // Encrypt text using AES-256-GCM
-export const encrypt = async (text: string, userId?: string): Promise<string> => {
+export const encrypt = async (text: string, _userId?: string): Promise<string> => {
   if (!text || typeof text !== "string") {
     throw new Error("Invalid text to encrypt");
   }
@@ -92,7 +92,7 @@ export const encrypt = async (text: string, userId?: string): Promise<string> =>
 };
 
 // Decrypt encrypted text
-export const decrypt = async (encryptedText: string, userId?: string): Promise<string> => {
+export const decrypt = async (encryptedText: string, _userId?: string): Promise<string> => {
   if (!encryptedText || typeof encryptedText !== "string" || encryptedText.trim().length === 0) {
     throw new Error("Invalid encrypted text: empty or not a string");
   }
@@ -191,7 +191,7 @@ export const decryptS3Config = async (
     let decrypted: string;
     try {
       decrypted = await decrypt(encryptedConfig, userId);
-    } catch (decryptError) {
+    } catch {
       // Decryption failed - config is corrupted or wrong key
       // Return null silently - the calling code will handle it
       return null;

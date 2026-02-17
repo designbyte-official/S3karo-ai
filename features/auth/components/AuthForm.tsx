@@ -25,7 +25,7 @@ type FormType = "sign-in" | "sign-up";
 
 const AuthForm = ({ type }: { type: FormType }) => {
   const { isLoading, errorMessage, onSubmit } = useAuthForm(type);
-  const router = useRouter();
+  const _router = useRouter();
 
   const formSchema = authFormSchema(type);
   const form = useForm<z.infer<typeof formSchema>>({

@@ -203,7 +203,7 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                 placeholder="https://assets.yourdomain.com/"
                 className={`shad-input min-h-12 flex-1 break-all py-3 font-mono text-base ${cdnError ? "border-red-500" : ""}`}
               />
-              {cdnError && <p className="text-red-500 mt-1 text-sm">{cdnError}</p>}
+              {cdnError && <p className="mt-1 text-sm text-red-500">{cdnError}</p>}
             </div>
             <Button
               onClick={handleCdnUpdate}
