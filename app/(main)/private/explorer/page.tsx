@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { LayoutGrid, List as ListIcon, Image as ImageIcon, AlertCircle } from "lucide-react";
+import { LayoutGrid, List as ListIcon, Image as ImageIcon, AlertCircle, Upload } from "lucide-react";
 
 import { Breadcrumbs } from "@/components/common/Breadcrumbs";
 import { DashboardLayout } from "@/components/common/DashboardLayout";
-import DragDropUploadZone from "@/components/common/DragDropUploadZone";
-import FileUploader from "@/components/common/FileUploader";
+import DragDropUploadZone, { type DragDropUploadZoneRef } from "@/components/common/DragDropUploadZone";
 import LocalSearch from "@/components/common/LocalSearch";
 import { ExplorerSkeleton } from "@/components/common/SkeletonLoader";
 import Sort from "@/components/common/Sort";
@@ -36,6 +35,8 @@ const OwnS3Page = () => {
     setSubPath,
     createFolder,
   } = useOwnS3();
+
+  const uploadZoneRef = useRef<DragDropUploadZoneRef>(null);
 
   const {
     view,
@@ -95,6 +96,7 @@ const OwnS3Page = () => {
   return (
     <div className="page-container !max-w-full !items-start lg:px-10">
       <DragDropUploadZone
+        ref={uploadZoneRef}
         ownerId={user.$id}
         accountId={user.accountId}
         subPath={subPath}
@@ -110,12 +112,14 @@ const OwnS3Page = () => {
           </div>
           <div className="flex items-center gap-3">
             <NewFolderDialog onCreate={createFolder} />
-            <FileUploader
-              ownerId={user.$id}
-              accountId={user.accountId}
-              mode="private"
-              path={subPath}
-            />
+            <Button
+              type="button"
+              onClick={() => uploadZoneRef.current?.openDialog()}
+              className="uploader-button flex items-center gap-2"
+            >
+              <Upload className="size-5" />
+              <span className="hidden md:inline">Upload</span>
+            </Button>
           </div>
         </div>
 

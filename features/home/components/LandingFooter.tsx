@@ -58,11 +58,33 @@ export const LandingFooter = () => {
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="border-t border-white/10 pt-8 text-center">
-          <p className="caption text-white/50">
-            &copy; {new Date().getFullYear()} S3Karo. All rights reserved.
-          </p>
+        {/* Copyright & Powered by */}
+        <div className="border-t border-white/10 pt-8">
+          <div className="flex flex-col items-center justify-center gap-3 text-center sm:flex-row sm:justify-between sm:gap-4">
+            <p className="caption text-white/50">
+              &copy; {new Date().getFullYear()} S3Karo. All rights reserved.
+            </p>
+            <p className="caption text-white/50">
+              Powered by{" "}
+              <a
+                href="https://studio.designbyte.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-white/80 transition-colors hover:text-brand"
+              >
+                Designbyte Studio
+              </a>
+              {" · "}
+              <a
+                href="https://studio.designbyte.dev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-white/80 transition-colors hover:text-brand"
+              >
+                studio.designbyte.dev
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>

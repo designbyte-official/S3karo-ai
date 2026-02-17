@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useImperativeHandle, useState, forwardRef } from "react";
 
-import { Upload, X, File, CheckCircle2 } from "lucide-react";
+import { Upload, X, File, CheckCircle2, ImageIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useDropzone, FileRejection } from "react-dropzone";
 
@@ -25,6 +25,10 @@ interface Props {
   mode?: "private" | "managed"; // Support both storage modes
 }
 
+export interface DragDropUploadZoneRef {
+  openDialog: () => void;
+}
+
 interface FileWithStatus {
   file: File;
   status: "pending" | "uploading" | "success" | "error" | "paused";
@@ -34,13 +38,16 @@ interface FileWithStatus {
   chunkInfo?: { current: number; total: number };
 }
 
-const DragDropUploadZone = ({
-  ownerId,
-  accountId,
-  subPath = "",
-  onUploadComplete,
-  mode = "private",
-}: Props) => {
+const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function DragDropUploadZone(
+  {
+    ownerId,
+    accountId,
+    subPath = "",
+    onUploadComplete,
+    mode = "private",
+  },
+  ref
+) {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -49,6 +56,12 @@ const DragDropUploadZone = ({
   const { toast } = useToast();
   const isPro = useAuthStore((state) => state.isPro);
   const { upload: uploadFile } = useUpload(); // For managed storage direct uploads
+  const isUploadingRef = React.useRef(false);
+  isUploadingRef.current = isUploading;
+
+  useImperativeHandle(ref, () => ({
+    openDialog: () => setIsDialogOpen(true),
+  }), []);
 
   // Helper function to create a unique key for a file
   const getFileKey = React.useCallback((file: File): string => {
@@ -382,12 +395,10 @@ const DragDropUploadZone = ({
     handleUpload();
   };
 
-  const handleCloseDialog = () => {
-    if (!isUploading) {
-      setIsDialogOpen(false);
-      setFilesToUpload([]);
-    }
-  };
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open && !isUploadingRef.current) setFilesToUpload([]);
+  }, []);
 
   const {
     getRootProps,
@@ -432,7 +443,7 @@ const DragDropUploadZone = ({
         typeof document !== "undefined" &&
         createPortal(
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="mx-4 max-w-2xl animate-pulse rounded-3xl border-4 border-dashed border-brand bg-white p-12 shadow-2xl">
+            <div className="mx-4 max-w-2xl animate-pulse rounded-3xl border-4 border-dashed border-brand bg-white p-12">
               <div className="flex flex-col items-center gap-6 text-center">
                 <div className="rounded-full bg-brand/10 p-6">
                   <Upload size={64} className="text-brand" />
@@ -452,7 +463,7 @@ const DragDropUploadZone = ({
       {/* Upload Dialog */}
       <ScrollableDialog
         open={isDialogOpen}
-        onOpenChange={handleCloseDialog}
+        onOpenChange={handleOpenChange}
         title={`Upload Files${filesToUpload.length > 0 ? ` (${filesToUpload.length})` : ""}`}
         fullScreen={false}
         className="!m-0 !h-[95vh] !max-h-[95vh] !w-[95%] !max-w-[700px]"
@@ -506,13 +517,29 @@ const DragDropUploadZone = ({
         }
       >
         <div className="w-full space-y-4">
-          {/* Drop zone inside dialog */}
+          {/* Compression: only for images (JPEG, PNG, WebP, GIF, AVIF). Videos/other files are never compressed. */}
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-light-300 bg-brand-50/50 p-4 transition-colors hover:border-brand/30 hover:bg-brand-50">
+            <Checkbox
+              checked={compressImages}
+              onCheckedChange={(checked) => setCompressImages(checked === true)}
+              className="border-light-200 data-[state=checked]:bg-brand data-[state=checked]:border-brand"
+            />
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="size-5 text-brand" />
+                <span className="text-sm font-medium text-dark-100">Compress images before upload</span>
+              </div>
+              <span className="body-2 text-light-100">JPEG, PNG, WebP, GIF, AVIF only. Videos and other files upload as-is.</span>
+            </div>
+          </label>
+
+          {/* Drop zone inside dialog - click calls open() to open file picker (noClick: true on dropzone) */}
           <div
             {...getRootProps()}
-            className="cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-12 text-center transition-colors hover:border-brand/50"
+            className="cursor-pointer rounded-xl border-2 border-dashed border-light-200 bg-light-300/50 p-12 text-center transition-colors hover:border-brand/50 hover:bg-brand-50/30"
             onClick={(e) => {
-              // Allow clicking to open file picker
               e.stopPropagation();
+              open();
             }}
           >
             <input {...getInputProps()} />
@@ -521,24 +548,14 @@ const DragDropUploadZone = ({
                 <Upload size={32} className="text-brand" />
               </div>
               <div>
-                <p className="text-lg font-semibold text-slate-800">Drag & drop files here</p>
-                <p className="mt-1 text-sm text-slate-500">or click to browse</p>
+                <p className="text-lg font-semibold text-dark-100">Drag & drop files here</p>
+                <p className="mt-1 text-sm text-light-100">or click to browse</p>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-light-200">
                 Upload to: <span className="font-semibold text-brand">{subPath || "Root"}</span>
               </p>
             </div>
           </div>
-
-          {/* Compression option - user can choose to compress images before upload */}
-          <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:border-slate-300">
-            <Checkbox
-              checked={compressImages}
-              onCheckedChange={(checked) => setCompressImages(checked === true)}
-              className="border-slate-400"
-            />
-            <span className="text-sm text-slate-700">Compress images before upload</span>
-          </label>
 
           {/* Files list */}
           {filesToUpload.length > 0 && (
@@ -632,7 +649,7 @@ const DragDropUploadZone = ({
       {typeof document !== "undefined" &&
         createPortal(
           <div
-            className="group pointer-events-auto fixed bottom-6 right-6 z-[9998] cursor-pointer rounded-2xl border-2 border-dashed border-brand/30 bg-white/90 p-4 shadow-lg backdrop-blur-sm transition-all hover:border-brand/60"
+            className="group pointer-events-auto fixed bottom-6 right-6 z-[9998] cursor-pointer rounded-2xl border-2 border-dashed border-brand/30 bg-white/90 p-4 backdrop-blur-sm transition-all hover:border-brand/60"
             title="Click to select files or drag and drop files anywhere on the page"
             onClick={(e) => {
               e.stopPropagation();
@@ -658,6 +675,6 @@ const DragDropUploadZone = ({
       </div>
     </>
   );
-};
+});
 
 export default DragDropUploadZone;

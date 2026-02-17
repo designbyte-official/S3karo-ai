@@ -3,7 +3,7 @@
 import React from "react";
 
 export const SkeletonCard = () => (
-  <div className="animate-pulse space-y-3 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1">
+  <div className="animate-pulse space-y-3 rounded-[20px] border border-light-300 bg-white p-4">
     <div className="h-32 rounded-xl bg-light-300" />
     <div className="space-y-2">
       <div className="h-4 w-3/4 rounded bg-light-300" />
@@ -25,7 +25,7 @@ export const SkeletonList = ({ count = 6 }: { count?: number }) => (
     {Array.from({ length: count }).map((_, i) => (
       <div
         key={i}
-        className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1"
+        className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4"
       >
         <div className="size-12 shrink-0 rounded-lg bg-light-300" />
         <div className="flex-1 space-y-2">
@@ -39,7 +39,7 @@ export const SkeletonList = ({ count = 6 }: { count?: number }) => (
 );
 
 export const SkeletonStorageChart = () => (
-  <div className="animate-pulse space-y-4 rounded-[20px] border border-light-300 bg-white p-6 shadow-drop-1">
+  <div className="animate-pulse space-y-4 rounded-[20px] border border-light-300 bg-white p-6">
     <div className="h-6 w-1/2 rounded bg-light-300" />
     <div className="h-32 rounded-xl bg-light-300" />
     <div className="space-y-2">
@@ -50,7 +50,7 @@ export const SkeletonStorageChart = () => (
 );
 
 export const SkeletonSummaryCard = () => (
-  <div className="animate-pulse space-y-4 rounded-[20px] border border-light-300 bg-white p-6 shadow-drop-1">
+  <div className="animate-pulse space-y-4 rounded-[20px] border border-light-300 bg-white p-6">
     <div className="flex items-center justify-between">
       <div className="size-16 rounded-full bg-light-300" />
       <div className="h-6 w-20 rounded bg-light-300" />
@@ -83,7 +83,7 @@ export const ExplorerSkeleton = ({ view = "grid" }: { view?: "grid" | "list" }) 
         </div>
 
         {/* Search and Sort Bar */}
-        <div className="flex w-full flex-col items-stretch justify-between gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1 sm:flex-row sm:items-center">
+        <div className="flex w-full flex-col items-stretch justify-between gap-4 rounded-[20px] border border-light-300 bg-white p-4 sm:flex-row sm:items-center">
           <div className="flex flex-1 items-center gap-3">
             <div className="h-9 flex-1 animate-pulse rounded-lg bg-light-300" />
             <div className="hidden h-9 w-32 animate-pulse rounded-lg bg-light-300 sm:block" />
@@ -115,7 +115,7 @@ export const ExplorerSkeleton = ({ view = "grid" }: { view?: "grid" | "list" }) 
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4 shadow-drop-1"
+                className="flex animate-pulse items-center gap-4 rounded-[20px] border border-light-300 bg-white p-4"
               >
                 <div className="size-12 shrink-0 rounded-lg bg-light-300" />
                 <div className="flex-1 space-y-2">

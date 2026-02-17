@@ -93,7 +93,7 @@ export const NewFolderDialog = ({ onCreate }: NewFolderDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="shad-button-primary h-[52px] gap-2 rounded-full bg-dark-100 px-6 text-white shadow-drop-1 transition-all hover:bg-dark-200">
+        <Button className="shad-button-primary h-[52px] gap-2 rounded-full bg-dark-100 px-6 text-white transition-all hover:bg-dark-200">
           <FolderPlus size={20} />
           <span className="hidden font-medium sm:block">New Folder</span>
         </Button>

@@ -94,7 +94,7 @@ export const ApiKeysSection = ({ keys, onRefresh }: ApiKeysSectionProps) => {
   };
 
   return (
-    <div className="rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
+    <div className="rounded-[18px] border border-light-300 bg-white p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="h2 text-brand">API Keys</h2>

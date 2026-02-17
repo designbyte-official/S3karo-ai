@@ -13,7 +13,7 @@ interface ProfileSectionProps {
 export const ProfileSection = React.memo(
   ({ title, description, children, className, headerClassName }: ProfileSectionProps) => {
     return (
-      <div className={cn("rounded-[18px] bg-white p-6 shadow-sm sm:p-8", className)}>
+      <div className={cn("rounded-[18px] bg-white p-6 sm:p-8", className)}>
         {(title || description) && (
           <div className={cn("mb-6", headerClassName)}>
             {title && <h3 className="h3 text-brand">{title}</h3>}

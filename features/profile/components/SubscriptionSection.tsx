@@ -27,7 +27,7 @@ export const SubscriptionSection = ({ subscription }: SubscriptionSectionProps) 
   const bandwidthPercentage = (subscription.bandwidthUsed / subscription.bandwidthLimit) * 100;
 
   return (
-    <div className="rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
+    <div className="rounded-[18px] border border-light-300 bg-white p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h2 className="h2 text-brand">Subscription</h2>
