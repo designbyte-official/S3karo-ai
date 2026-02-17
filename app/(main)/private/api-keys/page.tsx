@@ -213,7 +213,7 @@ export default function ApiKeysPage() {
             {keys.map((key) => (
               <div
                 key={key.id}
-                className="rounded-[18px] border border-light-300 bg-white p-6 shadow-sm"
+                className="rounded-[18px] border border-light-300 bg-white p-6"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

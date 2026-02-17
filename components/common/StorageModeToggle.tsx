@@ -18,7 +18,7 @@ const StorageModeToggle = () => {
 
   return (
     <TooltipProvider>
-      <div className="flex items-center rounded-full border border-light-300 bg-light-400 p-1 shadow-drop-1">
+      <div className="flex items-center rounded-full border border-light-300 bg-light-400 p-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
@@ -26,7 +26,7 @@ const StorageModeToggle = () => {
               className={cn(
                 "flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300 active:scale-95 hover:scale-105",
                 mode === "managed"
-                  ? "bg-brand text-white shadow-sm"
+                  ? "bg-brand text-white"
                   : "text-light-100 hover:bg-light-300"
               )}
             >
@@ -46,7 +46,7 @@ const StorageModeToggle = () => {
               className={cn(
                 "flex items-center gap-2 px-4 py-1.5 rounded-full transition-all duration-300 active:scale-95 hover:scale-105",
                 mode === "private"
-                  ? "bg-brand text-white shadow-sm"
+                  ? "bg-brand text-white"
                   : "text-light-100 hover:bg-light-300"
               )}
             >

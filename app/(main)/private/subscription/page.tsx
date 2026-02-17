@@ -89,7 +89,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Plan Info */}
-        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="h3 capitalize">{subscription.plan} Plan</h2>
@@ -117,7 +117,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Storage Usage */}
-        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6">
           <h3 className="h4 mb-4">Storage Usage</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -149,7 +149,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Bandwidth Usage */}
-        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
+        <div className="mb-6 rounded-[18px] border border-light-300 bg-white p-6">
           <h3 className="h4 mb-4">Bandwidth Usage</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -182,7 +182,7 @@ export default function SubscriptionPage() {
         </div>
 
         {/* Plan Features */}
-        <div className="rounded-[18px] border border-light-300 bg-white p-6 shadow-sm">
+        <div className="rounded-[18px] border border-light-300 bg-white p-6">
           <h3 className="h4 mb-4">Plan Features</h3>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex items-center gap-3">
