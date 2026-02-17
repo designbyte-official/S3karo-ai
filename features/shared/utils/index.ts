@@ -184,7 +184,16 @@ interface TotalSpaceItem {
   latestDate: string;
 }
 
-export const getUsageSummary = (totalSpace: Record<string, TotalSpaceItem>) => {
+export interface TotalSpaceSummaryInput {
+  document: TotalSpaceItem;
+  image: TotalSpaceItem;
+  video: TotalSpaceItem;
+  audio: TotalSpaceItem;
+  other: TotalSpaceItem;
+  [key: string]: TotalSpaceItem;
+}
+
+export const getUsageSummary = (totalSpace: TotalSpaceSummaryInput) => {
   return [
     {
       title: "Documents",

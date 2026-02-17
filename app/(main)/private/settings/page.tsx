@@ -71,7 +71,7 @@ const OwnS3SetupPage = () => {
             <div className="rounded-[24px] border border-light-300 bg-white p-8 shadow-drop-1">
               <S3ConfigForm
                 userId={user.$id}
-                defaultValues={config}
+                defaultValues={config ?? undefined}
                 onConfigSaved={async () => {
                   // Config will be reloaded automatically via storage event listener
                   // Optional: Don't auto redirect immediately if you want them to see success state

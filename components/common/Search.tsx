@@ -32,14 +32,15 @@ const Search = ({ mode = "managed" }: Props) => {
   const path = usePathname();
   const debouncedQuery = useDebounce(query, 500);
 
-  // Sync query from URL only on mount or when URL changes externally
+  // Sync query from URL only on mount or when URL changes externally (intentionally omit `query` to avoid overwriting user input)
   useEffect(() => {
     if (searchQuery !== query && !query) {
       setQuery(searchQuery);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync from URL only when searchQuery changes
   }, [searchQuery]);
 
-  // Update URL only after debounce completes
+  // Update URL only after debounce completes (intentionally omit path/router/searchParams to avoid extra navigations)
   useEffect(() => {
     if (debouncedQuery !== searchQuery) {
       const params = new URLSearchParams(searchParams.toString());
@@ -50,6 +51,7 @@ const Search = ({ mode = "managed" }: Props) => {
       }
       router.replace(`${path}?${params.toString()}`, { scroll: false });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only update URL when debounced query changes
   }, [debouncedQuery]);
 
   // Fetch search results

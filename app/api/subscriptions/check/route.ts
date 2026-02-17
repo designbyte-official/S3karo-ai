@@ -30,7 +30,7 @@ export async function GET(_request: NextRequest) {
       });
     } catch (dbError: unknown) {
       // If database schema is missing columns, return false but don't break the app
-      logger.warn("Subscription check failed (database schema may be outdated)", dbError);
+      logger.warn("Subscription check failed (database schema may be outdated)", { error: dbError });
       return createSuccessResponse({
         hasPlatformAccess: false,
         message: "Database schema may need migration. Run: pnpm db:fix-columns",

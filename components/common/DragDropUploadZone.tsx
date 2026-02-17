@@ -414,7 +414,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
     onDragOver: (e) => {
       e.preventDefault();
     },
-    onDragLeave: (_e) => {
+    onDragLeave: (e) => {
       // console.log('DragDrop: Drag leave');
       // Check if we're leaving the dropzone area
       const relatedTarget = e.relatedTarget as HTMLElement;
