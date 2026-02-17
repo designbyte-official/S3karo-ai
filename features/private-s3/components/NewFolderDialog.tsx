@@ -73,8 +73,8 @@ export const NewFolderDialog = ({ onCreate }: NewFolderDialogProps) => {
         className: "success-toast",
       });
       setOpen(false);
-    } catch (error: any) {
-      const errorMessage = error?.message || "Failed to create folder. Please try again.";
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to create folder. Please try again.";
       setError(errorMessage);
       toast({
         title: "Error",

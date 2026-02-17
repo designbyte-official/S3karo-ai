@@ -43,12 +43,12 @@ export async function getFilesForUser(
     limit?: number;
   }
 ) {
-  // Build base query
-  let baseQuery = sql`SELECT * FROM files WHERE user_id = ${userId}`;
+  // Build base query (kept for reference; execution uses queryText below)
+  let _baseQuery = sql`SELECT * FROM files WHERE user_id = ${userId}`;
 
   // Apply filters
   if (filters?.types && filters.types.length > 0) {
-    baseQuery = sql`
+    _baseQuery = sql`
       SELECT * FROM files 
       WHERE user_id = ${userId} AND type = ANY(${filters.types})
     `;
@@ -56,7 +56,7 @@ export async function getFilesForUser(
 
   if (filters?.searchText) {
     const searchPattern = `%${filters.searchText}%`;
-    baseQuery = sql`
+    _baseQuery = sql`
       SELECT * FROM files 
       WHERE user_id = ${userId} AND name ILIKE ${searchPattern}
     `;

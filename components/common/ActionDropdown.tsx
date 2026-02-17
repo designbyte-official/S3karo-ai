@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -130,7 +129,7 @@ const ActionDropdown = ({ file }: { file: S3File }) => {
             )}
           </DialogHeader>
 
-          <DialogFooter className="flex flex-col gap-3 md:flex-row mt-5">
+          <DialogFooter className="mt-5 flex flex-col gap-3 md:flex-row">
             <Button
               onClick={closeAllModals}
               variant="outline"

@@ -3,17 +3,16 @@
 import { useEffect, useState } from "react";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { S3ConfigForm } from "@/features/private-s3/components/S3ConfigForm";
+import type { S3Config } from "@/features/private-s3/services/s3-config.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 
 const OwnS3SetupPage = () => {
   const { user } = useAuthStore();
-  const [hasConfig, setHasConfig] = useState(false);
-  const [config, setConfig] = useState<any>(null);
-  const router = useRouter();
+  const [_hasConfig, setHasConfig] = useState(false);
+  const [config, setConfig] = useState<S3Config | null>(null);
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -72,7 +71,7 @@ const OwnS3SetupPage = () => {
             <div className="rounded-[24px] border border-light-300 bg-white p-8 shadow-drop-1">
               <S3ConfigForm
                 userId={user.$id}
-                defaultValues={config}
+                defaultValues={config ?? undefined}
                 onConfigSaved={async () => {
                   // Config will be reloaded automatically via storage event listener
                   // Optional: Don't auto redirect immediately if you want them to see success state

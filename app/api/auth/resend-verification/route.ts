@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
     return createSuccessResponse({
       message: "Verification email sent successfully",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Resend verification error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

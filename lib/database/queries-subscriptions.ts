@@ -49,17 +49,18 @@ export const getActiveSubscription = cache(async function getActiveSubscription(
       bandwidthLimit: subscription.bandwidthLimit ?? 10737418240, // 10GB default
       bandwidthUsed: subscription.bandwidthUsed ?? 0,
     } as Subscription;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { message?: string; code?: string; cause?: { code?: string }; query?: string; params?: string };
     // Check if error is due to missing columns (database schema issue)
     if (
-      error?.message?.includes("does not exist") ||
-      error?.code === "42703" ||
-      error?.cause?.code === "42703"
+      err?.message?.includes("does not exist") ||
+      err?.code === "42703" ||
+      err?.cause?.code === "42703"
     ) {
       logger.warn("Subscription check failed (database schema may be outdated)", {
-        query: error?.query || "N/A",
-        params: error?.params || "N/A",
-        cause: error?.cause,
+        query: err?.query || "N/A",
+        params: err?.params || "N/A",
+        cause: err?.cause,
       });
       // Try fallback query with only core columns
       try {
@@ -109,7 +110,7 @@ export const getActiveSubscription = cache(async function getActiveSubscription(
         return null;
       }
     }
-    logger.error("Get active subscription error", error);
+    logger.error("Get active subscription error", error as Error);
     throw error;
   }
 });
@@ -133,7 +134,7 @@ export const hasPlatformAccess = cache(async function hasPlatformAccess(
     // If database schema is missing columns, return false gracefully
     if (
       error instanceof Error &&
-      (error.message.includes("needs migration") || (error as any).code === "42703")
+      (error.message.includes("needs migration") || (error as { code?: string }).code === "42703")
     ) {
       logger.warn("Database schema needs migration. Returning false for platform access.");
       return false;

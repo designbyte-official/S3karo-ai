@@ -76,8 +76,8 @@ export async function POST(request: NextRequest) {
         emailVerified: user.emailVerified,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Signin error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

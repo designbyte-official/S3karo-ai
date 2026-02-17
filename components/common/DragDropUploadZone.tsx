@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { useDropzone, FileRejection } from "react-dropzone";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollableDialog } from "@/components/ui/scrollable-dialog";
 import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { useUpload } from "@/features/managed-storage/hooks/use-upload";
@@ -15,7 +16,6 @@ import { s3ExplorerService } from "@/features/private-s3/services/s3-explorer.se
 import { maybeCompressImage } from "@/features/shared/compression";
 import { convertFileSize } from "@/features/shared/utils";
 import { useToast } from "@/hooks/use-toast";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   ownerId: string;
@@ -264,15 +264,13 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
         const fileToUpload = await maybeCompressImage(fileWithStatus.file, {
           compress: compressImages,
         });
-        let result;
-
         if (mode === "private") {
           const config = await s3ConfigService.getConfig(ownerId);
           if (!config) {
             throw new Error("S3 not configured. Please configure your bucket first.");
           }
 
-          result = await s3ExplorerService.uploadFile({
+          const _result = await s3ExplorerService.uploadFile({
             config,
             file: fileToUpload,
             ownerId,
@@ -299,7 +297,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
           });
         } else {
           // Managed storage upload - use direct S3 upload with presigned URLs
-          result = await uploadFile(fileToUpload, {
+          await uploadFile(fileToUpload, {
             path: subPath,
             onUploadProgress: (progress) => {
               setFilesToUpload((prev) => {
@@ -379,6 +377,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
     setIsUploading(false);
 
     onUploadComplete?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- uploadFile is stable; full deps cause unnecessary resets
   }, [filesToUpload, ownerId, accountId, subPath, toast, onUploadComplete, mode, isPro, compressImages]);
 
   const handleRemoveFile = (index: number) => {
@@ -403,13 +402,13 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
   const {
     getRootProps,
     getInputProps,
-    isDragActive: dropzoneActive,
+    isDragActive: _dropzoneActive,
     open,
   } = useDropzone({
     onDrop,
     maxSize: 50 * 1024 * 1024,
     noClick: true, // Don't open file dialog on click - we'll handle it manually
-    onDragEnter: (e) => {
+    onDragEnter: (_e) => {
       setIsDragActive(true);
     },
     onDragOver: (e) => {
@@ -489,7 +488,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={handleCloseDialog} disabled={isUploading}>
+              <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={isUploading}>
                 {allComplete ? "Close" : "Cancel"}
               </Button>
               {pendingFiles.length > 0 && (
@@ -522,7 +521,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
             <Checkbox
               checked={compressImages}
               onCheckedChange={(checked) => setCompressImages(checked === true)}
-              className="border-light-200 data-[state=checked]:bg-brand data-[state=checked]:border-brand"
+              className="border-light-200 data-[state=checked]:border-brand data-[state=checked]:bg-brand"
             />
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">

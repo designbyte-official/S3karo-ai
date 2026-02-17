@@ -43,7 +43,7 @@ export function handleS3Error(error: unknown, operation: string): S3Error {
     return error;
   }
 
-  const awsError = error as any;
+  const awsError = error as { code?: string; name?: string; message?: string };
   const errorCode = awsError?.code || awsError?.name || "UNKNOWN_ERROR";
   const errorMessage = awsError?.message || "An unknown error occurred";
 
@@ -93,7 +93,7 @@ export function isRetryableError(error: unknown): boolean {
     return true;
   }
 
-  const awsError = error as any;
+  const awsError = error as { code?: string; name?: string };
   const errorCode = awsError?.code || awsError?.name || "";
 
   const retryableCodes = [

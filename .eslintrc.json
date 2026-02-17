@@ -14,51 +14,53 @@
     "unused-imports/no-unused-imports": "error",
     "unused-imports/no-unused-vars": [
       "warn",
-      {
-        "vars": "all",
-        "varsIgnorePattern": "^_",
-        "args": "after-used",
-        "argsIgnorePattern": "^_"
-      }
+      { "vars": "all", "varsIgnorePattern": "^_", "args": "after-used", "argsIgnorePattern": "^_" }
     ],
     "import/order": [
       "error",
       {
         "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
         "pathGroups": [
-          {
-            "pattern": "react",
-            "group": "external",
-            "position": "before"
-          },
-          {
-            "pattern": "next/**",
-            "group": "external",
-            "position": "before"
-          },
-          {
-            "pattern": "@/**",
-            "group": "internal",
-            "position": "after"
-          }
+          { "pattern": "react", "group": "external", "position": "before" },
+          { "pattern": "next/**", "group": "external", "position": "before" },
+          { "pattern": "@/**", "group": "internal", "position": "after" }
         ],
         "pathGroupsExcludedImportTypes": ["react", "next"],
         "newlines-between": "always",
-        "alphabetize": {
-          "order": "asc",
-          "caseInsensitive": true
-        }
+        "alphabetize": { "order": "asc", "caseInsensitive": true }
       }
     ],
     "import/no-duplicates": "error",
     "import/no-unresolved": "off",
-    "@typescript-eslint/no-explicit-any": "error"
+    "@typescript-eslint/no-explicit-any": "error",
+    "tailwindcss/no-custom-classname": [
+      "warn",
+      {
+        "whitelist": [
+          "no-scrollbar",
+          "separator",
+          "toaster",
+          "modal-cancel-btn",
+          "shad-button-primary",
+          "shad-submit-btn",
+          "shad-dialog",
+          "success-toast",
+          "search",
+          "search-input",
+          "search-input-wrapper",
+          "search-result",
+          "empty-result",
+          "subtitle-2",
+          "caption",
+          "summary-type-size",
+          "summary-type-title"
+        ]
+      }
+    ]
   },
   "settings": {
     "import/resolver": {
-      "typescript": {
-        "alwaysTryTypes": true
-      }
+      "typescript": { "alwaysTryTypes": true }
     }
   }
 }

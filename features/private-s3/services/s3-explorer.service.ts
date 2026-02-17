@@ -13,6 +13,7 @@ import { normalizeBaseUrl, constructFileUrl } from "@/lib/utils/url";
 import { S3File as File } from "@/types/file";
 
 import { handleS3Error, S3Error } from "../utils/errors";
+import type { MultipartUploadState } from "../utils/multipart-upload";
 import { withRetry } from "../utils/retry";
 import {
   validateFileName,
@@ -371,8 +372,8 @@ export const s3ExplorerService = {
     onChunkProgress?: (chunkNumber: number, totalChunks: number) => void;
     resume?: boolean;
     getFileId: (file: globalThis.File) => string;
-    getUploadState: (fileId: string) => any;
-    saveUploadState: (state: any) => void;
+    getUploadState: (fileId: string) => MultipartUploadState | null;
+    saveUploadState: (state: MultipartUploadState) => void;
     removeUploadState: (fileId: string) => void;
     calculatePartCount: (fileSize: number) => number;
     readChunk: (file: globalThis.File, start: number, end: number) => Promise<Uint8Array>;

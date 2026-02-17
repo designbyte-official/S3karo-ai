@@ -93,8 +93,8 @@ export async function POST(request: NextRequest) {
       201,
       "Account created successfully. Please check your email to verify your account."
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Signup error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

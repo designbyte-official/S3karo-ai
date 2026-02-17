@@ -44,7 +44,7 @@ export function encodeFileKey(key: string | undefined | null): string {
     // Handle edge cases: already encoded segments, special characters
     try {
       return encodeURIComponent(segment);
-    } catch (e) {
+    } catch {
       // Fallback for invalid characters
       return segment.replace(/[^a-zA-Z0-9._-]/g, "_");
     }

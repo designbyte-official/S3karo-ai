@@ -3,7 +3,6 @@
 import React from "react";
 
 import FileList from "@/features/managed-storage/components/FileList";
-import { useAuthStore } from "@/features/auth/stores/auth-store";
 import { useDashboardUsage } from "@/hooks/use-dashboard-usage";
 import { S3File } from "@/types/file";
 
@@ -27,7 +26,7 @@ interface DashboardLayoutProps {
     document?: { size: number; latestDate: string };
     other?: { size: number; latestDate: string };
   };
-  currentUser?: any;
+  currentUser?: unknown;
   variant?: "brand" | "blue";
   title?: string;
   isLoading?: boolean;

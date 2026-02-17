@@ -148,8 +148,8 @@ export default function ApiKeysPage() {
               <div className="space-y-4">
                 {newKeyValue && showNewKey ? (
                   <div className="space-y-4">
-                    <div className="bg-green-50 border-green-200 rounded-lg border p-4">
-                      <p className="text-green-800 mb-2 text-sm font-medium">
+                    <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                      <p className="mb-2 text-sm font-medium text-green-800">
                         ⚠️ Save this key now! You won&apos;t be able to see it again.
                       </p>
                       <div className="flex items-center gap-2">

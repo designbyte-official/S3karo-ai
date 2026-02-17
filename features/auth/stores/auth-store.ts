@@ -5,7 +5,7 @@ export interface AuthUser {
   id: string;
   email: string;
   fullName: string;
-  avatar: string;
+  avatar: string | null;
   accountId: string;
   isPro?: boolean;
 }

@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
       message: "Use client-side S3 operations for OWN S3 mode",
       note: "Presigned URLs are generated client-side using your AWS credentials",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Presigned URL error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

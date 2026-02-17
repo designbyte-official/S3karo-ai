@@ -28,7 +28,7 @@ export const getCurrentUser = async () => {
 export const signOutUser = async () => {
   try {
     // Call signout API
-    const response = await fetch(
+    const _response = await fetch(
       `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/signout`,
       {
         method: "POST",
@@ -42,7 +42,7 @@ export const signOutUser = async () => {
     redirect("/sign-in");
   }
 };
-export const getFiles = async (params: any) => {
+export const getFiles = async (_params: { types?: string[]; searchText?: string; sort?: string }) => {
   // Mocking getFiles for now to satisfy lints
   return { documents: [], total: 0 };
 };

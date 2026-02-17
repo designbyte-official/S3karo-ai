@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { key, fileName, fileType, fileSize, path } = body;
+    const { key, fileName, fileType, fileSize, path: _path } = body;
 
     if (!key || !fileName || !fileType || !fileSize) {
       return apiErrors.badRequest("key, fileName, fileType, and fileSize are required");
@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
       },
       201
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("S3-Karo callback error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

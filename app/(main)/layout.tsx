@@ -1,13 +1,14 @@
 import { Suspense } from "react";
+
 import { redirect } from "next/navigation";
 
 import Header from "@/components/layout/Header";
+import { MainContentFallback } from "@/components/layout/MainContentFallback";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import Sidebar from "@/components/layout/Sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { SyncAuth } from "@/components/wrappers/SyncAuth";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
-import { MainContentFallback } from "@/components/layout/MainContentFallback";
 
 const MainLayout = async ({ children }: { children: React.ReactNode }) => {
   const currentUser = await getCurrentUser();

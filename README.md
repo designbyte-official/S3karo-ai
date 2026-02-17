@@ -106,11 +106,22 @@ s3-karo/
 │   ├── encryption/     # Encryption utilities
 │   └── utils/          # Helper functions
 └── public/             # Static assets
+    ├── assets/
+    │   ├── logos/      # icon-logo.webp, name-logo.webp (used by Logo component)
+    │   ├── thumbnails/ # Sample/placeholder thumbnails (e.g. for docs, marketing, placeholders)
+    │   └── ...
+    └── thumbnail.webp  # Main OG/banner image (SEO, social)
 ```
+
+## 🖼️ Static Assets
+
+- **`public/thumbnail.webp`** – Main banner and Open Graph image (SEO, social sharing).
+- **`public/assets/logos/`** – **icon-logo.webp** (icon only) and **name-logo.webp** (full logo). Used by the shared `Logo` component across nav, footer, auth, and sidebar.
+- **`public/assets/thumbnails/`** – Sample or placeholder thumbnails (e.g. for documentation, marketing, or UI placeholders). In the app they’re served at `/assets/thumbnails/` (e.g. `![Thumbnail](./public/assets/thumbnails/2.webp)` in README or docs).
 
 ## 🎨 Design System
 
-S3Karo features a premium "poeru" aesthetic with:
+S3Karo features a premium aesthetic with:
 
 - Custom icon-based logo
 - Vibrant brand colors (`#FA7275`)

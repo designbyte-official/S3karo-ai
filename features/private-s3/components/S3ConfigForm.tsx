@@ -10,6 +10,7 @@ import { FormTextInput, FormPasswordInput } from "@/components/form-inputs";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import type { S3Config } from "@/features/private-s3/services/s3-config.service";
 import { s3ConfigService } from "@/features/private-s3/services/s3-config.service";
 import { useToast } from "@/hooks/use-toast";
 
@@ -75,8 +76,8 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
       // Update local state - only preserve the existence flag and cdnUrl
       setCurrentConfig({
         bucket: "EXISTING",
-        cdnUrl: values.endpoint, // Or use the dedicated cdnUrl logic
-      } as any);
+        cdnUrl: values.endpoint,
+      } as S3Config);
 
       toast({
         className: "success-toast",
@@ -200,9 +201,9 @@ export const S3ConfigForm = ({ userId, onConfigSaved, defaultValues }: S3ConfigF
                   }
                 }}
                 placeholder="https://assets.yourdomain.com/"
-                className={`shad-input min-h-12 flex-1 py-3 text-base font-mono break-all ${cdnError ? "border-red-500" : ""}`}
+                className={`shad-input min-h-12 flex-1 break-all py-3 font-mono text-base ${cdnError ? "border-red-500" : ""}`}
               />
-              {cdnError && <p className="text-red-500 mt-1 text-sm">{cdnError}</p>}
+              {cdnError && <p className="mt-1 text-sm text-red-500">{cdnError}</p>}
             </div>
             <Button
               onClick={handleCdnUpdate}

@@ -24,7 +24,7 @@ export function Toaster() {
             : props.variant || "default";
 
         return (
-          <Toast key={id} {...props} variant={variant as any} className={className}>
+          <Toast key={id} {...props} variant={variant as "default" | "destructive" | "success"} className={className}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && <ToastDescription>{description}</ToastDescription>}

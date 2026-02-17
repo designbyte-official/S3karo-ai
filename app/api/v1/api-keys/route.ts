@@ -6,7 +6,7 @@ import { createApiKey, getApiKeysForUser } from "@/lib/database/queries";
 import { apiErrors, createSuccessResponse } from "@/lib/utils/api-response";
 import { logger } from "@/lib/utils/logger";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {

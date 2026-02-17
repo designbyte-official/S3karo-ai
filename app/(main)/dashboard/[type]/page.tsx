@@ -57,8 +57,8 @@ const Page = async ({ searchParams, params }: SearchParamProps) => {
         types={types}
         searchText={searchText}
         sort={sort}
-        initialFiles={files as any}
-        currentUser={currentUser as any}
+        initialFiles={files}
+        currentUser={currentUser ?? undefined}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 type LogLevel = "info" | "warn" | "error" | "debug";
 
-type LogContext = Record<string, any>;
+type LogContext = Record<string, unknown>;
 
 class Logger {
   private isDevelopment = process.env.NODE_ENV === "development";

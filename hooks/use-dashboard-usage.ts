@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { getUsageSummary } from "@/features/shared/utils";
+import { getUsageSummary, type TotalSpaceSummaryInput } from "@/features/shared/utils";
 
 interface TotalSpace {
   used: number;
@@ -12,9 +12,19 @@ interface TotalSpace {
   other?: { size: number; latestDate: string };
 }
 
+function isTotalSpaceSummaryInput(ts: TotalSpace): ts is TotalSpace & TotalSpaceSummaryInput {
+  return (
+    ts.document != null &&
+    ts.image != null &&
+    ts.video != null &&
+    ts.audio != null &&
+    ts.other != null
+  );
+}
+
 export const useDashboardUsage = (totalSpace: TotalSpace) => {
   const usageSummary = useMemo(() => {
-    return totalSpace.document ? getUsageSummary(totalSpace) : [];
+    return isTotalSpaceSummaryInput(totalSpace) ? getUsageSummary(totalSpace) : [];
   }, [totalSpace]);
 
   return {

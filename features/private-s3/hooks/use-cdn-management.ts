@@ -68,7 +68,7 @@ export const useCdnManagement = (
       }
       setCdnError("");
       return true;
-    } catch (e) {
+    } catch {
       setCdnError("Must be a valid URL (e.g., https://example.com)");
       return false;
     }
