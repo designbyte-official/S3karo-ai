@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -52,41 +53,18 @@ export const HeroSection = () => {
           </div>
         </div>
 
-        {/* Hero Visual - File Cards (design system: brand, blue, green, orange) */}
-        <div className="relative">
-          <div className="relative rounded-3xl bg-gradient-to-br from-brand-50 via-white to-light-300 p-8 lg:p-12">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-              {[
-                { name: "Project Proposal.pdf", size: "2.4 MB", iconBg: "from-brand to-brand-100" },
-                { name: "Design Assets.zip", size: "15.8 MB", iconBg: "from-orange to-brand-100/90" },
-                { name: "Team Photo.jpg", size: "4.2 MB", iconBg: "from-green to-blue/90" },
-              ].map((file, i) => (
-                <div
-                  key={i}
-                  className="group rounded-2xl bg-white p-8 transition-all duration-300 hover:scale-[1.02]"
-                >
-                  <div
-                    className={`size-16 bg-gradient-to-br ${file.iconBg} mb-6 flex items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110`}
-                  >
-                    <svg
-                      className="size-8 text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                  <h3 className="subtitle-1 mb-2 font-semibold text-dark-100">{file.name}</h3>
-                  <p className="body-2 text-light-200">{file.size}</p>
-                </div>
-              ))}
-            </div>
+        {/* Hero Visual - Thumbnail */}
+        <div className="relative mx-auto max-w-5xl">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-50 via-white to-light-300 p-2 lg:p-3">
+            <Image
+              src="/assets/thumbnails/3.webp"
+              alt="S3Karo - Manage and share S3 storage"
+              width={1200}
+              height={630}
+              className="w-full rounded-2xl object-cover"
+              priority
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
+            />
           </div>
         </div>
       </div>
