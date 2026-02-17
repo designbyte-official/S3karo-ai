@@ -6,7 +6,7 @@ import { hasPlatformAccess } from "@/lib/database/queries-subscriptions";
 import { apiErrors, createSuccessResponse } from "@/lib/utils/api-response";
 import { logger } from "@/lib/utils/logger";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const user = await getCurrentUser();
 
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       return createSuccessResponse({
         hasPlatformAccess: access,
       });
-    } catch (dbError: any) {
+    } catch (dbError: unknown) {
       // If database schema is missing columns, return false but don't break the app
       logger.warn("Subscription check failed (database schema may be outdated)", dbError);
       return createSuccessResponse({
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         message: "Database schema may need migration. Run: pnpm db:fix-columns",
       });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Check subscription error", error);
     // Return false instead of error to prevent breaking private S3
     return createSuccessResponse({

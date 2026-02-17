@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { isDatabaseConfigured } from "@/lib/database/db";
 import { createSuccessResponse } from "@/lib/utils/api-response";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const checks = {
     status: "healthy",
     timestamp: new Date().toISOString(),

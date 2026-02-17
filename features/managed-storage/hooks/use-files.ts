@@ -15,7 +15,7 @@ export function useFiles(filters?: {
   sort?: string;
   limit?: number;
 }) {
-  const user = useAuthStore((state: any) => state.user);
+  const user = useAuthStore((state) => state.user);
   const { mode } = useStorageStore();
 
   return useQuery({
@@ -61,7 +61,7 @@ export function useFiles(filters?: {
 
 // Get total space used hook
 export function useTotalSpace() {
-  const user = useAuthStore((state: any) => state.user);
+  const user = useAuthStore((state) => state.user);
   const { mode } = useStorageStore();
 
   return useQuery({

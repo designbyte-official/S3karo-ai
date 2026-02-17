@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
+import { Control, FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
 
 import {
   FormControl,
@@ -30,7 +30,7 @@ interface FormSelectInputProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > {
-  control: any;
+  control: Control<TFieldValues>;
   name: TName;
   label?: string;
   description?: string;

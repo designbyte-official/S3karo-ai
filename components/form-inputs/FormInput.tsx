@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
+import { Control, FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
 
 import {
   FormControl,
@@ -20,7 +20,7 @@ interface FormInputProps<
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > {
   // Form control props
-  control: any; // Control from useForm
+  control: Control<TFieldValues>;
   name: TName;
 
   // Label and description

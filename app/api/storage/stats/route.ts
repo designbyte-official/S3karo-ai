@@ -12,7 +12,7 @@ import { logger } from "@/lib/utils/logger";
  * Get storage statistics for current user
  * Returns both file type breakdown and subscription limits
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const user = await getCurrentUser();
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     const cacheKey = `storage-stats:${user.id}`;
-    const cached = await getCache<any>(cacheKey);
+    const cached = await getCache<Record<string, unknown>>(cacheKey);
     if (cached) {
       return createSuccessResponse(cached);
     }
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
     await setCache(cacheKey, response, 60);
 
     return createSuccessResponse(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Get storage stats error", error);
-    return apiErrors.internalServerError("Failed to get storage stats", error.message);
+    return apiErrors.internalServerError("Failed to get storage stats", error instanceof Error ? error.message : "Unknown error");
   }
 }

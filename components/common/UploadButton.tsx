@@ -11,7 +11,7 @@ export interface UploadButtonProps {
   path?: string;
   maxFileSize?: number;
   allowedFileTypes?: string[];
-  onUploadComplete?: (files: any[]) => void;
+  onUploadComplete?: (files: unknown[]) => void;
   className?: string;
   children?: React.ReactNode;
 }
@@ -49,7 +49,7 @@ export function UploadButton({
         path,
         maxFileSize,
         allowedFileTypes,
-        onSuccess: (file) => {
+        onSuccess: (_file) => {
           // console.log('Uploaded:', file);
         },
       });

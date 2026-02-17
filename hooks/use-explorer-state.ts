@@ -2,13 +2,18 @@ import { useState, useMemo, useRef, useEffect } from "react";
 
 import { useSearchParams } from "next/navigation";
 
-export const useExplorerState = (initialFiles: any[]) => {
+interface ExplorerFile {
+  $id?: string;
+  bucketFileId?: string;
+}
+
+export const useExplorerState = (initialFiles: ExplorerFile[]) => {
   const searchParams = useSearchParams();
   const searchText = searchParams.get("query") || "";
 
   const [view, setView] = useState<"grid" | "list">("grid");
   const [showThumbnails, setShowThumbnails] = useState(false);
-  const [filteredFiles, setFilteredFiles] = useState<any[]>([]);
+  const [filteredFiles, setFilteredFiles] = useState<ExplorerFile[]>([]);
 
   // Memoize the file IDs to prevent unnecessary updates
   const filesIdsRef = useRef<string>("");

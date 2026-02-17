@@ -9,15 +9,6 @@ export interface UploadFile {
   file: File;
 }
 
-export interface UploadOptions {
-  path?: string;
-  maxFileSize?: number;
-  allowedFileTypes?: string[];
-  onUploadProgress?: (progress: number) => void;
-  onSuccess?: (file: any) => void;
-  onError?: (error: Error) => void;
-}
-
 export interface UploadResponse {
   url: string;
   key: string;
@@ -30,12 +21,21 @@ export interface UploadResponse {
   };
 }
 
+export interface UploadOptions {
+  path?: string;
+  maxFileSize?: number;
+  allowedFileTypes?: string[];
+  onUploadProgress?: (progress: number) => void;
+  onSuccess?: (file: UploadResponse) => void;
+  onError?: (error: Error) => void;
+}
+
 // Hook for direct S3 uploads
 export function useUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const upload = useCallback(async (file: File, options: UploadOptions = {}): Promise<any> => {
+  const upload = useCallback(async (file: File, options: UploadOptions = {}): Promise<UploadResponse | undefined> => {
     const {
       path = "",
       maxFileSize,
@@ -135,11 +135,11 @@ export function useUpload() {
       toast.success(`File "${file.name}" uploaded successfully`);
 
       return fileData;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Upload error:", error);
-      const errorMessage = error.message || "Upload failed";
+      const errorMessage = error instanceof Error ? error.message : "Upload failed";
       toast.error(errorMessage);
-      onError?.(error);
+      onError?.(error instanceof Error ? error : new Error(String(error)));
       throw error;
     } finally {
       setIsUploading(false);
@@ -148,11 +148,11 @@ export function useUpload() {
   }, []);
 
   const uploadMultiple = useCallback(
-    async (files: File[], options: UploadOptions = {}): Promise<any[]> => {
+    async (files: File[], options: UploadOptions = {}): Promise<(UploadResponse | undefined)[]> => {
       const results = await Promise.allSettled(files.map((file) => upload(file, options)));
 
       const successful = results
-        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled")
+        .filter((r): r is PromiseFulfilledResult<UploadResponse | undefined> => r.status === "fulfilled")
         .map((r) => r.value);
 
       const failed = results.filter(

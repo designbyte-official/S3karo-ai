@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
     try {
       validateFileName(fileName);
       validateFileSize(fileSize);
-    } catch (error: any) {
-      return apiErrors.badRequest(error.message);
+    } catch (error: unknown) {
+      return apiErrors.badRequest(error instanceof Error ? error.message : "Validation failed");
     }
 
     const maxSize = route.maxFileSize || DEFAULT_FILE_ROUTE.maxFileSize!;
@@ -98,8 +98,8 @@ export async function POST(request: NextRequest) {
         path: cleanPath,
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("S3-Karo upload route error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

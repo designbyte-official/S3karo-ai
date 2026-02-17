@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
+
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import Logo from "@/components/common/Logo";
 import { navItems } from "@/constants";
-import { cn } from "@/lib/utils";
 import { getAvatarUrl } from "@/features/shared/utils";
+import { cn } from "@/lib/utils";
 
 const ALL_NAV_URLS = [
   ...navItems.map((n) => n.url),
@@ -19,19 +20,25 @@ const ALL_NAV_URLS = [
   "/private/settings",
 ];
 
+interface NavItem {
+  name: string;
+  url: string;
+  icon: string;
+}
+
 interface Props {
   fullName: string;
   avatar: string;
   email: string;
   mode?: "managed" | "private";
-  navItems?: any[];
+  navItems?: NavItem[];
 }
 
 const Sidebar = ({
   fullName,
   avatar,
   email: _email,
-  mode = "managed",
+  mode: _mode = "managed",
   navItems: customNavItems,
 }: Props) => {
   const pathname = usePathname();
@@ -60,7 +67,7 @@ const Sidebar = ({
   ];
 
   // Determine which nav items to display
-  let displayNavItems: any[];
+  let displayNavItems: NavItem[];
   if (pathname === "/dashboard/profile" || pathname.startsWith("/dashboard/profile/")) {
     displayNavItems = profileNavItems;
   } else if (pathname.startsWith("/private")) {
@@ -121,9 +128,9 @@ const Sidebar = ({
         className="w-full"
       />
 
-      <Link href="/dashboard/profile" className="sidebar-user-info no-underline text-inherit hover:opacity-90" prefetch>
+      <Link href="/dashboard/profile" className="sidebar-user-info text-inherit no-underline hover:opacity-90" prefetch>
         <Image src={avatarUrl} alt="" width={44} height={44} className="sidebar-user-avatar" />
-        <div className="hidden lg:block min-w-0">
+        <div className="hidden min-w-0 lg:block">
           <p className="subtitle-2 truncate capitalize">{fullName || "Account"}</p>
           <p className="caption text-light-200">Profile</p>
         </div>

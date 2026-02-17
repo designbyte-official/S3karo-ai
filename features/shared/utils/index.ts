@@ -179,7 +179,12 @@ export const getFileIcon = (extension: string | undefined, type: FileType | stri
 };
 
 // DASHBOARD UTILS
-export const getUsageSummary = (totalSpace: any) => {
+interface TotalSpaceItem {
+  size: number;
+  latestDate: string;
+}
+
+export const getUsageSummary = (totalSpace: Record<string, TotalSpaceItem>) => {
   return [
     {
       title: "Documents",

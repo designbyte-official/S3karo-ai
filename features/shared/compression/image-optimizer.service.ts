@@ -1,6 +1,6 @@
 
-import { CompressedFile, CompressionSettings } from './types';
 import { compressImage } from './compressor';
+import { CompressionSettings } from './types';
 
 export interface ProcessingResult {
     blob: Blob;

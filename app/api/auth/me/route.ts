@@ -26,7 +26,7 @@ interface JWTPayload {
   exp: number;
 }
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const token = (await cookies()).get("auth-token")?.value;
 

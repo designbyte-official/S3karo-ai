@@ -10,7 +10,7 @@ import { logger } from "@/lib/utils/logger";
  * GET /api/subscriptions
  * Get current user's subscription details
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const user = await getCurrentUser();
 
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     const cacheKey = `subscription:${user.id}`;
-    const cached = await getCache<any>(cacheKey);
+    const cached = await getCache<Record<string, unknown>>(cacheKey);
     if (cached) {
       return createSuccessResponse(cached);
     }
@@ -57,8 +57,8 @@ export async function GET(request: NextRequest) {
     await setCache(cacheKey, response, 300);
 
     return createSuccessResponse(response);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Get subscription error", error);
-    return apiErrors.internalServerError("Failed to get subscription", error.message);
+    return apiErrors.internalServerError("Failed to get subscription", error instanceof Error ? error.message : "Unknown error");
   }
 }

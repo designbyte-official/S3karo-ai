@@ -371,8 +371,8 @@ export const s3ExplorerService = {
     onChunkProgress?: (chunkNumber: number, totalChunks: number) => void;
     resume?: boolean;
     getFileId: (file: globalThis.File) => string;
-    getUploadState: (fileId: string) => any;
-    saveUploadState: (state: any) => void;
+    getUploadState: (fileId: string) => unknown;
+    saveUploadState: (state: unknown) => void;
     removeUploadState: (fileId: string) => void;
     calculatePartCount: (fileSize: number) => number;
     readChunk: (file: globalThis.File, start: number, end: number) => Promise<Uint8Array>;

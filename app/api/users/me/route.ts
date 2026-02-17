@@ -9,7 +9,7 @@ import { logger } from "@/lib/utils/logger";
  * GET /api/users/me
  * Get current user profile
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const user = await getCurrentUser();
 

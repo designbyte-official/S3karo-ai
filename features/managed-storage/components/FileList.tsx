@@ -10,7 +10,7 @@ import { S3File as File } from "@/types/file";
 interface Props {
   files?: File[];
   initialFiles?: { documents: File[]; total: number };
-  currentUser?: any;
+  currentUser?: unknown;
   types?: string[];
   searchText?: string;
   sort?: string;
@@ -23,10 +23,10 @@ interface Props {
 const FileList = ({
   files,
   initialFiles,
-  currentUser,
-  types,
-  searchText,
-  sort,
+  currentUser: _currentUser,
+  types: _types,
+  searchText: _searchText,
+  sort: _sort,
   onFolderClick,
   view = "grid",
   showThumbnails = false,

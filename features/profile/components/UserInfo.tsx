@@ -2,6 +2,7 @@ import React, { memo } from "react";
 
 import Image from "next/image";
 
+import type { LucideIcon } from "lucide-react";
 import { Mail, UserCircle, Hash } from "lucide-react";
 
 import { useAuthStore } from "@/features/auth/stores/auth-store";
@@ -16,7 +17,7 @@ const UserDetailItem = memo(
     value,
     valueClass = "",
   }: {
-    icon: any;
+    icon: LucideIcon;
     label: string;
     value: string;
     valueClass?: string;
@@ -30,8 +31,9 @@ const UserDetailItem = memo(
     </div>
   )
 );
+UserDetailItem.displayName = "UserDetailItem";
 
-export const UserInfo = memo(() => {
+export const UserInfo = memo(function UserInfo() {
   const { user } = useAuthStore();
 
   if (!user) {

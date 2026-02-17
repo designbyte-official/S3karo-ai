@@ -18,7 +18,7 @@ export default function ProfilePage() {
     return <ProfileSkeleton />;
   }
 
-  const handleNavigateToManaged = (section: "api-keys" | "subscription") => {
+  const _handleNavigateToManaged = (_section: "api-keys" | "subscription") => {
     router.push(`/dashboard/profile`);
     // Scroll to section after navigation would happen - but since we're switching modes, just navigate
   };

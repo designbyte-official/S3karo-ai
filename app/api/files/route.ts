@@ -64,9 +64,9 @@ export async function GET(request: NextRequest) {
       documents: transformedFiles,
       total: transformedFiles.length,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Get files error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }
 
@@ -84,8 +84,8 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData();
     const file = formData.get("file") as File;
-    const ownerId = formData.get("ownerId") as string;
-    const accountId = formData.get("accountId") as string;
+    const _ownerId = formData.get("ownerId") as string;
+    const _accountId = formData.get("accountId") as string;
     const path = formData.get("path") as string;
 
     if (!file) {
@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
 
     try {
       validateFileName(file.name);
-    } catch (error: any) {
-      return apiErrors.badRequest(error.message);
+    } catch (error: unknown) {
+      return apiErrors.badRequest(error instanceof Error ? error.message : "Invalid file name");
     }
 
     const storageCheck = await checkStorageLimit(user.id, file.size);
@@ -122,14 +122,15 @@ export async function POST(request: NextRequest) {
         })
       );
       logger.info("S3 upload successful", { bucket, key: storageKey });
-    } catch (s3Error: any) {
+    } catch (s3Error: unknown) {
+      const err = s3Error as { code?: string; message?: string; $metadata?: { requestId?: string } };
       logger.error("S3 Upload Error", s3Error, {
-        code: s3Error.code,
-        requestId: s3Error.$metadata?.requestId,
+        code: err.code,
+        requestId: err.$metadata?.requestId,
         bucket,
         region: process.env.AWS_REGION,
       });
-      return apiErrors.internalServerError("Failed to upload to storage", s3Error.message);
+      return apiErrors.internalServerError("Failed to upload to storage", err.message ?? "Unknown error");
     }
 
     const url = getFileUrl(storageKey);
@@ -166,8 +167,8 @@ export async function POST(request: NextRequest) {
     };
 
     return createSuccessResponse(transformedFile);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Upload file error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

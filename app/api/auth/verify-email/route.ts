@@ -20,8 +20,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.redirect(new URL("/sign-in?verified=true", request.url));
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Verify email error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }

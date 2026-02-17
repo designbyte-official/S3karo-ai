@@ -10,7 +10,7 @@ import { logger } from "@/lib/utils/logger";
  *
  * Usage: POST /api/fix-database
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     // Optional: Require authentication (uncomment if needed)
     // const user = await getCurrentUser();
@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
     try {
       await runMigrations();
       results.push("✅ Database migrations completed successfully");
-    } catch (error: any) {
-      results.push(`⚠️ Migration error: ${error.message}`);
+    } catch (error: unknown) {
+      results.push(`⚠️ Migration error: ${error instanceof Error ? error.message : String(error)}`);
       // Continue anyway - might be partial success
     }
 
@@ -51,8 +51,8 @@ export async function POST(request: NextRequest) {
       results.push(
         `✅ Created ${subscriptionResult.created} subscription(s), skipped ${subscriptionResult.skipped}`
       );
-    } catch (error: any) {
-      results.push(`⚠️ Error creating subscriptions: ${error.message}`);
+    } catch (error: unknown) {
+      results.push(`⚠️ Error creating subscriptions: ${error instanceof Error ? error.message : String(error)}`);
     }
 
     logger.info("Database schema fix completed", {
@@ -69,13 +69,14 @@ export async function POST(request: NextRequest) {
         note: "Schema synced using Drizzle migrations. All columns should now be present.",
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error("Failed to fix database schema", error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || "Failed to fix database schema",
-        details: error.stack,
+        error: err.message || "Failed to fix database schema",
+        details: err.stack,
       },
       { status: 500 }
     );

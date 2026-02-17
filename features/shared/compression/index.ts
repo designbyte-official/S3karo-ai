@@ -1,5 +1,5 @@
-import type { CompressionSettings } from "./types";
 import { ImageOptimizerService } from "./image-optimizer.service";
+import type { CompressionSettings } from "./types";
 
 export { ImageOptimizerService } from "./image-optimizer.service";
 export { compressImage, formatSize, isAvifSupported } from "./compressor";

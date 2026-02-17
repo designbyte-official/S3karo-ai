@@ -49,7 +49,7 @@ const MobileNavigation = ({ $id: ownerId, accountId, fullName, avatar, email }: 
                 height={44}
                 className="header-user-avatar"
               />
-              <div className="sm:hidden lg:block min-w-0">
+              <div className="min-w-0 sm:hidden lg:block">
                 <p className="subtitle-2 truncate capitalize">{fullName || "Account"}</p>
                 <p className="caption text-light-200">Profile</p>
               </div>

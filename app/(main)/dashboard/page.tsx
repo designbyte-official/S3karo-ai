@@ -42,7 +42,7 @@ const Dashboard = async () => {
       document: { size: 0, latestDate: "" },
       other: { size: 0, latestDate: "" },
     });
-  } catch (e) {
+  } catch {
     // Error handled silently - will show empty state
   }
 

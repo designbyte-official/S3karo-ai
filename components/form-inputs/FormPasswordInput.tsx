@@ -3,7 +3,7 @@
 import * as React from "react";
 
 import { Eye, EyeOff } from "lucide-react";
-import { FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
+import { Control, FieldPath, FieldValues, ControllerRenderProps } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ interface FormPasswordInputProps<
   TFieldValues extends FieldValues = FieldValues,
   TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
 > {
-  control: any;
+  control: Control<TFieldValues>;
   name: TName;
   label?: string;
   description?: string;

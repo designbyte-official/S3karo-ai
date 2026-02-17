@@ -23,7 +23,7 @@ export const HeroSection = () => {
           </div>
 
           {/* Main Heading - HUGE */}
-          <h1 className="font-bold leading-[1.1] tracking-tight text-dark-100 sm:text-6xl md:text-7xl lg:text-8xl text-5xl">
+          <h1 className="text-5xl font-bold leading-[1.1] tracking-tight text-dark-100 sm:text-6xl md:text-7xl lg:text-8xl">
             A Better Way to Manage
             <br />
             <span className="bg-gradient-to-r from-brand to-brand-100 bg-clip-text text-transparent">and Share S3 Storage</span>

@@ -12,7 +12,7 @@ import { s3ExplorerService } from "../services/s3-explorer.service";
 import { useS3ConfigStatus } from "./use-s3-config-status";
 
 export const useOwnS3 = (searchText: string = "", sort: string = "$createdAt-desc") => {
-  const authUser = useAuthStore((state: any) => state.user);
+  const authUser = useAuthStore((state) => state.user);
   const [hydrated, setHydrated] = React.useState(false);
   const [subPath, setSubPath] = React.useState("");
 

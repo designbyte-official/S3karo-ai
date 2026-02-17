@@ -16,7 +16,7 @@ export const useS3ConfigSync = (userId: string, isInitialEditMode: boolean) => {
           setCurrentConfig({
             bucket: latestConfig.bucket ? "EXISTING" : "",
             cdnUrl: latestConfig.cdnUrl,
-          } as any);
+          } as S3Config);
 
           // If configured, switch to view mode (unless explicitly override)
           if (latestConfig.bucket && !configSyncRef.current) {

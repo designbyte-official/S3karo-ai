@@ -41,7 +41,7 @@ export async function DELETE(
           Key: deletedFile.storageKey,
         })
       );
-    } catch (s3Error: any) {
+    } catch (s3Error: unknown) {
       logger.error("Failed to delete from S3", s3Error);
     }
 
@@ -50,9 +50,9 @@ export async function DELETE(
     await deleteCache(`storage-stats:${user.id}`);
 
     return createSuccessResponse({ status: "success" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Delete file error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }
 
@@ -97,8 +97,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     await deleteCache(`storage-stats:${user.id}`);
 
     return createSuccessResponse(transformedFile);
-  } catch (error: any) {
+  } catch (error: unknown) {
     logger.error("Update file error", error);
-    return apiErrors.internalServerError("Internal server error", error.message);
+    return apiErrors.internalServerError("Internal server error", error instanceof Error ? error.message : "Unknown error");
   }
 }
