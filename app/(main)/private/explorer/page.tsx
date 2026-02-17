@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { LayoutGrid, List as ListIcon, Image as ImageIcon, AlertCircle, Upload } from "lucide-react";
 
@@ -19,7 +19,6 @@ import { useExplorerState } from "@/hooks/use-explorer-state";
 import { useToast } from "@/hooks/use-toast";
 
 const OwnS3Page = () => {
-  const router = useRouter();
   const { toast } = useToast();
 
   const {
@@ -85,8 +84,8 @@ const OwnS3Page = () => {
           <p className="body-1 max-w-md text-light-100">
             To view and manage your files, you need to configure your S3 bucket credentials first.
           </p>
-          <Button onClick={() => router.push("/private/settings")} className="shad-submit-btn px-8">
-            Go to Settings
+          <Button asChild className="shad-submit-btn px-8">
+            <Link href="/private/settings" prefetch>Go to Settings</Link>
           </Button>
         </div>
       </div>
