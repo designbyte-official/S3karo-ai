@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { Key, CreditCard } from "lucide-react";
 
@@ -12,16 +12,10 @@ import { useProfile } from "@/features/profile/hooks/use-profile";
 export default function ProfilePage() {
   const isManagedStorage = false; // This is in private S3 layout
   const { loading } = useProfile(isManagedStorage);
-  const router = useRouter();
 
   if (loading) {
     return <ProfileSkeleton />;
   }
-
-  const _handleNavigateToManaged = (_section: "api-keys" | "subscription") => {
-    router.push(`/dashboard/profile`);
-    // Scroll to section after navigation would happen - but since we're switching modes, just navigate
-  };
 
   return (
     <div className="page-container">
@@ -37,19 +31,17 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col gap-4 sm:flex-row">
-            <Button
-              onClick={() => router.push("/dashboard/profile")}
-              className="flex items-center gap-2 bg-brand text-white hover:bg-brand/90"
-            >
-              <Key className="size-4" />
-              View API Keys
+            <Button asChild className="flex items-center gap-2 bg-brand text-white hover:bg-brand/90">
+              <Link href="/dashboard/profile" prefetch>
+                <Key className="size-4" />
+                View API Keys
+              </Link>
             </Button>
-            <Button
-              onClick={() => router.push("/dashboard/profile")}
-              className="flex items-center gap-2 bg-brand text-white hover:bg-brand/90"
-            >
-              <CreditCard className="size-4" />
-              View Subscription
+            <Button asChild className="flex items-center gap-2 bg-brand text-white hover:bg-brand/90">
+              <Link href="/dashboard/profile" prefetch>
+                <CreditCard className="size-4" />
+                View Subscription
+              </Link>
             </Button>
           </div>
 

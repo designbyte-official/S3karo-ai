@@ -97,13 +97,11 @@ const Sidebar = ({
                   href={url}
                   className={cn("sidebar-nav-item lg:w-full", isActive && "shad-active")}
                   prefetch
-                  onClick={(e) => {
-                    if (pathname === url) return;
-                    if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-                      e.preventDefault();
-                      router.push(url);
-                    }
-                  }}
+                  // onClick={(e) => {
+                  //   // When clicking the already-active item, prevent navigation so we don't
+                  //   // trigger a pointless route transition (same page).
+                  //   if (pathname === url) e.preventDefault();
+                  // }}
                 >
                   <Image
                     src={icon}
