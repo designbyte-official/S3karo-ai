@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import Header from "@/components/layout/Header";
@@ -6,6 +7,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { SyncAuth } from "@/components/wrappers/SyncAuth";
 import { getCurrentUser } from "@/features/auth/actions/user.actions";
+import { MainContentFallback } from "@/components/layout/MainContentFallback";
 
 const MainLayout = async ({ children }: { children: React.ReactNode }) => {
   const currentUser = await getCurrentUser();
@@ -33,8 +35,11 @@ const MainLayout = async ({ children }: { children: React.ReactNode }) => {
           userId={currentUser.$id || currentUser.id}
           accountId={currentUser.accountId || currentUser.id}
           avatar={currentUser.avatar || ""}
+          fullName={currentUser.fullName || ""}
         />
-        <div className="main-content poeru-content-fade min-w-0">{children}</div>
+        <div className="main-content poeru-content-fade min-w-0">
+          <Suspense fallback={<MainContentFallback />}>{children}</Suspense>
+        </div>
       </section>
 
       <Toaster />

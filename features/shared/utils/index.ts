@@ -1,6 +1,21 @@
 // Re-export core utilities from lib/utils to maintain backward compatibility
 export { cn, parseStringify } from "@/lib/utils";
 
+const DEFAULT_AVATAR_PLACEHOLDER = "https://ui-avatars.com/api/?name=User&background=random";
+
+/**
+ * Returns avatar URL with proper initials from fullName when avatar is empty or default "User".
+ * Use everywhere we show user avatar (Header, Sidebar, MobileNav, Profile).
+ */
+export function getAvatarUrl(avatar: string | null | undefined, fullName: string | null | undefined): string {
+  const trimmed = (avatar ?? "").trim();
+  if (!trimmed) return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || "User")}&background=random`;
+  if (trimmed === DEFAULT_AVATAR_PLACEHOLDER || trimmed.includes("name=User&")) {
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName || "User")}&background=random`;
+  }
+  return trimmed;
+}
+
 export const convertFileToUrl = (file: File) => URL.createObjectURL(file);
 
 export const convertFileSize = (sizeInBytes: number, digits?: number) => {

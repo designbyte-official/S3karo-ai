@@ -33,7 +33,7 @@ export const LandingNav = () => {
   }, [user, setUser]);
 
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 bg-white/95 backdrop-blur-md">
+    <nav className="fixed inset-x-0 top-0 z-50 border-b border-light-300/80 bg-white/95 backdrop-blur-md">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between lg:h-20">
           <Logo variant="full" href="/" />

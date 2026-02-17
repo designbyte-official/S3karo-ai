@@ -1,12 +1,23 @@
 "use client";
 
+import { useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import Logo from "@/components/common/Logo";
 import { navItems } from "@/constants";
 import { cn } from "@/lib/utils";
+import { getAvatarUrl } from "@/features/shared/utils";
+
+const ALL_NAV_URLS = [
+  ...navItems.map((n) => n.url),
+  "/dashboard/profile",
+  "/dashboard/profile/api-keys",
+  "/dashboard/profile/subscription",
+  "/private/explorer",
+  "/private/settings",
+];
 
 interface Props {
   fullName: string;
@@ -19,11 +30,17 @@ interface Props {
 const Sidebar = ({
   fullName,
   avatar,
-  email,
+  email: _email,
   mode = "managed",
   navItems: customNavItems,
 }: Props) => {
   const pathname = usePathname();
+  const router = useRouter();
+  const avatarUrl = getAvatarUrl(avatar, fullName);
+
+  useEffect(() => {
+    ALL_NAV_URLS.forEach((url) => router.prefetch(url));
+  }, [router]);
 
   // Profile navigation items (API Keys and Subscription)
   const profileNavItems = [
@@ -68,8 +85,19 @@ const Sidebar = ({
               (url === "/dashboard/profile/subscription" &&
                 pathname.startsWith("/dashboard/profile/subscription"));
             return (
-              <Link key={name} href={url} className="lg:w-full">
-                <li className={cn("sidebar-nav-item", isActive && "shad-active")}>
+              <li key={name} className="list-none">
+                <Link
+                  href={url}
+                  className={cn("sidebar-nav-item lg:w-full", isActive && "shad-active")}
+                  prefetch
+                  onClick={(e) => {
+                    if (pathname === url) return;
+                    if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                      e.preventDefault();
+                      router.push(url);
+                    }
+                  }}
+                >
                   <Image
                     src={icon}
                     alt={name}
@@ -78,8 +106,8 @@ const Sidebar = ({
                     className={cn("nav-icon", isActive && "nav-icon-active")}
                   />
                   <p className={cn("hidden lg:block", isActive && "text-white")}>{name}</p>
-                </li>
-              </Link>
+                </Link>
+              </li>
             );
           })}
         </ul>
@@ -93,13 +121,13 @@ const Sidebar = ({
         className="w-full"
       />
 
-      <div className="sidebar-user-info">
-        <Image src={avatar} alt="Avatar" width={44} height={44} className="sidebar-user-avatar" />
-        <div className="hidden lg:block">
-          <p className="subtitle-2 capitalize">{fullName}</p>
-          <p className="caption">{email}</p>
+      <Link href="/dashboard/profile" className="sidebar-user-info no-underline text-inherit hover:opacity-90" prefetch>
+        <Image src={avatarUrl} alt="" width={44} height={44} className="sidebar-user-avatar" />
+        <div className="hidden lg:block min-w-0">
+          <p className="subtitle-2 truncate capitalize">{fullName || "Account"}</p>
+          <p className="caption text-light-200">Profile</p>
         </div>
-      </div>
+      </Link>
     </aside>
   );
 };

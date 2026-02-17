@@ -9,16 +9,17 @@ export const CTASection = () => {
   const user = useAuthStore((state) => state.user);
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-brand to-brand-100 px-4 py-20 sm:px-6 lg:px-8 lg:py-32">
-      {/* Decorative Elements */}
-      <div className="absolute left-0 top-0 size-96 rounded-full bg-white/5 blur-3xl"></div>
-      <div className="absolute bottom-0 right-0 size-96 rounded-full bg-white/5 blur-3xl"></div>
+      {/* Decorative orbs - design system */}
+      <div className="absolute left-0 top-0 size-96 rounded-full bg-white/10 blur-3xl" />
+      <div className="absolute bottom-0 right-0 size-96 rounded-full bg-brand-50/20 blur-3xl" />
+      <div className="absolute right-1/4 top-1/2 size-64 rounded-full bg-blue/10 blur-2xl" />
 
       <div className="container relative z-10 mx-auto max-w-5xl text-center">
         <h2 className="mb-6 text-4xl font-bold leading-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
-          Ready to Get Started?
+          Your S3, Without the Hassle
         </h2>
         <p className="mx-auto mb-10 max-w-3xl text-xl leading-relaxed text-white/90 sm:text-2xl lg:text-3xl">
-          Join thousands of users who trust S3Karo for their file storage needs.
+          Manage and share files the smart way—your bucket or ours, full control, zero lock-in.
         </p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           {user ? (

@@ -9,17 +9,19 @@ import FileUploader from "@/components/common/FileUploader";
 import Search from "@/components/common/Search";
 import StorageModeToggle from "@/components/common/StorageModeToggle";
 import { Button } from "@/components/ui/button";
+import { getAvatarUrl } from "@/features/shared/utils";
 
 interface Props {
   userId: string;
   accountId: string;
   avatar?: string;
+  fullName?: string;
 }
 
-const Header = ({ userId, accountId, avatar }: Props) => {
+const Header = ({ userId, accountId, avatar, fullName }: Props) => {
   const router = useRouter();
   const pathname = usePathname();
-  const defaultAvatar = "https://ui-avatars.com/api/?name=User&background=random";
+  const avatarUrl = getAvatarUrl(avatar, fullName);
 
   const isPrivate = pathname.startsWith("/private");
   const mode = isPrivate ? "private" : "managed";
@@ -35,7 +37,7 @@ const Header = ({ userId, accountId, avatar }: Props) => {
 
         <Button onClick={() => router.push("/dashboard/profile")} className="sign-out-button">
           <Image
-            src={avatar || defaultAvatar}
+            src={avatarUrl}
             alt="Profile"
             width={24}
             height={24}
