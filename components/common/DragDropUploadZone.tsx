@@ -56,6 +56,8 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
   const { toast } = useToast();
   const isPro = useAuthStore((state) => state.isPro);
   const { upload: uploadFile } = useUpload(); // For managed storage direct uploads
+  const isUploadingRef = React.useRef(false);
+  isUploadingRef.current = isUploading;
 
   useImperativeHandle(ref, () => ({
     openDialog: () => setIsDialogOpen(true),
@@ -393,12 +395,10 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
     handleUpload();
   };
 
-  const handleCloseDialog = () => {
-    if (!isUploading) {
-      setIsDialogOpen(false);
-      setFilesToUpload([]);
-    }
-  };
+  const handleOpenChange = useCallback((open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open && !isUploadingRef.current) setFilesToUpload([]);
+  }, []);
 
   const {
     getRootProps,
@@ -463,7 +463,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
       {/* Upload Dialog */}
       <ScrollableDialog
         open={isDialogOpen}
-        onOpenChange={handleCloseDialog}
+        onOpenChange={handleOpenChange}
         title={`Upload Files${filesToUpload.length > 0 ? ` (${filesToUpload.length})` : ""}`}
         fullScreen={false}
         className="!m-0 !h-[95vh] !max-h-[95vh] !w-[95%] !max-w-[700px]"
@@ -517,26 +517,29 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
         }
       >
         <div className="w-full space-y-4">
-          {/* Compression option - at top so users always see it (drag, drop, or header Upload) */}
+          {/* Compression: only for images (JPEG, PNG, WebP, GIF, AVIF). Videos/other files are never compressed. */}
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-light-300 bg-brand-50/50 p-4 transition-colors hover:border-brand/30 hover:bg-brand-50">
             <Checkbox
               checked={compressImages}
               onCheckedChange={(checked) => setCompressImages(checked === true)}
               className="border-light-200 data-[state=checked]:bg-brand data-[state=checked]:border-brand"
             />
-            <div className="flex items-center gap-2">
-              <ImageIcon className="size-5 text-brand" />
-              <span className="text-sm font-medium text-dark-100">Compress images before upload</span>
+            <div className="flex flex-col gap-0.5">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="size-5 text-brand" />
+                <span className="text-sm font-medium text-dark-100">Compress images before upload</span>
+              </div>
+              <span className="body-2 text-light-100">JPEG, PNG, WebP, GIF, AVIF only. Videos and other files upload as-is.</span>
             </div>
-            <span className="body-2 ml-auto text-light-100">Saves space & bandwidth</span>
           </label>
 
-          {/* Drop zone inside dialog */}
+          {/* Drop zone inside dialog - click calls open() to open file picker (noClick: true on dropzone) */}
           <div
             {...getRootProps()}
             className="cursor-pointer rounded-xl border-2 border-dashed border-light-200 bg-light-300/50 p-12 text-center transition-colors hover:border-brand/50 hover:bg-brand-50/30"
             onClick={(e) => {
               e.stopPropagation();
+              open();
             }}
           >
             <input {...getInputProps()} />

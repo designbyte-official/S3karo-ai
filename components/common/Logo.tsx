@@ -12,20 +12,19 @@ export const LOGO_ICON_PATH = "/assets/logos/icon-logo.webp";
 export const LOGO_NAME_PATH = "/assets/logos/name-logo.webp";
 
 export interface LogoProps {
-  /** "icon" = icon only, "name" = wordmark only, "full" = icon + name */
+  /** "icon" = icon only, "name" | "full" = combined logo (icon + text in one image). Never both at once. */
   variant?: "icon" | "name" | "full";
   className?: string;
   /** Link URL; if set, logo is wrapped in Link. Pass "" or null to render without link. */
   href?: string | null;
-  /** Icon size in px (variant icon or full) */
+  /** Icon size in px (variant icon only) */
   iconSize?: number;
-  /** Name/wordmark height in px (variant name or full). Width auto. */
+  /** Height in px for name/full logo. Width auto. */
   nameHeight?: number;
   /** Preload for LCP (e.g. above-the-fold nav) */
   priority?: boolean;
-  /** Alt text for icon */
+  /** Alt text */
   iconAlt?: string;
-  /** Alt text for name (when used alone or in full) */
   nameAlt?: string;
 }
 
@@ -39,39 +38,33 @@ const Logo = ({
   iconAlt = "S3Karo",
   nameAlt = "S3Karo",
 }: LogoProps) => {
-  const iconNode =
-    variant === "icon" || variant === "full" ? (
-      <Image
-        src={LOGO_ICON_PATH}
-        alt={iconAlt}
-        width={iconSize}
-        height={iconSize}
-        className={cn("shrink-0 transition-transform duration-300 group-hover:scale-110", variant === "icon" && "block")}
-        priority={priority}
-        unoptimized={false}
-      />
-    ) : null;
-
-  const nameNode =
-    variant === "name" || variant === "full" ? (
-      <Image
-        src={LOGO_NAME_PATH}
-        alt={nameAlt}
-        width={140}
-        height={nameHeight}
-        className={cn(
-          "shrink-0 object-contain object-left transition-opacity duration-300 group-hover:opacity-90",
-          variant === "name" && "block"
-        )}
-        priority={priority}
-        unoptimized={false}
-      />
-    ) : null;
+  const isIconOnly = variant === "icon";
+  const isNameOrFull = variant === "name" || variant === "full";
 
   const content = (
-    <div className={cn("group flex items-center gap-3", className)}>
-      {iconNode}
-      {nameNode}
+    <div className={cn("group flex items-center", className)}>
+      {isIconOnly && (
+        <Image
+          src={LOGO_ICON_PATH}
+          alt={iconAlt}
+          width={iconSize}
+          height={iconSize}
+          className="shrink-0 transition-transform duration-300 group-hover:scale-110"
+          priority={priority}
+          unoptimized={false}
+        />
+      )}
+      {isNameOrFull && (
+        <Image
+          src={LOGO_NAME_PATH}
+          alt={nameAlt}
+          width={140}
+          height={nameHeight}
+          className="shrink-0 object-contain object-left transition-opacity duration-300 group-hover:opacity-90"
+          priority={priority}
+          unoptimized={false}
+        />
+      )}
     </div>
   );
 
