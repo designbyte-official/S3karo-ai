@@ -489,7 +489,7 @@ const DragDropUploadZone = forwardRef<DragDropUploadZoneRef, Props>(function Dra
               )}
             </div>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={handleCloseDialog} disabled={isUploading}>
+              <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={isUploading}>
                 {allComplete ? "Close" : "Cancel"}
               </Button>
               {pendingFiles.length > 0 && (
